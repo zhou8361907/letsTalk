@@ -1,0 +1,60 @@
+[agent]
+name = "page-requirement-agent"
+mode = "interactive"
+workspace_root = "/Users/zs/IdeaProjects/work/letsTalk"
+
+[models.primary]
+provider = "deepseek"
+model = "deepseek-chat"
+api_key_env = "DEEPSEEK_API_KEY"
+base_url = "https://api.deepseek.com"
+temperature = 0.0
+max_tokens = 8000
+
+[models.review]
+provider = "deepseek"
+model = "deepseek-chat"
+api_key_env = "DEEPSEEK_API_KEY"
+base_url = "https://api.deepseek.com"
+temperature = 0.0
+max_tokens = 4000
+
+[models.planner]
+provider = "deepseek"
+model = "deepseek-chat"
+api_key_env = "DEEPSEEK_API_KEY"
+base_url = "https://api.deepseek.com"
+temperature = 0.0
+max_tokens = 4000
+
+[memory]
+backend = "memory"
+persist_path = "./.agent/memory.json"
+enable_user_memory = true
+enable_project_memory = true
+enable_page_memory = true
+
+[runtime]
+max_turns = 16
+enable_background_tasks = true
+enable_sub_agents = true
+enable_message_normalization = true
+enable_context_compression = false
+
+[tools]
+enabled = [
+  "page_workspace_parser",
+  "page_doc_llm",
+  "runtime_schema_builder",
+  "memory_store",
+  "task_queue"
+]
+
+[sandbox]
+renderer = "runtime_schema"
+floating_requirement_input = true
+
+[paths]
+frontend_root = ""
+backend_root = ""
+default_page = ""

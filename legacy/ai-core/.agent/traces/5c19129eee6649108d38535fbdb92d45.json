@@ -1,0 +1,43 @@
+{
+  "trace_id": "5c19129eee6649108d38535fbdb92d45",
+  "project_name": "test-project",
+  "page_path": "/src/views/test/index.vue",
+  "started_at": "2026-05-21T05:04:02.764702Z",
+  "completed_at": "2026-05-21T05:04:02.764744Z",
+  "status": "completed",
+  "steps": [
+    {
+      "step_number": 1,
+      "step_type": "planning",
+      "content": "开始分析页面",
+      "tool_calls": [],
+      "timestamp": "2026-05-21T05:04:02.764708Z",
+      "details": {}
+    },
+    {
+      "step_number": 2,
+      "step_type": "evidence",
+      "content": "构建证据包",
+      "tool_calls": [],
+      "timestamp": "2026-05-21T05:04:02.764714Z",
+      "details": {
+        "files": 5,
+        "actions": 3
+      }
+    }
+  ],
+  "total_tool_calls": 0,
+  "files_read": [
+    "/src/views/test/index.vue",
+    "/src/api/test.js"
+  ],
+  "apis_traced": [
+    "/api/test/list",
+    "/api/test/detail"
+  ],
+  "total_duration_ms": 1500,
+  "final_result": null,
+  "error": null,
+  "model_name": "deepseek-chat",
+  "mode": "agent"
+}

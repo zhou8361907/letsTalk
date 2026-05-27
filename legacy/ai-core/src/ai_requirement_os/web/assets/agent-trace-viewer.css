@@ -1,0 +1,476 @@
+/**
+ * Agent 追踪查看器样式
+ */
+
+.agent-trace {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    padding: 20px;
+    background: #f5f7fa;
+    border-radius: 8px;
+}
+
+/* 头部 */
+.trace-header {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.trace-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.trace-title h3 {
+    margin: 0;
+    font-size: 20px;
+    color: #2c3e50;
+}
+
+.trace-status {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.trace-status.success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.trace-status.error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.trace-status.running {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.trace-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+}
+
+.meta-item {
+    display: flex;
+    gap: 8px;
+}
+
+.meta-item .label {
+    color: #6c757d;
+    font-size: 13px;
+}
+
+.meta-item .value {
+    color: #2c3e50;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* 统计卡片 */
+.trace-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: bold;
+    color: #409eff;
+    margin-bottom: 8px;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #6c757d;
+}
+
+/* 时间线 */
+.trace-timeline {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.trace-timeline h4 {
+    margin: 0 0 20px 0;
+    font-size: 16px;
+    color: #2c3e50;
+}
+
+.timeline-container {
+    position: relative;
+    padding-left: 40px;
+}
+
+.timeline-step {
+    position: relative;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+}
+
+.timeline-step:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: -28px;
+    top: 30px;
+    bottom: -20px;
+    width: 2px;
+    background: #e0e6ed;
+}
+
+.step-marker {
+    position: absolute;
+    left: -40px;
+    top: 0;
+    width: 24px;
+    height: 24px;
+    background: white;
+    border: 2px solid #409eff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    z-index: 1;
+}
+
+.timeline-step.planning .step-marker {
+    border-color: #909399;
+}
+
+.timeline-step.tool_call .step-marker {
+    border-color: #e6a23c;
+}
+
+.timeline-step.reasoning .step-marker {
+    border-color: #409eff;
+}
+
+.timeline-step.conclusion .step-marker {
+    border-color: #67c23a;
+}
+
+.timeline-step.evidence .step-marker {
+    border-color: #f56c6c;
+}
+
+.step-content {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+    border-left: 3px solid #409eff;
+}
+
+.timeline-step.planning .step-content {
+    border-left-color: #909399;
+}
+
+.timeline-step.tool_call .step-content {
+    border-left-color: #e6a23c;
+}
+
+.timeline-step.reasoning .step-content {
+    border-left-color: #409eff;
+}
+
+.timeline-step.conclusion .step-content {
+    border-left-color: #67c23a;
+}
+
+.timeline-step.evidence .step-content {
+    border-left-color: #f56c6c;
+}
+
+.step-header {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.step-number {
+    font-weight: bold;
+    color: #409eff;
+    font-size: 12px;
+}
+
+.step-type-label {
+    background: #ecf5ff;
+    color: #409eff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.step-time {
+    margin-left: auto;
+    font-size: 11px;
+    color: #909399;
+}
+
+.step-description {
+    color: #2c3e50;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.step-details {
+    margin-top: 10px;
+    padding: 10px;
+    background: white;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.detail-item {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.detail-key {
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.detail-value {
+    color: #2c3e50;
+}
+
+/* 工具调用 */
+.tool-calls {
+    margin-top: 10px;
+    padding: 10px;
+    background: white;
+    border-radius: 4px;
+}
+
+.tool-call {
+    padding: 8px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    border: 1px solid #e0e6ed;
+}
+
+.tool-call.success {
+    background: #f0f9ff;
+    border-color: #409eff;
+}
+
+.tool-call.error {
+    background: #fef0f0;
+    border-color: #f56c6c;
+}
+
+.tool-call-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.tool-name {
+    font-weight: 500;
+    color: #2c3e50;
+    font-size: 13px;
+}
+
+.tool-duration {
+    font-size: 11px;
+    color: #909399;
+}
+
+.tool-result {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 4px;
+    padding: 4px 8px;
+    background: #f8f9fa;
+    border-radius: 3px;
+}
+
+.tool-error {
+    font-size: 12px;
+    color: #f56c6c;
+    margin-top: 4px;
+}
+
+/* 文件列表 */
+.trace-files,
+.trace-apis {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.trace-files h4,
+.trace-apis h4 {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    color: #2c3e50;
+}
+
+.file-list,
+.api-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.file-item,
+.api-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    margin-bottom: 4px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.file-icon,
+.api-icon {
+    font-size: 16px;
+}
+
+.file-path,
+.api-path {
+    color: #2c3e50;
+    font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+}
+
+/* 流式展示 */
+.trace-streaming {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.trace-streaming h3 {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    color: #2c3e50;
+}
+
+.stream-steps {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.stream-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    margin-bottom: 8px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    animation: slideIn 0.3s ease-out;
+}
+
+.stream-step.error {
+    background: #fef0f0;
+    border-left: 3px solid #f56c6c;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.stream-icon {
+    font-size: 18px;
+}
+
+.stream-content {
+    flex: 1;
+    color: #2c3e50;
+    font-size: 14px;
+}
+
+.stream-time {
+    font-size: 11px;
+    color: #909399;
+}
+
+/* 错误显示 */
+.trace-error,
+.trace-empty {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.error-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
+.error-message {
+    color: #f56c6c;
+    font-size: 14px;
+}
+
+.trace-empty {
+    color: #909399;
+    font-size: 14px;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+    .trace-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .trace-meta {
+        grid-template-columns: 1fr;
+    }
+
+    .timeline-container {
+        padding-left: 30px;
+    }
+
+    .step-marker {
+        left: -30px;
+    }
+}

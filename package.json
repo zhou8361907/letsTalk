@@ -1,0 +1,15 @@
+{
+  "name": "lets-talk",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter @lets-talk/web dev",
+    "build": "pnpm -r build",
+    "smoke": "pnpm --filter @lets-talk/agent-runtime smoke",
+    "minimal": "pnpm --filter @lets-talk/agent-runtime minimal",
+    "lint": "pnpm -r lint"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

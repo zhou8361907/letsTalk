@@ -1,0 +1,119 @@
+{
+  "asset_id": "eb2331093ff74f57b9165cc95813a8c1",
+  "version": 1,
+  "identity": {
+    "project_name": "RunningAccount-master",
+    "page_path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Login.vue",
+    "page_key": "Login-35ff31438f76",
+    "page_name": "Login"
+  },
+  "source": {
+    "source_hash": "07d320842e868e882f39cebc4a583d5a4834b1952b8b88ed69a4814bb588b375",
+    "fingerprint_count": 4,
+    "fingerprints": [
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/rbac/UserController.java",
+        "sha256": "a608a981564b60d684790e5ecfbf5d981a2d9a13c206188f9de45f2cf0578b12"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/rbac/UserService.java",
+        "sha256": "e9b6f73bcf64a7956a4f773bdc486cb5e12633d61eca031e5ce37797ab0cecda"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/rbac/userApi.js",
+        "sha256": "3bfb8ea785ee8958ecf60c584e7c0d413daeab251d087ed5ab4ed9409bd22557"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Login.vue",
+        "sha256": "11b44f02dbf4cc9a1beed77fb9bf36d111d9173edb7519cf987dd9e6fe94e9f4"
+      }
+    ],
+    "generated_from_analysis_at": "2026-05-21T07:20:22.737686Z"
+  },
+  "documentation": null,
+  "lineage": {
+    "kind": "lineage",
+    "mode": "agent",
+    "model": "deepseek-chat",
+    "warnings": [
+      "Lineage 结果由 agent 基于方法级 Evidence Bundle 直接生成。",
+      "提示词预览：项目名称：RunningAccount-master 页面名称：Login 页面路径：/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Login.vue 下面是当前页面的 Evidence..."
+    ],
+    "json_payload": {
+      "page_info": {
+        "page_name": "Login",
+        "page_path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Login.vue",
+        "module_name": "vue",
+        "summary": "提供用户登录入口，验证用户名和密码，登录成功后跳转至系统首页或指定重定向页面。"
+      },
+      "search_fields": [],
+      "display_fields": [],
+      "initial_fetches": [],
+      "actions": [
+        {
+          "name": "登录",
+          "frontend_handler": "onSubmit",
+          "summary": "用户提交登录表单，前端对密码进行 Base64 编码后发送 POST 请求至后端，后端通过 Shiro 进行身份认证，成功后返回用户主体信息并跳转页面。",
+          "request_flow": [
+            {
+              "order": 1,
+              "api": "rbac/user/login",
+              "method": "POST",
+              "payload_fields": [
+                "username",
+                "password"
+              ],
+              "summary": "前端调用 userApi.login(loginForm)，密码经 Base64 编码后发送 POST 请求。后端 UserController.login 接收 User 对象，通过 Shiro Subject.login 完成认证，返回 R 对象携带用户主体信息。",
+              "return_summary": "成功返回 R.ok().data(subject.getPrincipal())，其中 data 包含 username、groupId 等用户信息；失败返回 R.fail().message(错误信息)。",
+              "backend_pointers": [
+                {
+                  "layer": "controller",
+                  "class_name": "UserController",
+                  "method_name": "login",
+                  "method_signature": "public R login(@RequestBody User user)",
+                  "file_path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/rbac/UserController.java",
+                  "line_number_hint": 57,
+                  "note": "POST /rbac/user/login，使用 Shiro 认证"
+                }
+              ],
+              "source_refs": [
+                "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Login.vue",
+                "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/rbac/userApi.js",
+                "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/rbac/UserController.java"
+              ]
+            }
+          ],
+          "source_refs": [
+            "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Login.vue",
+            "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/rbac/userApi.js",
+            "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/rbac/UserController.java"
+          ]
+        }
+      ],
+      "backend_overview": {
+        "controllers": [
+          "UserController"
+        ],
+        "services": [],
+        "tables": []
+      },
+      "notes": [
+        "Login 页面无搜索字段和表格展示字段，仅包含登录表单（用户名、密码）。",
+        "页面无初始化请求，所有数据交互仅在登录提交时触发。",
+        "后端认证逻辑依赖 Apache Shiro，Controller 层直接调用 Subject.login，未显式调用 Service 层。"
+      ],
+      "unknowns": [
+        "Shiro Realm 的具体实现类及认证逻辑（UserRealm 或自定义 Realm）未在证据中体现。",
+        "User 实体类的具体字段映射（如 username、password、groupId 等）对应的数据库表未知。",
+        "Base64 编码使用的具体工具类来源未明确。"
+      ],
+      "deep_logic_flags": {
+        "action:onSubmit:login:controller_to_service": "Controller 方法中未识别到直接的 Service 调用，认证由 Shiro Subject.login 委托至 Realm 完成，具体 Realm 实现未在当前证据中捕获。"
+      }
+    },
+    "markdown": "# 页面数据解析报告：Login\n\n## 1. 页面概览\n- 页面路径：`/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Login.vue`\n- 所属模块：vue\n- 页面说明：提供用户登录入口，验证用户名和密码，登录成功后跳转至系统首页或指定重定向页面。\n\n## 2. 查询条件字段\n| 页面展示名称 | 前端字段 | 后端字段 | 说明 |\n| :--- | :--- | :--- | :--- |\n| - | - | - | - |\n\n## 3. 展示字段\n| 页面展示名称 | 前端字段 | 后端字段 | 说明 |\n| :--- | :--- | :--- | :--- |\n| - | - | - | - |\n\n## 4. 页面初始化请求\n- -\n\n## 5. 页面操作\n### 登录\n- 前端方法：onSubmit\n- 操作说明：用户提交登录表单，前端对密码进行 Base64 编码后发送 POST 请求至后端，后端通过 Shiro 进行身份认证，成功后返回用户主体信息并跳转页面。\n- 请求链路：\n  - 1. `POST rbac/user/login`\n    - 参数：username / password\n    - 逻辑：前端调用 userApi.login(loginForm)，密码经 Base64 编码后发送 POST 请求。后端 UserController.login 接收 User 对象，通过 Shiro Subject.login 完成认证，返回 R 对象携带用户主体信息。\n    - 返回：成功返回 R.ok().data(subject.getPrincipal())，其中 data 包含 username、groupId 等用户信息；失败返回 R.fail().message(错误信息)。\n    - 后端定位：controller:UserController.login\n\n## 6. 后端概览\n- Controller：UserController\n- Service：-\n- 涉及数据表：-\n\n## 7. 备注\n- Login 页面无搜索字段和表格展示字段，仅包含登录表单（用户名、密码）。\n- 页面无初始化请求，所有数据交互仅在登录提交时触发。\n- 后端认证逻辑依赖 Apache Shiro，Controller 层直接调用 Subject.login，未显式调用 Service 层。\n\n## 8. 深水区提示\n- `action:onSubmit:login:controller_to_service`: Controller 方法中未识别到直接的 Service 调用，认证由 Shiro Subject.login 委托至 Realm 完成，具体 Realm 实现未在当前证据中捕获。\n\n## 9. 未确认项\n- Shiro Realm 的具体实现类及认证逻辑（UserRealm 或自定义 Realm）未在证据中体现。\n- User 实体类的具体字段映射（如 username、password、groupId 等）对应的数据库表未知。\n- Base64 编码使用的具体工具类来源未明确。",
+    "generated_at": "2026-05-21T07:20:22.737797Z"
+  },
+  "created_at": "2026-05-21T07:20:22.737756Z",
+  "updated_at": "2026-05-21T07:20:22.737800Z"
+}

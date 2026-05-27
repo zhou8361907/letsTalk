@@ -1,0 +1,29 @@
+{
+  "RunningAccount-master::/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Detail.vue": {
+    "project_name": "RunningAccount-master",
+    "page_path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Detail.vue",
+    "page_key": "Detail-eb11d4edd4f2",
+    "page_name": "Detail",
+    "latest_version": 1,
+    "latest_asset_path": "/Users/zs/IdeaProjects/work/letsTalk/ai-core/.agent/page_documents/RunningAccount-master/Detail-eb11d4edd4f2/latest.json",
+    "latest_source_hash": "44d64ca42be7bae3c890b1438655efb7dc3565fdaf80d1b3817e33fdb655f8e3",
+    "available_artifacts": [
+      "documentation",
+      "lineage"
+    ],
+    "updated_at": "2026-05-21T07:57:06.573407Z"
+  },
+  "RunningAccount-master::/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Login.vue": {
+    "project_name": "RunningAccount-master",
+    "page_path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Login.vue",
+    "page_key": "Login-35ff31438f76",
+    "page_name": "Login",
+    "latest_version": 1,
+    "latest_asset_path": "/Users/zs/IdeaProjects/work/letsTalk/ai-core/.agent/page_documents/RunningAccount-master/Login-35ff31438f76/latest.json",
+    "latest_source_hash": "07d320842e868e882f39cebc4a583d5a4834b1952b8b88ed69a4814bb588b375",
+    "available_artifacts": [
+      "lineage"
+    ],
+    "updated_at": "2026-05-21T07:20:22.737800Z"
+  }
+}

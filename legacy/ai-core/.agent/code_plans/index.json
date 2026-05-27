@@ -1,0 +1,14 @@
+{
+  "plan-detail-reset-balance": {
+    "status": "failed",
+    "summary": "新增\"结存归零\"按钮，选中表格行后可将选中记录的结存批量重置为0",
+    "created_at": "2026-05-19T14:31:29.062525+00:00",
+    "branch_name": "agent-feat/plan-det"
+  },
+  "plan-detail-balance-reset": {
+    "status": "planned",
+    "summary": "新增\"结存归零\"按钮：选中表格中的记录后，将选中记录的结存值批量设为0",
+    "created_at": "2026-05-19T14:31:09.199770+00:00",
+    "branch_name": null
+  }
+}

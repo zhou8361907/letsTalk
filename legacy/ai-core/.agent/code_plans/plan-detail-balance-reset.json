@@ -1,0 +1,22 @@
+{
+  "plan_id": "plan-detail-balance-reset",
+  "summary": "新增\"结存归零\"按钮：选中表格中的记录后，将选中记录的结存值批量设为0",
+  "rationale": [
+    "用户需要一个按钮，选中数据后让结存数据变为0。当前后端已有 PUT /detail/balance 接口（updateAllBalance），但该接口是更新所有记录的结存，并非只更新选中记录。前端没有现成的批量更新选中记录结存为0的后端接口。为了做前端可演示版本，可以在前端直接修改选中行的 balance 字段为0，并调用已有的 update 接口逐条更新（或调用 updateBalance 全量更新）。但更合理的做法是：在前端选中行后，遍历选中行，将每行的 balance 置为0，然后调用 update 接口逐条提交。由于 update 接口接收 DetailFormReqDTO，包含 id、earning、expense、balance 等字段，可以传入修改后的 balance=0。这样不需要新增后端接口。"
+  ],
+  "edits": [
+    {
+      "file_path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Detail.vue",
+      "action": "insert_after",
+      "anchor_text": "生成报销凭证",
+      "new_content": "\n                     style=\"margin-left: 10px\" @click=\"resetBalanceToZero\"\n                     :loading=\"tableData.multipleSelectionData.loading\">结存归零",
+      "description": "在\"生成报销凭证\"按钮后面添加\"结存归零\"按钮，点击后对选中行的 balance 置0并调用 update 接口"
+    }
+  ],
+  "created_at": "2026-05-19T14:31:09.199770Z",
+  "status": "planned",
+  "branch_name": null,
+  "base_branch": null,
+  "commit_sha": null,
+  "revert_commit_sha": null
+}

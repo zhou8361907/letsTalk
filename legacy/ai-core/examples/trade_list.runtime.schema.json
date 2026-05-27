@@ -1,0 +1,153 @@
+{
+  "page": "trade_list",
+  "route": "/trade/list",
+  "domain": "payment",
+  "components": [
+    {
+      "key": "trade_search",
+      "type": "SearchForm",
+      "title": "Search",
+      "fields": [
+        {
+          "key": "tradeNo",
+          "label": "Trade No",
+          "component": "input",
+          "required": false,
+          "visible_when": null,
+          "disabled_when": null,
+          "options_api": null,
+          "placeholder": "Enter trade number"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "component": "select",
+          "required": false,
+          "visible_when": null,
+          "disabled_when": null,
+          "options_api": "getTradeStatusOptions",
+          "placeholder": null
+        }
+      ],
+      "columns": [],
+      "actions": [
+        {
+          "key": "query",
+          "label": "Query",
+          "action_type": "custom",
+          "scope": "page",
+          "visible_when": null,
+          "disabled_when": null,
+          "api_name": null
+        },
+        {
+          "key": "reset",
+          "label": "Reset",
+          "action_type": "custom",
+          "scope": "page",
+          "visible_when": null,
+          "disabled_when": null,
+          "api_name": null
+        }
+      ]
+    },
+    {
+      "key": "trade_table",
+      "type": "Table",
+      "title": "Trade Records",
+      "fields": [],
+      "columns": [
+        {
+          "key": "tradeNo",
+          "label": "Trade No",
+          "value_type": "text"
+        },
+        {
+          "key": "amount",
+          "label": "Amount",
+          "value_type": "money"
+        },
+        {
+          "key": "status",
+          "label": "Status",
+          "value_type": "enum"
+        }
+      ],
+      "actions": [
+        {
+          "key": "create",
+          "label": "New",
+          "action_type": "create",
+          "scope": "page",
+          "visible_when": null,
+          "disabled_when": null,
+          "api_name": null
+        },
+        {
+          "key": "refund",
+          "label": "Refund",
+          "action_type": "api_call",
+          "scope": "row",
+          "visible_when": "status == 'FAIL'",
+          "disabled_when": null,
+          "api_name": "refundTrade"
+        }
+      ]
+    },
+    {
+      "key": "trade_dialog",
+      "type": "Dialog",
+      "title": "Trade Form",
+      "fields": [
+        {
+          "key": "price",
+          "label": "Price",
+          "component": "number",
+          "required": true,
+          "visible_when": null,
+          "disabled_when": null,
+          "options_api": null,
+          "placeholder": null
+        },
+        {
+          "key": "count",
+          "label": "Count",
+          "component": "number",
+          "required": true,
+          "visible_when": null,
+          "disabled_when": null,
+          "options_api": null,
+          "placeholder": null
+        },
+        {
+          "key": "amount",
+          "label": "Amount",
+          "component": "number",
+          "required": false,
+          "visible_when": null,
+          "disabled_when": "true",
+          "options_api": null,
+          "placeholder": null
+        }
+      ],
+      "columns": [],
+      "actions": [
+        {
+          "key": "submit",
+          "label": "Submit",
+          "action_type": "submit",
+          "scope": "dialog",
+          "visible_when": null,
+          "disabled_when": null,
+          "api_name": null
+        }
+      ]
+    }
+  ],
+  "formulas": [
+    {
+      "target": "trade_dialog.amount",
+      "expression": "price * count"
+    }
+  ]
+}

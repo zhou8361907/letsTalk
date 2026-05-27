@@ -1,0 +1,82 @@
+{
+  "page_path": "examples/test_cases/frontend/Detail.vue",
+  "total_apis": 4,
+  "completed_apis": [
+    {
+      "method": "PUT",
+      "url": "/api/account/${this.accountId}",
+      "trigger": "unknown",
+      "line_number": 38,
+      "controller_class": "AccountController",
+      "controller_method": "updateAccount",
+      "controller_file": "examples/test_cases/backend/controller/AccountController.java",
+      "complexity_score": 20,
+      "lines_of_code": 5,
+      "cyclomatic_complexity": 1,
+      "external_calls": [
+        "数据库操作"
+      ],
+      "recommendation": "简单方法，可以直接分析",
+      "analysis_time": 0.014351129531860352,
+      "status": "completed"
+    },
+    {
+      "method": "GET",
+      "url": "/api/account/${this.accountId}/transactions",
+      "trigger": "unknown",
+      "line_number": 30,
+      "controller_class": "AccountController",
+      "controller_method": "getTransactions",
+      "controller_file": "examples/test_cases/backend/controller/AccountController.java",
+      "complexity_score": 10,
+      "lines_of_code": 4,
+      "cyclomatic_complexity": 1,
+      "external_calls": [],
+      "recommendation": "简单方法，可以直接分析",
+      "analysis_time": 0.01669788360595703,
+      "status": "completed"
+    },
+    {
+      "method": "GET",
+      "url": "/api/account/${this.accountId}",
+      "trigger": "unknown",
+      "line_number": 22,
+      "controller_class": "AccountController",
+      "controller_method": "getAccountById",
+      "controller_file": "examples/test_cases/backend/controller/AccountController.java",
+      "complexity_score": 19,
+      "lines_of_code": 7,
+      "cyclomatic_complexity": 2,
+      "external_calls": [],
+      "recommendation": "简单方法，可以直接分析",
+      "analysis_time": 0.019010066986083984,
+      "status": "completed"
+    },
+    {
+      "method": "POST",
+      "url": "/api/account/${this.accountId}/sync",
+      "trigger": "unknown",
+      "line_number": 47,
+      "controller_class": "AccountController",
+      "controller_method": "syncAccount",
+      "controller_file": "examples/test_cases/backend/controller/AccountController.java",
+      "complexity_score": 10,
+      "lines_of_code": 4,
+      "cyclomatic_complexity": 1,
+      "external_calls": [],
+      "recommendation": "简单方法，可以直接分析",
+      "analysis_time": 0.02051520347595215,
+      "status": "completed"
+    }
+  ],
+  "pending_deep_analysis": [],
+  "failed_apis": [],
+  "error": null,
+  "total_time": 0.022787094116210938,
+  "api_times": {
+    "PUT /api/account/${this.accountId}": 0.014351129531860352,
+    "GET /api/account/${this.accountId}/transactions": 0.01669788360595703,
+    "GET /api/account/${this.accountId}": 0.019010066986083984,
+    "POST /api/account/${this.accountId}/sync": 0.02051520347595215
+  }
+}

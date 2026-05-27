@@ -1,0 +1,2686 @@
+{
+  "RunningAccount-master::/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Detail.vue": {
+    "asset_key": "RunningAccount-master::/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Detail.vue",
+    "project_name": "RunningAccount-master",
+    "page_path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Detail.vue",
+    "updated_at": "2026-05-21T01:56:40.259198Z",
+    "fingerprints": [
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Detail.vue",
+        "sha256": "691ce19c3082b37e31354297229f7a6c505e1968ac335c726956850400bfb8ff"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/detailApi.js",
+        "sha256": "649070191066acf89aae4e4c08e2b1ecc0f9f2fb4c7a0cd40c613ae1483346b0"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/excelApi.js",
+        "sha256": "0dab379c64c31d0179bf91e5a16a80465c31c4ab7b0ed6315b9ea63bcee9c225"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/optionApi.js",
+        "sha256": "085dfe2f128ca1ba5ca884c552c40c87c2f73f1d32d70cfa0dc91f02b59a96a6"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/DetailController.java",
+        "sha256": "23d1d75d8ba0902d8a81ae8906816ea74ce1ea9222f78b47d6b8c1d238c28110"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/DetailService.java",
+        "sha256": "b3a08736b13956fc6de64230e23c629fea72f7f445a7776e551ef2ece6b021c9"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/req/DetailFormReqDTO.java",
+        "sha256": "d5fea479162c8c559c6fc11bf0029b1d449a9150f558341de17f8ba7925e100a"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/req/DetailQueryConditionDTO.java",
+        "sha256": "688357b43776b735814653e340db95a882ef7ee9a5b91f2fa406d00a1393c5e0"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/resp/DetailRespDTO.java",
+        "sha256": "47e29f0b0eb7cef761c247e0174f3bee899e9ee79957f95cca64b9386ab0cc90"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/ExcelController.java",
+        "sha256": "c10a9d31ab5535ac893ab95056984d35bf5cf3e86bd5b9b2b5545a635bba7319"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/ExcelService.java",
+        "sha256": "cb63c170305f382275362ea6cd44302e345dfdb7603fd3729bd6b57c7ca8aa1f"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/OptionService.java",
+        "sha256": "290dd0ef9a884c03b60181b83db5eaabef8b00684e692185921e077ff2a1d64b"
+      }
+    ],
+    "workspace": {
+      "project_name": "RunningAccount-master",
+      "selected_page": {
+        "route_hint": "/Detail",
+        "name": "Detail",
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Detail.vue",
+        "api_modules": [
+          ";"
+        ],
+        "has_table": true,
+        "has_dialog": true,
+        "has_form": true
+      },
+      "sandbox_route": "/detail",
+      "sandbox_url": "http://127.0.0.1:8081/#/detail",
+      "related_files": [
+        {
+          "role": "page",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Detail.vue"
+        },
+        {
+          "role": "api",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/detailApi.js"
+        },
+        {
+          "role": "api",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/excelApi.js"
+        },
+        {
+          "role": "api",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/optionApi.js"
+        },
+        {
+          "role": "controller",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/DetailController.java"
+        },
+        {
+          "role": "service",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/DetailService.java"
+        },
+        {
+          "role": "dto",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/req/DetailFormReqDTO.java"
+        },
+        {
+          "role": "dto",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/req/DetailQueryConditionDTO.java"
+        },
+        {
+          "role": "dto",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/resp/DetailRespDTO.java"
+        },
+        {
+          "role": "controller",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/ExcelController.java"
+        },
+        {
+          "role": "service",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/ExcelService.java"
+        },
+        {
+          "role": "service",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/OptionService.java"
+        }
+      ],
+      "documentation": {
+        "page_name": "Detail",
+        "page_path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Detail.vue",
+        "purpose": "用于查询、展示和维护收支明细记录，支持按日期范围、项目、银行账户、部门、类别和摘要关键字进行筛选，提供新增、修改、删除记录功能，以及图片上传/删除和生成费用报销凭证等操作。",
+        "structures": [
+          "搜索区",
+          "表格区",
+          "分页区",
+          "弹窗：修改记录",
+          "弹窗：上传图片"
+        ],
+        "search_fields": [
+          {
+            "key": "dateRange",
+            "label": "日期范围",
+            "component": "el-date-picker"
+          },
+          {
+            "key": "projectId",
+            "label": "所有项目",
+            "component": "el-select"
+          },
+          {
+            "key": "accountId",
+            "label": "所有银行账户",
+            "component": "el-select"
+          },
+          {
+            "key": "departmentId",
+            "label": "所有部门",
+            "component": "el-select"
+          },
+          {
+            "key": "categoryId",
+            "label": "所有类别",
+            "component": "el-select"
+          },
+          {
+            "key": "digest",
+            "label": "摘要关键字",
+            "component": "el-input"
+          }
+        ],
+        "table_columns": [
+          {
+            "label": "日期",
+            "prop": "date"
+          },
+          {
+            "label": "项目",
+            "prop": "project.name"
+          },
+          {
+            "label": "银行账户",
+            "prop": "account.name"
+          },
+          {
+            "label": "部门",
+            "prop": "department.name"
+          },
+          {
+            "label": "具体类别",
+            "prop": "category.name"
+          },
+          {
+            "label": "收入",
+            "prop": "earning"
+          },
+          {
+            "label": "支出",
+            "prop": "expense"
+          },
+          {
+            "label": "结存",
+            "prop": "balance"
+          },
+          {
+            "label": "操作",
+            "prop": null
+          }
+        ],
+        "page_actions": [
+          "添加记录",
+          "生成报销凭证"
+        ],
+        "row_actions": [
+          "修改",
+          "删除"
+        ],
+        "forms": [],
+        "dialogs": [
+          {
+            "title": "修改记录",
+            "fields": [
+              {
+                "label": "日期时间",
+                "model": "updateDetailDialog.detail.date",
+                "component": "el-date-picker"
+              },
+              {
+                "label": "项目",
+                "model": "updateDetailDialog.detail.project.id",
+                "component": "el-select"
+              },
+              {
+                "label": "银行账户",
+                "model": "updateDetailDialog.detail.account.id",
+                "component": "el-select"
+              },
+              {
+                "label": "部门",
+                "model": "updateDetailDialog.detail.department.id",
+                "component": "el-select"
+              },
+              {
+                "label": "具体类别",
+                "model": "updateDetailDialog.detail.category.id",
+                "component": "el-select"
+              },
+              {
+                "label": "收入",
+                "model": "updateDetailDialog.detail.earning",
+                "component": "el-input-number"
+              },
+              {
+                "label": "支出",
+                "model": "updateDetailDialog.detail.expense",
+                "component": "el-input-number"
+              },
+              {
+                "label": "摘要",
+                "model": "updateDetailDialog.detail.digest",
+                "component": "el-input"
+              }
+            ],
+            "actions": [
+              "取 消",
+              "确 定"
+            ]
+          },
+          {
+            "title": "上传图片",
+            "fields": [
+              {
+                "label": "选择图片文件",
+                "model": null,
+                "component": "el-upload"
+              }
+            ],
+            "actions": [
+              "取 消",
+              "确 定"
+            ]
+          }
+        ],
+        "api_methods": [
+          {
+            "name": "add",
+            "method": "POST",
+            "path": "detail"
+          },
+          {
+            "name": "update",
+            "method": "PUT",
+            "path": "detail"
+          },
+          {
+            "name": "get",
+            "method": "GET",
+            "path": "detail/${id}"
+          },
+          {
+            "name": "delete",
+            "method": "DELETE",
+            "path": "detail"
+          },
+          {
+            "name": "deletePicture",
+            "method": "DELETE",
+            "path": "detail/picture/${pictureId}"
+          },
+          {
+            "name": "updateBalance",
+            "method": "PUT",
+            "path": "detail/balance"
+          },
+          {
+            "name": "list",
+            "method": "GET",
+            "path": "detail"
+          },
+          {
+            "name": "listPicture",
+            "method": "GET",
+            "path": "detail/picture/${detailId}"
+          },
+          {
+            "name": "generateExpenseClaimForm",
+            "method": "POST",
+            "path": "excel/expenseClaimForm"
+          },
+          {
+            "name": "addProject",
+            "method": "POST",
+            "path": "option/project"
+          },
+          {
+            "name": "addAccount",
+            "method": "POST",
+            "path": "option/account"
+          },
+          {
+            "name": "addDepartment",
+            "method": "POST",
+            "path": "option/department"
+          },
+          {
+            "name": "addCategory",
+            "method": "POST",
+            "path": "option/category"
+          },
+          {
+            "name": "updateProject",
+            "method": "PUT",
+            "path": "option/project"
+          },
+          {
+            "name": "updateAccount",
+            "method": "PUT",
+            "path": "option/account"
+          },
+          {
+            "name": "updateDepartment",
+            "method": "PUT",
+            "path": "option/department"
+          },
+          {
+            "name": "updateCategory",
+            "method": "PUT",
+            "path": "option/category"
+          },
+          {
+            "name": "listAccount",
+            "method": "GET",
+            "path": "option/account"
+          },
+          {
+            "name": "getAll",
+            "method": "GET",
+            "path": "option/all"
+          }
+        ],
+        "backend_endpoints": [
+          {
+            "method": "GET",
+            "path": "/detail",
+            "handler": "list"
+          },
+          {
+            "method": "GET",
+            "path": "/detail/{id}",
+            "handler": "findOne"
+          },
+          {
+            "method": "POST",
+            "path": "/detail",
+            "handler": "add"
+          },
+          {
+            "method": "PUT",
+            "path": "/detail",
+            "handler": "update"
+          },
+          {
+            "method": "DELETE",
+            "path": "/detail",
+            "handler": "delete"
+          },
+          {
+            "method": "PUT",
+            "path": "/detail/balance",
+            "handler": "updateBalance"
+          },
+          {
+            "method": "POST",
+            "path": "/detail/picture/{detailId}",
+            "handler": "addVouchers"
+          },
+          {
+            "method": "DELETE",
+            "path": "/detail/picture/{pictureId}",
+            "handler": "deleteVoucher"
+          },
+          {
+            "method": "GET",
+            "path": "/detail/picture/{detailId}",
+            "handler": "listVoucherByDetailId"
+          },
+          {
+            "method": "GET",
+            "path": "/detail/picture/img/{fileName}",
+            "handler": "getImg"
+          },
+          {
+            "method": "POST",
+            "path": "/excel/expenseClaimForm",
+            "handler": "generateExpenseClaimForm"
+          },
+          {
+            "method": "GET",
+            "path": "/excel/expenseClaimForm",
+            "handler": "downloadExpenseClaimForm"
+          }
+        ],
+        "business_rules": [
+          "页面中的操作列（修改、删除）和上传图片按钮受 currentUserGroupId <= '1' 控制，仅管理员组可见。",
+          "新增记录前需要通过表单校验，校验通过后调用 add 接口。",
+          "新增时，摘要为空则由后端默认补为“无”；收入和支出为空则由后端补零。",
+          "修改时，后端对 earning、expense 为 null 时补零，digest 为 null 时补“无”。",
+          "新增和修改时，日期时间不允许重复，否则后端返回 DuplicateKeyException 错误提示。",
+          "删除记录时需同时传递 id、date、expense、earning、account 信息用于后续结存调整。",
+          "生成报销凭证时，一次最多选择 7 条记录。",
+          "表格行支持展开，展开后显示摘要详情和图片信息（如有）。",
+          "图片上传仅支持单文件上传，上传后自动刷新该行的图片列表。",
+          "删除图片时同步刷新对应行的图片列表。"
+        ]
+      },
+      "runtime_schema": {
+        "page": "Detail",
+        "route": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Detail.vue",
+        "domain": "page-workspace",
+        "components": [
+          {
+            "key": "search_form",
+            "type": "SearchForm",
+            "title": "搜索条件",
+            "fields": [
+              {
+                "key": "dateRange",
+                "label": "日期范围",
+                "component": "unknown",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "projectId",
+                "label": "所有项目",
+                "component": "el-select",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "accountId",
+                "label": "所有银行账户",
+                "component": "el-select",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "departmentId",
+                "label": "所有部门",
+                "component": "el-select",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "categoryId",
+                "label": "所有类别",
+                "component": "el-select",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "digest",
+                "label": "摘要关键字",
+                "component": "el-input",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              }
+            ],
+            "columns": [],
+            "actions": [
+              {
+                "key": "添加记录",
+                "label": "添加记录",
+                "action_type": "custom",
+                "scope": "page",
+                "visible_when": null,
+                "disabled_when": null,
+                "api_name": null
+              },
+              {
+                "key": "0\" size=\"small\" type=\"primary\"\n                     style=\"margin-left: 0\" @click=\"generateExpenseClaimForm\"\n                     :loading=\"tableData.multipleSelectionData.loading\">生成报销凭证",
+                "label": "0\" size=\"small\" type=\"primary\"\n                     style=\"margin-left: 0\" @click=\"generateExpenseClaimForm\"\n                     :loading=\"tableData.multipleSelectionData.loading\">生成报销凭证",
+                "action_type": "custom",
+                "scope": "page",
+                "visible_when": null,
+                "disabled_when": null,
+                "api_name": null
+              }
+            ]
+          },
+          {
+            "key": "table_main",
+            "type": "Table",
+            "title": "数据列表",
+            "fields": [],
+            "columns": [
+              {
+                "key": "日期",
+                "label": "日期",
+                "value_type": "text"
+              },
+              {
+                "key": "project.name",
+                "label": "项目",
+                "value_type": "text"
+              },
+              {
+                "key": "account.name",
+                "label": "银行账户",
+                "value_type": "text"
+              },
+              {
+                "key": "department.name",
+                "label": "部门",
+                "value_type": "text"
+              },
+              {
+                "key": "category.name",
+                "label": "具体类别",
+                "value_type": "text"
+              },
+              {
+                "key": "earning",
+                "label": "收入",
+                "value_type": "text"
+              },
+              {
+                "key": "expense",
+                "label": "支出",
+                "value_type": "text"
+              },
+              {
+                "key": "balance",
+                "label": "结存",
+                "value_type": "text"
+              },
+              {
+                "key": "操作",
+                "label": "操作",
+                "value_type": "text"
+              }
+            ],
+            "actions": [
+              {
+                "key": "修改",
+                "label": "修改",
+                "action_type": "custom",
+                "scope": "row",
+                "visible_when": null,
+                "disabled_when": null,
+                "api_name": null
+              },
+              {
+                "key": "删除",
+                "label": "删除",
+                "action_type": "custom",
+                "scope": "row",
+                "visible_when": null,
+                "disabled_when": null,
+                "api_name": null
+              }
+            ]
+          },
+          {
+            "key": "dialog_1",
+            "type": "Dialog",
+            "title": "修改记录",
+            "fields": [
+              {
+                "key": "updateDetailDialog.detail.date",
+                "label": "日期时间",
+                "component": "el-date-picker",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "updateDetailDialog.detail.project.id",
+                "label": "项目",
+                "component": "el-select",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "updateDetailDialog.detail.account.id",
+                "label": "银行账户",
+                "component": "el-select",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "updateDetailDialog.detail.department.id",
+                "label": "部门",
+                "component": "el-select",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "updateDetailDialog.detail.category.id",
+                "label": "具体类别",
+                "component": "el-select",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "updateDetailDialog.detail.earning",
+                "label": "收入",
+                "component": "el-input-number",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "updateDetailDialog.detail.expense",
+                "label": "支出",
+                "component": "el-input-number",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "updateDetailDialog.detail.digest",
+                "label": "摘要",
+                "component": "el-input",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              }
+            ],
+            "columns": [],
+            "actions": [
+              {
+                "key": "取 消",
+                "label": "取 消",
+                "action_type": "custom",
+                "scope": "dialog",
+                "visible_when": null,
+                "disabled_when": null,
+                "api_name": null
+              },
+              {
+                "key": "确 定",
+                "label": "确 定",
+                "action_type": "custom",
+                "scope": "dialog",
+                "visible_when": null,
+                "disabled_when": null,
+                "api_name": null
+              }
+            ]
+          }
+        ],
+        "formulas": []
+      },
+      "discovery": {
+        "project_name": "RunningAccount-master",
+        "frontend_path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue",
+        "backend_path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master",
+        "frontend_pages": [
+          {
+            "route_hint": "/Detail",
+            "name": "Detail",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Detail.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": true,
+            "has_dialog": true,
+            "has_form": true
+          },
+          {
+            "route_hint": "/Login",
+            "name": "Login",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Login.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": false,
+            "has_dialog": false,
+            "has_form": true
+          },
+          {
+            "route_hint": "/Statistics",
+            "name": "Statistics",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Statistics.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": true,
+            "has_dialog": false,
+            "has_form": true
+          },
+          {
+            "route_hint": "/rbac/admin/GroupAdmin",
+            "name": "GroupAdmin",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/rbac/admin/GroupAdmin.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": false,
+            "has_dialog": true,
+            "has_form": true
+          },
+          {
+            "route_hint": "/rbac/admin/RoleAdmin",
+            "name": "RoleAdmin",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/rbac/admin/RoleAdmin.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": false,
+            "has_dialog": true,
+            "has_form": true
+          },
+          {
+            "route_hint": "/rbac/admin/UserAdmin",
+            "name": "UserAdmin",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/rbac/admin/UserAdmin.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": false,
+            "has_dialog": true,
+            "has_form": true
+          },
+          {
+            "route_hint": "/rbac/assign/PermissionAssign",
+            "name": "PermissionAssign",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/rbac/assign/PermissionAssign.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": false,
+            "has_dialog": true,
+            "has_form": true
+          },
+          {
+            "route_hint": "/rbac/assign/RoleAssign",
+            "name": "RoleAssign",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/rbac/assign/RoleAssign.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": false,
+            "has_dialog": true,
+            "has_form": true
+          }
+        ],
+        "backend_controllers": [
+          {
+            "name": "DetailController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/DetailController.java",
+            "request_mapping": "/detail",
+            "endpoint_count": 10
+          },
+          {
+            "name": "ExcelController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/ExcelController.java",
+            "request_mapping": "/excel",
+            "endpoint_count": 5
+          },
+          {
+            "name": "SettingController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/SettingController.java",
+            "request_mapping": "/option",
+            "endpoint_count": 13
+          },
+          {
+            "name": "StatisticsController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/StatisticsController.java",
+            "request_mapping": "statistics",
+            "endpoint_count": 3
+          },
+          {
+            "name": "GroupController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/rbac/GroupController.java",
+            "request_mapping": "rbac/group",
+            "endpoint_count": 7
+          },
+          {
+            "name": "PermissionController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/rbac/PermissionController.java",
+            "request_mapping": "rbac/permission",
+            "endpoint_count": 1
+          },
+          {
+            "name": "RoleController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/rbac/RoleController.java",
+            "request_mapping": "rbac/role",
+            "endpoint_count": 6
+          },
+          {
+            "name": "UserController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/rbac/UserController.java",
+            "request_mapping": "rbac/user",
+            "endpoint_count": 6
+          }
+        ],
+        "api_modules": [
+          {
+            "name": "detailApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/detailApi.js",
+            "method_count": 8
+          },
+          {
+            "name": "excelApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/excelApi.js",
+            "method_count": 1
+          },
+          {
+            "name": "optionApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/optionApi.js",
+            "method_count": 10
+          },
+          {
+            "name": "groupApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/rbac/groupApi.js",
+            "method_count": 7
+          },
+          {
+            "name": "permissionApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/rbac/permissionApi.js",
+            "method_count": 1
+          },
+          {
+            "name": "roleApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/rbac/roleApi.js",
+            "method_count": 6
+          },
+          {
+            "name": "userApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/rbac/userApi.js",
+            "method_count": 5
+          },
+          {
+            "name": "statisticsApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/statisticsApi.js",
+            "method_count": 3
+          }
+        ],
+        "dto_files": [
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/req/DetailFormReqDTO.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/req/DetailQueryConditionDTO.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/req/StatisticsQueryConditionDTO.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/resp/DetailRespDTO.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/resp/MoneyStatisticsRespDTO.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/resp/ProportionStatisticsRespDTO.java"
+        ],
+        "service_files": [
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/DetailService.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/ExcelService.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/OptionService.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/StatisticsService.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/rbac/GroupService.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/rbac/PermissionService.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/rbac/RoleService.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/rbac/UserService.java"
+        ],
+        "mapper_files": [
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/resources/mapper/DetailMapper.xml",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/resources/mapper/GroupMapper.xml",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/resources/mapper/RoleMapper.xml",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/resources/mapper/StatisticsMapper.xml"
+        ],
+        "entry_page_suggestions": [
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Detail.vue"
+        ],
+        "notes": [
+          "Detected pages that match the CRUD MVP pattern (table + dialog).",
+          "SpringBoot controllers are organized clearly enough for first-pass parsing.",
+          "Detail.vue is a strong first entry page for parser MVP."
+        ]
+      }
+    },
+    "llm_doc_result": {
+      "mode": "llm",
+      "model": "deepseek-chat",
+      "warnings": [
+        "LLM 只处理当前页面及其直接关联文件，不会扩展到整个仓库。",
+        "提示词预览：项目名称：RunningAccount-master 页面名称：Detail 页面路径：/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Detail.vue 下面先给你一份基于规则抽取的页面文档草稿，请你在此基础上进行规范化补全：..."
+      ],
+      "documentation": {
+        "page_name": "Detail",
+        "page_path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Detail.vue",
+        "purpose": "用于查询、展示和维护收支明细记录，支持按日期范围、项目、银行账户、部门、类别和摘要关键字进行筛选，提供新增、修改、删除记录功能，以及图片上传/删除和生成费用报销凭证等操作。",
+        "structures": [
+          "搜索区",
+          "表格区",
+          "分页区",
+          "弹窗：修改记录",
+          "弹窗：上传图片"
+        ],
+        "search_fields": [
+          {
+            "key": "dateRange",
+            "label": "日期范围",
+            "component": "el-date-picker"
+          },
+          {
+            "key": "projectId",
+            "label": "所有项目",
+            "component": "el-select"
+          },
+          {
+            "key": "accountId",
+            "label": "所有银行账户",
+            "component": "el-select"
+          },
+          {
+            "key": "departmentId",
+            "label": "所有部门",
+            "component": "el-select"
+          },
+          {
+            "key": "categoryId",
+            "label": "所有类别",
+            "component": "el-select"
+          },
+          {
+            "key": "digest",
+            "label": "摘要关键字",
+            "component": "el-input"
+          }
+        ],
+        "table_columns": [
+          {
+            "label": "日期",
+            "prop": "date"
+          },
+          {
+            "label": "项目",
+            "prop": "project.name"
+          },
+          {
+            "label": "银行账户",
+            "prop": "account.name"
+          },
+          {
+            "label": "部门",
+            "prop": "department.name"
+          },
+          {
+            "label": "具体类别",
+            "prop": "category.name"
+          },
+          {
+            "label": "收入",
+            "prop": "earning"
+          },
+          {
+            "label": "支出",
+            "prop": "expense"
+          },
+          {
+            "label": "结存",
+            "prop": "balance"
+          },
+          {
+            "label": "操作",
+            "prop": null
+          }
+        ],
+        "page_actions": [
+          "添加记录",
+          "生成报销凭证"
+        ],
+        "row_actions": [
+          "修改",
+          "删除"
+        ],
+        "forms": [],
+        "dialogs": [
+          {
+            "title": "修改记录",
+            "fields": [
+              {
+                "label": "日期时间",
+                "model": "updateDetailDialog.detail.date",
+                "component": "el-date-picker"
+              },
+              {
+                "label": "项目",
+                "model": "updateDetailDialog.detail.project.id",
+                "component": "el-select"
+              },
+              {
+                "label": "银行账户",
+                "model": "updateDetailDialog.detail.account.id",
+                "component": "el-select"
+              },
+              {
+                "label": "部门",
+                "model": "updateDetailDialog.detail.department.id",
+                "component": "el-select"
+              },
+              {
+                "label": "具体类别",
+                "model": "updateDetailDialog.detail.category.id",
+                "component": "el-select"
+              },
+              {
+                "label": "收入",
+                "model": "updateDetailDialog.detail.earning",
+                "component": "el-input-number"
+              },
+              {
+                "label": "支出",
+                "model": "updateDetailDialog.detail.expense",
+                "component": "el-input-number"
+              },
+              {
+                "label": "摘要",
+                "model": "updateDetailDialog.detail.digest",
+                "component": "el-input"
+              }
+            ],
+            "actions": [
+              "取 消",
+              "确 定"
+            ]
+          },
+          {
+            "title": "上传图片",
+            "fields": [
+              {
+                "label": "选择图片文件",
+                "model": null,
+                "component": "el-upload"
+              }
+            ],
+            "actions": [
+              "取 消",
+              "确 定"
+            ]
+          }
+        ],
+        "api_methods": [
+          {
+            "name": "add",
+            "method": "POST",
+            "path": "detail"
+          },
+          {
+            "name": "update",
+            "method": "PUT",
+            "path": "detail"
+          },
+          {
+            "name": "get",
+            "method": "GET",
+            "path": "detail/${id}"
+          },
+          {
+            "name": "delete",
+            "method": "DELETE",
+            "path": "detail"
+          },
+          {
+            "name": "deletePicture",
+            "method": "DELETE",
+            "path": "detail/picture/${pictureId}"
+          },
+          {
+            "name": "updateBalance",
+            "method": "PUT",
+            "path": "detail/balance"
+          },
+          {
+            "name": "list",
+            "method": "GET",
+            "path": "detail"
+          },
+          {
+            "name": "listPicture",
+            "method": "GET",
+            "path": "detail/picture/${detailId}"
+          },
+          {
+            "name": "generateExpenseClaimForm",
+            "method": "POST",
+            "path": "excel/expenseClaimForm"
+          },
+          {
+            "name": "addProject",
+            "method": "POST",
+            "path": "option/project"
+          },
+          {
+            "name": "addAccount",
+            "method": "POST",
+            "path": "option/account"
+          },
+          {
+            "name": "addDepartment",
+            "method": "POST",
+            "path": "option/department"
+          },
+          {
+            "name": "addCategory",
+            "method": "POST",
+            "path": "option/category"
+          },
+          {
+            "name": "updateProject",
+            "method": "PUT",
+            "path": "option/project"
+          },
+          {
+            "name": "updateAccount",
+            "method": "PUT",
+            "path": "option/account"
+          },
+          {
+            "name": "updateDepartment",
+            "method": "PUT",
+            "path": "option/department"
+          },
+          {
+            "name": "updateCategory",
+            "method": "PUT",
+            "path": "option/category"
+          },
+          {
+            "name": "listAccount",
+            "method": "GET",
+            "path": "option/account"
+          },
+          {
+            "name": "getAll",
+            "method": "GET",
+            "path": "option/all"
+          }
+        ],
+        "backend_endpoints": [
+          {
+            "method": "GET",
+            "path": "/detail",
+            "handler": "list"
+          },
+          {
+            "method": "GET",
+            "path": "/detail/{id}",
+            "handler": "findOne"
+          },
+          {
+            "method": "POST",
+            "path": "/detail",
+            "handler": "add"
+          },
+          {
+            "method": "PUT",
+            "path": "/detail",
+            "handler": "update"
+          },
+          {
+            "method": "DELETE",
+            "path": "/detail",
+            "handler": "delete"
+          },
+          {
+            "method": "PUT",
+            "path": "/detail/balance",
+            "handler": "updateBalance"
+          },
+          {
+            "method": "POST",
+            "path": "/detail/picture/{detailId}",
+            "handler": "addVouchers"
+          },
+          {
+            "method": "DELETE",
+            "path": "/detail/picture/{pictureId}",
+            "handler": "deleteVoucher"
+          },
+          {
+            "method": "GET",
+            "path": "/detail/picture/{detailId}",
+            "handler": "listVoucherByDetailId"
+          },
+          {
+            "method": "GET",
+            "path": "/detail/picture/img/{fileName}",
+            "handler": "getImg"
+          },
+          {
+            "method": "POST",
+            "path": "/excel/expenseClaimForm",
+            "handler": "generateExpenseClaimForm"
+          },
+          {
+            "method": "GET",
+            "path": "/excel/expenseClaimForm",
+            "handler": "downloadExpenseClaimForm"
+          }
+        ],
+        "business_rules": [
+          "页面中的操作列（修改、删除）和上传图片按钮受 currentUserGroupId <= '1' 控制，仅管理员组可见。",
+          "新增记录前需要通过表单校验，校验通过后调用 add 接口。",
+          "新增时，摘要为空则由后端默认补为“无”；收入和支出为空则由后端补零。",
+          "修改时，后端对 earning、expense 为 null 时补零，digest 为 null 时补“无”。",
+          "新增和修改时，日期时间不允许重复，否则后端返回 DuplicateKeyException 错误提示。",
+          "删除记录时需同时传递 id、date、expense、earning、account 信息用于后续结存调整。",
+          "生成报销凭证时，一次最多选择 7 条记录。",
+          "表格行支持展开，展开后显示摘要详情和图片信息（如有）。",
+          "图片上传仅支持单文件上传，上传后自动刷新该行的图片列表。",
+          "删除图片时同步刷新对应行的图片列表。"
+        ]
+      }
+    },
+    "patch_history": []
+  },
+  "RunningAccount-master::/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Login.vue": {
+    "asset_key": "RunningAccount-master::/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Login.vue",
+    "project_name": "RunningAccount-master",
+    "page_path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Login.vue",
+    "updated_at": "2026-05-19T06:02:16.072808Z",
+    "fingerprints": [
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Login.vue",
+        "sha256": "11b44f02dbf4cc9a1beed77fb9bf36d111d9173edb7519cf987dd9e6fe94e9f4"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/rbac/userApi.js",
+        "sha256": "3bfb8ea785ee8958ecf60c584e7c0d413daeab251d087ed5ab4ed9409bd22557"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/rbac/UserController.java",
+        "sha256": "a608a981564b60d684790e5ecfbf5d981a2d9a13c206188f9de45f2cf0578b12"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/rbac/UserService.java",
+        "sha256": "e9b6f73bcf64a7956a4f773bdc486cb5e12633d61eca031e5ce37797ab0cecda"
+      }
+    ],
+    "workspace": {
+      "project_name": "RunningAccount-master",
+      "selected_page": {
+        "route_hint": "/Login",
+        "name": "Login",
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Login.vue",
+        "api_modules": [
+          ";"
+        ],
+        "has_table": false,
+        "has_dialog": false,
+        "has_form": true
+      },
+      "related_files": [
+        {
+          "role": "page",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Login.vue"
+        },
+        {
+          "role": "api",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/rbac/userApi.js"
+        },
+        {
+          "role": "controller",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/rbac/UserController.java"
+        },
+        {
+          "role": "service",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/rbac/UserService.java"
+        }
+      ],
+      "documentation": {
+        "page_name": "Login",
+        "page_path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Login.vue",
+        "purpose": "提供用户登录入口，验证用户名和密码，登录成功后跳转至系统首页或指定重定向页面。",
+        "structures": [
+          "登录表单"
+        ],
+        "search_fields": [],
+        "table_columns": [],
+        "page_actions": [
+          "登录"
+        ],
+        "row_actions": [],
+        "dialogs": [],
+        "api_methods": [
+          {
+            "name": "login",
+            "method": "POST",
+            "path": "rbac/user/login"
+          },
+          {
+            "name": "logout",
+            "method": "DELETE",
+            "path": "rbac/user/logout"
+          }
+        ],
+        "backend_endpoints": [
+          {
+            "method": "POST",
+            "path": "rbac/user/login",
+            "handler": "login"
+          },
+          {
+            "method": "DELETE",
+            "path": "rbac/user/logout",
+            "handler": "logout"
+          }
+        ],
+        "business_rules": [
+          "密码在提交前需经过 Base64 编码",
+          "登录成功后，将 username 和 groupId 存入 sessionStorage",
+          "登录成功后，若 URL 中存在 redirect 参数则跳转至该路径，否则跳转至首页 /",
+          "登录失败时，loading 状态恢复为 false，不跳转页面"
+        ]
+      },
+      "runtime_schema": {
+        "page": "Login",
+        "route": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Login.vue",
+        "domain": "page-workspace",
+        "components": [],
+        "formulas": []
+      },
+      "discovery": {
+        "project_name": "RunningAccount-master",
+        "frontend_path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue",
+        "backend_path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master",
+        "frontend_pages": [
+          {
+            "route_hint": "/Detail",
+            "name": "Detail",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Detail.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": true,
+            "has_dialog": true,
+            "has_form": true
+          },
+          {
+            "route_hint": "/Login",
+            "name": "Login",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Login.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": false,
+            "has_dialog": false,
+            "has_form": true
+          },
+          {
+            "route_hint": "/Statistics",
+            "name": "Statistics",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Statistics.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": true,
+            "has_dialog": false,
+            "has_form": true
+          },
+          {
+            "route_hint": "/rbac/admin/GroupAdmin",
+            "name": "GroupAdmin",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/rbac/admin/GroupAdmin.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": false,
+            "has_dialog": true,
+            "has_form": true
+          },
+          {
+            "route_hint": "/rbac/admin/RoleAdmin",
+            "name": "RoleAdmin",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/rbac/admin/RoleAdmin.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": false,
+            "has_dialog": true,
+            "has_form": true
+          },
+          {
+            "route_hint": "/rbac/admin/UserAdmin",
+            "name": "UserAdmin",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/rbac/admin/UserAdmin.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": false,
+            "has_dialog": true,
+            "has_form": true
+          },
+          {
+            "route_hint": "/rbac/assign/PermissionAssign",
+            "name": "PermissionAssign",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/rbac/assign/PermissionAssign.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": false,
+            "has_dialog": true,
+            "has_form": true
+          },
+          {
+            "route_hint": "/rbac/assign/RoleAssign",
+            "name": "RoleAssign",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/rbac/assign/RoleAssign.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": false,
+            "has_dialog": true,
+            "has_form": true
+          }
+        ],
+        "backend_controllers": [
+          {
+            "name": "DetailController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/DetailController.java",
+            "request_mapping": "/detail",
+            "endpoint_count": 10
+          },
+          {
+            "name": "ExcelController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/ExcelController.java",
+            "request_mapping": "/excel",
+            "endpoint_count": 5
+          },
+          {
+            "name": "SettingController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/SettingController.java",
+            "request_mapping": "/option",
+            "endpoint_count": 13
+          },
+          {
+            "name": "StatisticsController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/StatisticsController.java",
+            "request_mapping": "statistics",
+            "endpoint_count": 3
+          },
+          {
+            "name": "GroupController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/rbac/GroupController.java",
+            "request_mapping": "rbac/group",
+            "endpoint_count": 7
+          },
+          {
+            "name": "PermissionController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/rbac/PermissionController.java",
+            "request_mapping": "rbac/permission",
+            "endpoint_count": 1
+          },
+          {
+            "name": "RoleController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/rbac/RoleController.java",
+            "request_mapping": "rbac/role",
+            "endpoint_count": 6
+          },
+          {
+            "name": "UserController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/rbac/UserController.java",
+            "request_mapping": "rbac/user",
+            "endpoint_count": 6
+          }
+        ],
+        "api_modules": [
+          {
+            "name": "detailApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/detailApi.js",
+            "method_count": 8
+          },
+          {
+            "name": "excelApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/excelApi.js",
+            "method_count": 1
+          },
+          {
+            "name": "optionApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/optionApi.js",
+            "method_count": 10
+          },
+          {
+            "name": "groupApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/rbac/groupApi.js",
+            "method_count": 7
+          },
+          {
+            "name": "permissionApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/rbac/permissionApi.js",
+            "method_count": 1
+          },
+          {
+            "name": "roleApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/rbac/roleApi.js",
+            "method_count": 6
+          },
+          {
+            "name": "userApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/rbac/userApi.js",
+            "method_count": 5
+          },
+          {
+            "name": "statisticsApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/api/statisticsApi.js",
+            "method_count": 3
+          }
+        ],
+        "dto_files": [
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/req/DetailFormReqDTO.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/req/DetailQueryConditionDTO.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/req/StatisticsQueryConditionDTO.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/resp/DetailRespDTO.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/resp/MoneyStatisticsRespDTO.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/resp/ProportionStatisticsRespDTO.java"
+        ],
+        "service_files": [
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/DetailService.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/ExcelService.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/OptionService.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/StatisticsService.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/rbac/GroupService.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/rbac/PermissionService.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/rbac/RoleService.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/rbac/UserService.java"
+        ],
+        "mapper_files": [
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/resources/mapper/DetailMapper.xml",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/resources/mapper/GroupMapper.xml",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/resources/mapper/RoleMapper.xml",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/resources/mapper/StatisticsMapper.xml"
+        ],
+        "entry_page_suggestions": [
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Detail.vue"
+        ],
+        "notes": [
+          "Detected pages that match the CRUD MVP pattern (table + dialog).",
+          "SpringBoot controllers are organized clearly enough for first-pass parsing.",
+          "Detail.vue is a strong first entry page for parser MVP."
+        ]
+      }
+    },
+    "llm_doc_result": {
+      "mode": "llm",
+      "model": "deepseek-chat",
+      "warnings": [
+        "LLM 只处理当前页面及其直接关联文件，不会扩展到整个仓库。",
+        "提示词预览：项目名称：RunningAccount-master 页面名称：Login 页面路径：/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Login.vue 下面先给你一份基于规则抽取的页面文档草稿，请你在此基础上进行规范化补全： {..."
+      ],
+      "documentation": {
+        "page_name": "Login",
+        "page_path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/vue/src/views/Login.vue",
+        "purpose": "提供用户登录入口，验证用户名和密码，登录成功后跳转至系统首页或指定重定向页面。",
+        "structures": [
+          "登录表单"
+        ],
+        "search_fields": [],
+        "table_columns": [],
+        "page_actions": [
+          "登录"
+        ],
+        "row_actions": [],
+        "dialogs": [],
+        "api_methods": [
+          {
+            "name": "login",
+            "method": "POST",
+            "path": "rbac/user/login"
+          },
+          {
+            "name": "logout",
+            "method": "DELETE",
+            "path": "rbac/user/logout"
+          }
+        ],
+        "backend_endpoints": [
+          {
+            "method": "POST",
+            "path": "rbac/user/login",
+            "handler": "login"
+          },
+          {
+            "method": "DELETE",
+            "path": "rbac/user/logout",
+            "handler": "logout"
+          }
+        ],
+        "business_rules": [
+          "密码在提交前需经过 Base64 编码",
+          "登录成功后，将 username 和 groupId 存入 sessionStorage",
+          "登录成功后，若 URL 中存在 redirect 参数则跳转至该路径，否则跳转至首页 /",
+          "登录失败时，loading 状态恢复为 false，不跳转页面"
+        ]
+      }
+    }
+  },
+  "RunningAccount-sample::/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/views/Detail.vue": {
+    "asset_key": "RunningAccount-sample::/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/views/Detail.vue",
+    "project_name": "RunningAccount-sample",
+    "page_path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/views/Detail.vue",
+    "updated_at": "2026-05-19T11:02:27.855725Z",
+    "fingerprints": [
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/views/Detail.vue",
+        "sha256": "f9c80359d382f300c028ea3557c00fdaaad17422ba27290a538dc230758c3f3a"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/api/detailApi.js",
+        "sha256": "649070191066acf89aae4e4c08e2b1ecc0f9f2fb4c7a0cd40c613ae1483346b0"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/api/excelApi.js",
+        "sha256": "0dab379c64c31d0179bf91e5a16a80465c31c4ab7b0ed6315b9ea63bcee9c225"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/api/optionApi.js",
+        "sha256": "085dfe2f128ca1ba5ca884c552c40c87c2f73f1d32d70cfa0dc91f02b59a96a6"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/DetailController.java",
+        "sha256": "23d1d75d8ba0902d8a81ae8906816ea74ce1ea9222f78b47d6b8c1d238c28110"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/DetailService.java",
+        "sha256": "b3a08736b13956fc6de64230e23c629fea72f7f445a7776e551ef2ece6b021c9"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/req/DetailFormReqDTO.java",
+        "sha256": "d5fea479162c8c559c6fc11bf0029b1d449a9150f558341de17f8ba7925e100a"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/req/DetailQueryConditionDTO.java",
+        "sha256": "688357b43776b735814653e340db95a882ef7ee9a5b91f2fa406d00a1393c5e0"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/resp/DetailRespDTO.java",
+        "sha256": "47e29f0b0eb7cef761c247e0174f3bee899e9ee79957f95cca64b9386ab0cc90"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/ExcelController.java",
+        "sha256": "c10a9d31ab5535ac893ab95056984d35bf5cf3e86bd5b9b2b5545a635bba7319"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/ExcelService.java",
+        "sha256": "cb63c170305f382275362ea6cd44302e345dfdb7603fd3729bd6b57c7ca8aa1f"
+      },
+      {
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/OptionService.java",
+        "sha256": "290dd0ef9a884c03b60181b83db5eaabef8b00684e692185921e077ff2a1d64b"
+      }
+    ],
+    "workspace": {
+      "project_name": "RunningAccount-sample",
+      "selected_page": {
+        "route_hint": "/Detail",
+        "name": "Detail",
+        "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/views/Detail.vue",
+        "api_modules": [
+          ";"
+        ],
+        "has_table": true,
+        "has_dialog": true,
+        "has_form": true
+      },
+      "sandbox_route": "/detail",
+      "sandbox_url": "http://localhost:8084/#/detail",
+      "related_files": [
+        {
+          "role": "page",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/views/Detail.vue"
+        },
+        {
+          "role": "api",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/api/detailApi.js"
+        },
+        {
+          "role": "api",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/api/excelApi.js"
+        },
+        {
+          "role": "api",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/api/optionApi.js"
+        },
+        {
+          "role": "controller",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/DetailController.java"
+        },
+        {
+          "role": "service",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/DetailService.java"
+        },
+        {
+          "role": "dto",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/req/DetailFormReqDTO.java"
+        },
+        {
+          "role": "dto",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/req/DetailQueryConditionDTO.java"
+        },
+        {
+          "role": "dto",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/resp/DetailRespDTO.java"
+        },
+        {
+          "role": "controller",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/ExcelController.java"
+        },
+        {
+          "role": "service",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/ExcelService.java"
+        },
+        {
+          "role": "service",
+          "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/OptionService.java"
+        }
+      ],
+      "documentation": {
+        "page_name": "Detail",
+        "page_path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/views/Detail.vue",
+        "purpose": "用于查询、展示和维护收支明细记录，并承载新增、修改、删除与图片上传流程。",
+        "structures": [
+          "搜索区",
+          "表格区",
+          "分页区",
+          "弹窗区",
+          "弹窗：修改记录"
+        ],
+        "search_fields": [
+          {
+            "key": "dateRange",
+            "label": "日期范围",
+            "component": "unknown"
+          },
+          {
+            "key": "projectId",
+            "label": "所有项目",
+            "component": "el-select"
+          },
+          {
+            "key": "accountId",
+            "label": "所有银行账户",
+            "component": "el-select"
+          },
+          {
+            "key": "departmentId",
+            "label": "所有部门",
+            "component": "el-select"
+          },
+          {
+            "key": "categoryId",
+            "label": "所有类别",
+            "component": "el-select"
+          },
+          {
+            "key": "digest",
+            "label": "摘要关键字",
+            "component": "el-input"
+          }
+        ],
+        "table_columns": [
+          {
+            "label": "日期",
+            "prop": null
+          },
+          {
+            "label": "项目",
+            "prop": "project.name"
+          },
+          {
+            "label": "银行账户",
+            "prop": "account.name"
+          },
+          {
+            "label": "部门",
+            "prop": "department.name"
+          },
+          {
+            "label": "具体类别",
+            "prop": "category.name"
+          },
+          {
+            "label": "收入",
+            "prop": "earning"
+          },
+          {
+            "label": "支出",
+            "prop": "expense"
+          },
+          {
+            "label": "结存",
+            "prop": "balance"
+          },
+          {
+            "label": "笔数",
+            "prop": "count"
+          },
+          {
+            "label": "操作",
+            "prop": null
+          }
+        ],
+        "page_actions": [
+          "添加记录",
+          "0\" size=\"small\" type=\"primary\"\n                     style=\"margin-left: 0\" @click=\"generateExpenseClaimForm\"\n                     :loading=\"tableData.multipleSelectionData.loading\">生成报销凭证"
+        ],
+        "row_actions": [
+          "修改",
+          "删除"
+        ],
+        "forms": [],
+        "dialogs": [
+          {
+            "title": "修改记录",
+            "fields": [
+              {
+                "label": "日期时间",
+                "model": "updateDetailDialog.detail.date",
+                "component": "el-date-picker"
+              },
+              {
+                "label": "项目",
+                "model": "updateDetailDialog.detail.project.id",
+                "component": "el-select"
+              },
+              {
+                "label": "银行账户",
+                "model": "updateDetailDialog.detail.account.id",
+                "component": "el-select"
+              },
+              {
+                "label": "部门",
+                "model": "updateDetailDialog.detail.department.id",
+                "component": "el-select"
+              },
+              {
+                "label": "具体类别",
+                "model": "updateDetailDialog.detail.category.id",
+                "component": "el-select"
+              },
+              {
+                "label": "收入",
+                "model": "updateDetailDialog.detail.earning",
+                "component": "el-input-number"
+              },
+              {
+                "label": "支出",
+                "model": "updateDetailDialog.detail.expense",
+                "component": "el-input-number"
+              },
+              {
+                "label": "笔数",
+                "model": "updateDetailDialog.detail.count",
+                "component": "el-input-number"
+              },
+              {
+                "label": "摘要",
+                "model": "updateDetailDialog.detail.digest",
+                "component": "el-input"
+              }
+            ],
+            "actions": [
+              "取 消",
+              "确 定"
+            ]
+          }
+        ],
+        "api_methods": [
+          {
+            "name": "add",
+            "method": "POST",
+            "path": "detail"
+          },
+          {
+            "name": "update",
+            "method": "PUT",
+            "path": "detail"
+          },
+          {
+            "name": "get",
+            "method": "GET",
+            "path": "detail/${id}"
+          },
+          {
+            "name": "delete",
+            "method": "DELETE",
+            "path": "detail"
+          },
+          {
+            "name": "deletePicture",
+            "method": "DELETE",
+            "path": "detail/picture/${pictureId}"
+          },
+          {
+            "name": "updateBalance",
+            "method": "PUT",
+            "path": "detail/balance"
+          },
+          {
+            "name": "list",
+            "method": "GET",
+            "path": "detail"
+          },
+          {
+            "name": "listPicture",
+            "method": "GET",
+            "path": "detail/picture/${detailId}"
+          },
+          {
+            "name": "generateExpenseClaimForm",
+            "method": "POST",
+            "path": "excel/expenseClaimForm"
+          },
+          {
+            "name": "addProject",
+            "method": "POST",
+            "path": "option/project"
+          },
+          {
+            "name": "addAccount",
+            "method": "POST",
+            "path": "option/account"
+          },
+          {
+            "name": "addDepartment",
+            "method": "POST",
+            "path": "option/department"
+          },
+          {
+            "name": "addCategory",
+            "method": "POST",
+            "path": "option/category"
+          },
+          {
+            "name": "updateProject",
+            "method": "PUT",
+            "path": "option/project"
+          },
+          {
+            "name": "updateAccount",
+            "method": "PUT",
+            "path": "option/account"
+          },
+          {
+            "name": "updateDepartment",
+            "method": "PUT",
+            "path": "option/department"
+          },
+          {
+            "name": "updateCategory",
+            "method": "PUT",
+            "path": "option/category"
+          },
+          {
+            "name": "listAccount",
+            "method": "GET",
+            "path": "option/account"
+          },
+          {
+            "name": "getAll",
+            "method": "GET",
+            "path": "option/all"
+          }
+        ],
+        "backend_endpoints": [
+          {
+            "method": "GET",
+            "path": "/detail",
+            "handler": "list"
+          },
+          {
+            "method": "GET",
+            "path": "/detail/{id}",
+            "handler": "findOne"
+          },
+          {
+            "method": "POST",
+            "path": "/detail",
+            "handler": "add"
+          },
+          {
+            "method": "PUT",
+            "path": "/detail",
+            "handler": "update"
+          },
+          {
+            "method": "DELETE",
+            "path": "/detail",
+            "handler": "delete"
+          },
+          {
+            "method": "PUT",
+            "path": "/detail/balance",
+            "handler": "updateBalance"
+          },
+          {
+            "method": "POST",
+            "path": "/detail/picture/{detailId}",
+            "handler": "addVouchers"
+          },
+          {
+            "method": "DELETE",
+            "path": "/detail/picture/{pictureId}",
+            "handler": "deleteVoucher"
+          },
+          {
+            "method": "GET",
+            "path": "/detail/picture/{detailId}",
+            "handler": "listVoucherByDetailId"
+          },
+          {
+            "method": "GET",
+            "path": "/detail/picture/img/{fileName}",
+            "handler": "getImg"
+          }
+        ],
+        "business_rules": [
+          "页面中的操作列和上传图片能力受 currentUserGroupId <= 1 控制。",
+          "新增记录前需要通过表单校验。",
+          "摘要为空时由后端默认补为“无”。",
+          "收入和支出为空时由后端补零。"
+        ]
+      },
+      "runtime_schema": {
+        "page": "Detail",
+        "route": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/views/Detail.vue",
+        "domain": "page-workspace",
+        "components": [
+          {
+            "key": "search_form",
+            "type": "SearchForm",
+            "title": "搜索条件",
+            "fields": [
+              {
+                "key": "dateRange",
+                "label": "日期范围",
+                "component": "unknown",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "projectId",
+                "label": "所有项目",
+                "component": "el-select",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "accountId",
+                "label": "所有银行账户",
+                "component": "el-select",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "departmentId",
+                "label": "所有部门",
+                "component": "el-select",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "categoryId",
+                "label": "所有类别",
+                "component": "el-select",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "digest",
+                "label": "摘要关键字",
+                "component": "el-input",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              }
+            ],
+            "columns": [],
+            "actions": [
+              {
+                "key": "添加记录",
+                "label": "添加记录",
+                "action_type": "custom",
+                "scope": "page",
+                "visible_when": null,
+                "disabled_when": null,
+                "api_name": null
+              },
+              {
+                "key": "0\" size=\"small\" type=\"primary\"\n                     style=\"margin-left: 0\" @click=\"generateExpenseClaimForm\"\n                     :loading=\"tableData.multipleSelectionData.loading\">生成报销凭证",
+                "label": "0\" size=\"small\" type=\"primary\"\n                     style=\"margin-left: 0\" @click=\"generateExpenseClaimForm\"\n                     :loading=\"tableData.multipleSelectionData.loading\">生成报销凭证",
+                "action_type": "custom",
+                "scope": "page",
+                "visible_when": null,
+                "disabled_when": null,
+                "api_name": null
+              }
+            ]
+          },
+          {
+            "key": "table_main",
+            "type": "Table",
+            "title": "数据列表",
+            "fields": [],
+            "columns": [
+              {
+                "key": "日期",
+                "label": "日期",
+                "value_type": "text"
+              },
+              {
+                "key": "project.name",
+                "label": "项目",
+                "value_type": "text"
+              },
+              {
+                "key": "account.name",
+                "label": "银行账户",
+                "value_type": "text"
+              },
+              {
+                "key": "department.name",
+                "label": "部门",
+                "value_type": "text"
+              },
+              {
+                "key": "category.name",
+                "label": "具体类别",
+                "value_type": "text"
+              },
+              {
+                "key": "earning",
+                "label": "收入",
+                "value_type": "text"
+              },
+              {
+                "key": "expense",
+                "label": "支出",
+                "value_type": "text"
+              },
+              {
+                "key": "balance",
+                "label": "结存",
+                "value_type": "text"
+              },
+              {
+                "key": "count",
+                "label": "笔数",
+                "value_type": "text"
+              },
+              {
+                "key": "操作",
+                "label": "操作",
+                "value_type": "text"
+              }
+            ],
+            "actions": [
+              {
+                "key": "修改",
+                "label": "修改",
+                "action_type": "custom",
+                "scope": "row",
+                "visible_when": null,
+                "disabled_when": null,
+                "api_name": null
+              },
+              {
+                "key": "删除",
+                "label": "删除",
+                "action_type": "custom",
+                "scope": "row",
+                "visible_when": null,
+                "disabled_when": null,
+                "api_name": null
+              }
+            ]
+          },
+          {
+            "key": "dialog_1",
+            "type": "Dialog",
+            "title": "修改记录",
+            "fields": [
+              {
+                "key": "updateDetailDialog.detail.date",
+                "label": "日期时间",
+                "component": "el-date-picker",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "updateDetailDialog.detail.project.id",
+                "label": "项目",
+                "component": "el-select",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "updateDetailDialog.detail.account.id",
+                "label": "银行账户",
+                "component": "el-select",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "updateDetailDialog.detail.department.id",
+                "label": "部门",
+                "component": "el-select",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "updateDetailDialog.detail.category.id",
+                "label": "具体类别",
+                "component": "el-select",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "updateDetailDialog.detail.earning",
+                "label": "收入",
+                "component": "el-input-number",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "updateDetailDialog.detail.expense",
+                "label": "支出",
+                "component": "el-input-number",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "updateDetailDialog.detail.count",
+                "label": "笔数",
+                "component": "el-input-number",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              },
+              {
+                "key": "updateDetailDialog.detail.digest",
+                "label": "摘要",
+                "component": "el-input",
+                "required": false,
+                "visible_when": null,
+                "disabled_when": null,
+                "options_api": null,
+                "placeholder": null
+              }
+            ],
+            "columns": [],
+            "actions": [
+              {
+                "key": "取 消",
+                "label": "取 消",
+                "action_type": "custom",
+                "scope": "dialog",
+                "visible_when": null,
+                "disabled_when": null,
+                "api_name": null
+              },
+              {
+                "key": "确 定",
+                "label": "确 定",
+                "action_type": "custom",
+                "scope": "dialog",
+                "visible_when": null,
+                "disabled_when": null,
+                "api_name": null
+              }
+            ]
+          }
+        ],
+        "formulas": []
+      },
+      "discovery": {
+        "project_name": "RunningAccount-sample",
+        "frontend_path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2",
+        "backend_path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master",
+        "frontend_pages": [
+          {
+            "route_hint": "/Detail",
+            "name": "Detail",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/views/Detail.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": true,
+            "has_dialog": true,
+            "has_form": true
+          },
+          {
+            "route_hint": "/Login",
+            "name": "Login",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/views/Login.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": false,
+            "has_dialog": false,
+            "has_form": true
+          },
+          {
+            "route_hint": "/Statistics",
+            "name": "Statistics",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/views/Statistics.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": true,
+            "has_dialog": false,
+            "has_form": true
+          },
+          {
+            "route_hint": "/rbac/admin/GroupAdmin",
+            "name": "GroupAdmin",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/views/rbac/admin/GroupAdmin.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": false,
+            "has_dialog": true,
+            "has_form": true
+          },
+          {
+            "route_hint": "/rbac/admin/RoleAdmin",
+            "name": "RoleAdmin",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/views/rbac/admin/RoleAdmin.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": false,
+            "has_dialog": true,
+            "has_form": true
+          },
+          {
+            "route_hint": "/rbac/admin/UserAdmin",
+            "name": "UserAdmin",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/views/rbac/admin/UserAdmin.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": false,
+            "has_dialog": true,
+            "has_form": true
+          },
+          {
+            "route_hint": "/rbac/assign/PermissionAssign",
+            "name": "PermissionAssign",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/views/rbac/assign/PermissionAssign.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": false,
+            "has_dialog": true,
+            "has_form": true
+          },
+          {
+            "route_hint": "/rbac/assign/RoleAssign",
+            "name": "RoleAssign",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/views/rbac/assign/RoleAssign.vue",
+            "api_modules": [
+              ";"
+            ],
+            "has_table": false,
+            "has_dialog": true,
+            "has_form": true
+          }
+        ],
+        "backend_controllers": [
+          {
+            "name": "DetailController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/DetailController.java",
+            "request_mapping": "/detail",
+            "endpoint_count": 10
+          },
+          {
+            "name": "ExcelController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/ExcelController.java",
+            "request_mapping": "/excel",
+            "endpoint_count": 5
+          },
+          {
+            "name": "SettingController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/SettingController.java",
+            "request_mapping": "/option",
+            "endpoint_count": 13
+          },
+          {
+            "name": "StatisticsController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/StatisticsController.java",
+            "request_mapping": "statistics",
+            "endpoint_count": 3
+          },
+          {
+            "name": "GroupController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/rbac/GroupController.java",
+            "request_mapping": "rbac/group",
+            "endpoint_count": 7
+          },
+          {
+            "name": "PermissionController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/rbac/PermissionController.java",
+            "request_mapping": "rbac/permission",
+            "endpoint_count": 1
+          },
+          {
+            "name": "RoleController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/rbac/RoleController.java",
+            "request_mapping": "rbac/role",
+            "endpoint_count": 6
+          },
+          {
+            "name": "UserController",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/controller/rbac/UserController.java",
+            "request_mapping": "rbac/user",
+            "endpoint_count": 6
+          }
+        ],
+        "api_modules": [
+          {
+            "name": "detailApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/api/detailApi.js",
+            "method_count": 8
+          },
+          {
+            "name": "excelApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/api/excelApi.js",
+            "method_count": 1
+          },
+          {
+            "name": "optionApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/api/optionApi.js",
+            "method_count": 10
+          },
+          {
+            "name": "groupApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/api/rbac/groupApi.js",
+            "method_count": 7
+          },
+          {
+            "name": "permissionApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/api/rbac/permissionApi.js",
+            "method_count": 1
+          },
+          {
+            "name": "roleApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/api/rbac/roleApi.js",
+            "method_count": 6
+          },
+          {
+            "name": "userApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/api/rbac/userApi.js",
+            "method_count": 5
+          },
+          {
+            "name": "statisticsApi",
+            "path": "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/api/statisticsApi.js",
+            "method_count": 3
+          }
+        ],
+        "dto_files": [
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/req/DetailFormReqDTO.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/req/DetailQueryConditionDTO.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/req/StatisticsQueryConditionDTO.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/resp/DetailRespDTO.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/resp/MoneyStatisticsRespDTO.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/entity/dto/resp/ProportionStatisticsRespDTO.java"
+        ],
+        "service_files": [
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/DetailService.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/ExcelService.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/OptionService.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/StatisticsService.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/rbac/GroupService.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/rbac/PermissionService.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/rbac/RoleService.java",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/java/erp/service/rbac/UserService.java"
+        ],
+        "mapper_files": [
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/resources/mapper/DetailMapper.xml",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/resources/mapper/GroupMapper.xml",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/resources/mapper/RoleMapper.xml",
+          "/Users/zs/IdeaProjects/work/letsTalk/test-project/RunningAccount-master/src/main/resources/mapper/StatisticsMapper.xml"
+        ],
+        "entry_page_suggestions": [
+          "/Users/zs/IdeaProjects/work/letsTalk/sandbox-projects/running-account-vue-sandbox-v2/src/views/Detail.vue"
+        ],
+        "notes": [
+          "Detected pages that match the CRUD MVP pattern (table + dialog).",
+          "SpringBoot controllers are organized clearly enough for first-pass parsing.",
+          "Detail.vue is a strong first entry page for parser MVP."
+        ]
+      }
+    },
+    "llm_doc_result": null,
+    "patch_history": [
+      {
+        "record_id": "6cbfe845ad4d4b57966a455d60840012",
+        "created_at": "2026-05-19T11:02:34.090704Z",
+        "user_request": "在表格上增加一个清除结存按钮，先选中数据，再点击按钮清除结存",
+        "patch_result": {
+          "mode": "llm",
+          "model": "deepseek-chat",
+          "warnings": [
+            "后端现有的 updateBalance（PUT /detail/balance）接口是更新所有记录的结存，并非清除选中记录的结存。当前没有提供「按选中记录清除结存」的后端接口，因此该按钮只能做前端演示效果（将选中行的 balance 置为 0），无法持久化到数据库。如需真实功能，需要后端新增一个批量清除结存的接口。",
+            "patch 只面向当前页面沙箱副本，不直接落到生产代码。",
+            "提示词预览：在表格上增加一个清除结存按钮，先选中数据，再点击按钮清除结存"
+          ],
+          "patch": {
+            "summary": "在表格上方增加「清除结存」按钮，选中数据后点击可清除选中记录的结存",
+            "rationale": [
+              "用户需要在表格区增加一个批量操作按钮，用于清除选中记录的结存字段",
+              "当前页面已有表格多选能力（@select、@select-all），可以复用选中逻辑",
+              "后端已有 updateBalance 接口（PUT /detail/balance），但该接口是更新所有结存，并非清除选中记录的结存。由于不能编造后端能力，此按钮仅作为演示性前端操作"
+            ],
+            "operations": [
+              {
+                "action": "add_table_column",
+                "target": "table",
+                "label": "清除结存",
+                "key": null,
+                "component": "el-button",
+                "placeholder": null,
+                "value": null,
+                "original_label": null,
+                "note": "在表格上方（与「添加记录」「生成报销凭证」同区域）新增一个按钮，文案为「清除结存」，点击后遍历 tableData.multipleSelectionData 中选中的行，将每行的 balance 字段置为 0（演示行为，不调用真实后端接口）"
+              },
+              {
+                "action": "add_toolbar_button",
+                "target": "toolbar",
+                "label": "清除结存",
+                "key": "clearBalance",
+                "component": null,
+                "placeholder": null,
+                "value": null,
+                "original_label": "添加记录",
+                "note": "需先勾选表格数据，再点击按钮，将选中行的结存仅在沙箱展示层清零。"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "record_id": "0ad98ef45ecd48d4a85e72c8e3551e63",
+        "created_at": "2026-05-19T11:13:25.185316Z",
+        "user_request": "在表格上增加一个清除结存按钮，先选中数据，再点击按钮清除结存",
+        "patch_result": {
+          "mode": "llm",
+          "model": "deepseek-chat",
+          "warnings": [
+            "当前后端 PUT /detail/balance 接口是更新所有记录的结存（updateAllBalance），并非按选中记录清除结存。沙箱演示层可以模拟按钮点击后前端置零选中行 balance 的交互效果，但真实调用后端时无法按选中记录清除结存，需要后端新增一个按 ID 列表批量清除结存的接口。",
+            "patch 只面向当前页面沙箱副本，不直接落到生产代码。",
+            "提示词预览：在表格上增加一个清除结存按钮，先选中数据，再点击按钮清除结存"
+          ],
+          "patch": {
+            "summary": "在表格上方增加「清除结存」按钮，选中数据后点击可清除选中记录的结存",
+            "rationale": [
+              "用户需要在表格区增加一个批量操作按钮，用于清除选中记录的结存字段",
+              "当前页面已有表格多选能力（@select、@select-all），可以复用选中机制",
+              "后端已有 updateBalance 接口（PUT /detail/balance），但该接口是更新所有结存，不是清除选中记录的结存。因此需要说明：当前后端没有提供「按选中记录清除结存」的专用接口，沙箱演示层可以模拟按钮交互，但实际调用需后端配合"
+            ],
+            "operations": [
+              {
+                "action": "add_toolbar_button",
+                "target": "toolbar",
+                "label": "清除结存",
+                "key": "clearBalance",
+                "component": null,
+                "placeholder": null,
+                "value": null,
+                "original_label": "添加记录",
+                "note": "需先勾选表格数据，再点击按钮，将选中行的结存仅在沙箱展示层清零。"
+              }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

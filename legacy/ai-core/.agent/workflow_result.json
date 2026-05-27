@@ -1,0 +1,71 @@
+{
+  "page_path": "examples/test_cases/frontend/Detail.vue",
+  "total_apis": 4,
+  "completed_apis": [
+    {
+      "method": "GET",
+      "url": "/api/account/${this.accountId}",
+      "trigger": "unknown",
+      "line_number": 22,
+      "controller_class": "AccountController",
+      "controller_method": "getAccountById",
+      "controller_file": "examples/test_cases/backend/controller/AccountController.java",
+      "complexity_score": 19,
+      "lines_of_code": 7,
+      "cyclomatic_complexity": 2,
+      "external_calls": [],
+      "recommendation": "简单方法，可以直接分析",
+      "status": "completed"
+    },
+    {
+      "method": "GET",
+      "url": "/api/account/${this.accountId}/transactions",
+      "trigger": "unknown",
+      "line_number": 30,
+      "controller_class": "AccountController",
+      "controller_method": "getTransactions",
+      "controller_file": "examples/test_cases/backend/controller/AccountController.java",
+      "complexity_score": 10,
+      "lines_of_code": 4,
+      "cyclomatic_complexity": 1,
+      "external_calls": [],
+      "recommendation": "简单方法，可以直接分析",
+      "status": "completed"
+    },
+    {
+      "method": "PUT",
+      "url": "/api/account/${this.accountId}",
+      "trigger": "unknown",
+      "line_number": 38,
+      "controller_class": "AccountController",
+      "controller_method": "updateAccount",
+      "controller_file": "examples/test_cases/backend/controller/AccountController.java",
+      "complexity_score": 20,
+      "lines_of_code": 5,
+      "cyclomatic_complexity": 1,
+      "external_calls": [
+        "数据库操作"
+      ],
+      "recommendation": "简单方法，可以直接分析",
+      "status": "completed"
+    },
+    {
+      "method": "POST",
+      "url": "/api/account/${this.accountId}/sync",
+      "trigger": "unknown",
+      "line_number": 47,
+      "controller_class": "AccountController",
+      "controller_method": "syncAccount",
+      "controller_file": "examples/test_cases/backend/controller/AccountController.java",
+      "complexity_score": 10,
+      "lines_of_code": 4,
+      "cyclomatic_complexity": 1,
+      "external_calls": [],
+      "recommendation": "简单方法，可以直接分析",
+      "status": "completed"
+    }
+  ],
+  "pending_deep_analysis": [],
+  "failed_apis": [],
+  "error": null
+}

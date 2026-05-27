@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Requirement OS - 页面需求工作台</title>
+  <link rel="stylesheet" href="/assets/workbench.css">
+  <link rel="stylesheet" href="/assets/agent-trace-viewer.css">
+</head>
+<body>
+  <div class="workspace-shell">
+    <aside class="workspace-sidebar">
+      <div class="brand">
+        <div class="brand-mark">AR</div>
+        <div>
+          <h1>AI Requirement OS</h1>
+          <p>页面需求工作台</p>
+        </div>
+      </div>
+
+      <section class="sidebar-block">
+        <div class="block-header">
+          <h2>项目配置</h2>
+          <button id="load-sample" class="icon-button" type="button" title="载入样例">载入</button>
+        </div>
+        <label>
+          <span>项目名称</span>
+          <input id="project-name" type="text">
+        </label>
+        <label>
+          <span>前端路径</span>
+          <input id="frontend-path" type="text">
+        </label>
+        <label>
+          <span>后端路径</span>
+          <input id="backend-path" type="text">
+        </label>
+        <button id="scan-project" class="button button-primary" type="button">扫描页面</button>
+      </section>
+
+      <section class="sidebar-block">
+        <div class="block-header">
+          <h2>页面列表</h2>
+          <span id="status-pill" class="status-pill idle">等待扫描</span>
+        </div>
+        <div id="page-list" class="page-list empty-state">暂无页面</div>
+      </section>
+    </aside>
+
+    <main class="workspace-main">
+      <section class="workspace-focus">
+        <header class="focus-header">
+          <div>
+            <p class="eyebrow">V1 Focus</p>
+            <h2>页面扫描工作台</h2>
+            <p class="focus-subtitle">当前先聚焦页面级扫描、结构说明、前后端关联与文档输出。代码计划、沙箱预览和自动改码能力暂时收起。</p>
+          </div>
+          <div class="header-actions">
+            <button id="open-workspace" class="button button-secondary" type="button">加载页面工作区</button>
+            <button id="generate-llm-doc" class="button button-primary" type="button">生成 JSON / 报告</button>
+            <button id="reset-workspace" class="button button-secondary" type="button">重置到初始状态</button>
+          </div>
+        </header>
+
+        <section class="v1-panels">
+          <article class="panel">
+            <div class="record-panel-header">
+              <h3>结构化 JSON</h3>
+              <span class="mini-tag">machine readable</span>
+            </div>
+            <pre id="structured-json" class="artifact-preview empty-state">请选择左侧页面后加载。</pre>
+          </article>
+
+          <article class="panel">
+            <div class="record-panel-header">
+              <h3>Markdown 报告</h3>
+              <span class="mini-tag">human readable</span>
+            </div>
+            <pre id="markdown-report" class="artifact-preview empty-state">请选择左侧页面后加载。</pre>
+          </article>
+
+          <article class="panel">
+            <div class="record-panel-header">
+              <h3>Agent 分析过程</h3>
+              <span class="mini-tag">trace & debug</span>
+            </div>
+            <div id="agent-trace-container" class="artifact-preview empty-state">
+              生成 JSON / 报告后，这里会显示 Agent 的完整分析过程。
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="record-panel-header">
+              <h3>Agent 调试台</h3>
+              <span class="mini-tag">developer mode</span>
+            </div>
+            <div class="agent-dev-panel">
+              <label class="agent-prompt-box">
+                <span>Agent 指令</span>
+                <textarea id="agent-prompt" rows="5" placeholder="比如：先读取当前页面的 Evidence Bundle，再解释主列表依赖的后端入口和 service 方法。"></textarea>
+              </label>
+              <div class="record-actions">
+                <button id="run-agent" class="button button-primary button-small" type="button">运行 Agent</button>
+                <button id="clear-debug-log" class="button button-secondary button-small" type="button">清空日志</button>
+              </div>
+              <div id="agent-answer" class="placeholder-card">这里会显示 agent 的最终回答。</div>
+            </div>
+          </article>
+
+          <article class="panel sandbox-preview">
+            <div class="record-panel-header">
+              <h3>沙箱</h3>
+              <button id="toggle-sandbox" class="button button-secondary button-small" type="button" aria-expanded="false">展开</button>
+            </div>
+            <div id="sandbox-preview" class="empty-state is-collapsed">加载页面后，将在这里嵌入真实前端 dev server 预览。</div>
+          </article>
+        </section>
+
+        <!-- V2/V3 能力区，当前讨论阶段先隐藏 -->
+        <section class="conversation-layout future-section">
+          <article class="panel conversation-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Conversation</p>
+                <h3>需求对话</h3>
+              </div>
+              <span class="mini-tag">多轮讨论</span>
+            </div>
+            <div id="conversation-thread" class="conversation-thread empty-state">先加载页面工作区，Agent 才能基于真实页面上下文参与讨论。</div>
+            <div class="conversation-composer">
+              <textarea id="floating-demand-input" rows="5" placeholder="描述你要改的页面行为。Agent 会基于真实页面上下文生成代码计划，并在应用前先给你看 diff。"></textarea>
+              <div class="composer-actions">
+                <p class="composer-hint">主流程已经切到真实代码修改，不再生成 overlay patch。</p>
+                <button id="floating-demand-submit" class="button button-primary" type="button">生成代码计划</button>
+              </div>
+            </div>
+          </article>
+
+          <div class="insight-column">
+            <article class="panel compact-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Plan</p>
+                  <h3>当前计划</h3>
+                </div>
+              </div>
+              <div id="insight-summary" class="empty-state">请选择左侧页面后加载。</div>
+            </article>
+
+            <article class="panel compact-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Files</p>
+                  <h3>目标文件</h3>
+                </div>
+              </div>
+              <ul id="insight-confirmed" class="list empty-state">暂无数据</ul>
+            </article>
+
+            <article class="panel compact-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Status</p>
+                  <h3>执行状态</h3>
+                </div>
+              </div>
+              <ul id="insight-open-questions" class="list empty-state">暂无数据</ul>
+            </article>
+          </div>
+        </section>
+
+        <div class="focus-meta-grid future-section">
+          <article class="panel compact-panel">
+            <h3 id="doc-title">页面背景</h3>
+            <p id="doc-purpose" class="muted">请选择左侧页面后加载。</p>
+          </article>
+          <article class="panel compact-panel">
+            <h3>Agent 状态</h3>
+            <div id="llm-output-status" class="card-stack empty-state">尚未调用 LLM。</div>
+          </article>
+        </div>
+
+        <!-- V3 代码计划区，当前讨论阶段先隐藏 -->
+        <article class="panel future-section">
+          <div class="record-panel-header">
+            <h3>代码 Diff 预览</h3>
+            <div class="record-actions">
+              <button id="apply-code-plan" class="button button-primary button-small" type="button" disabled>应用修改</button>
+              <button id="revert-code-plan" class="button button-secondary button-small" type="button" disabled>回滚修改</button>
+            </div>
+          </div>
+          <pre id="code-plan-diff" class="diff-preview empty-state">生成计划后，这里会显示 unified diff。</pre>
+        </article>
+      </section>
+
+      <section class="workspace-support">
+        <section class="column column-doc">
+          <header class="column-header">
+            <div>
+              <p class="eyebrow">Reference</p>
+              <h2>页面关键信息</h2>
+            </div>
+          </header>
+
+          <article class="panel">
+            <h3>页面结构摘要</h3>
+            <ul id="doc-structures" class="list empty-state">暂无数据</ul>
+          </article>
+
+          <article class="panel">
+            <h3>搜索与筛选</h3>
+            <div id="doc-search-fields" class="card-stack empty-state">暂无数据</div>
+          </article>
+
+          <article class="panel">
+            <h3>表格与操作</h3>
+            <div id="doc-table-columns" class="card-stack empty-state">暂无数据</div>
+            <div class="subsection">
+              <h4>页面动作</h4>
+              <div id="doc-page-actions" class="chip-row empty-state">暂无数据</div>
+            </div>
+            <div class="subsection">
+              <h4>行级动作</h4>
+              <div id="doc-row-actions" class="chip-row empty-state">暂无数据</div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <h3>弹窗结构</h3>
+            <div id="doc-dialogs" class="card-stack empty-state">暂无数据</div>
+          </article>
+
+          <article class="panel">
+            <h3>业务规则与约束</h3>
+            <ul id="doc-rules" class="list empty-state">暂无数据</ul>
+          </article>
+
+          <!-- V3 计划记录区，当前讨论阶段先隐藏 -->
+          <article class="panel future-section">
+            <div class="record-panel-header">
+              <h3>计划记录</h3>
+              <button id="refresh-code-plans" class="button button-secondary button-small" type="button">刷新记录</button>
+            </div>
+            <div id="patch-history" class="card-stack empty-state">暂无记录</div>
+          </article>
+        </section>
+
+        <section class="column column-api">
+          <header class="column-header">
+          <div>
+            <p class="eyebrow">Technical</p>
+            <h2>技术上下文</h2>
+          </div>
+          </header>
+
+          <article class="panel">
+            <h3>关联文件</h3>
+            <div id="related-files" class="linked-files empty-state">请选择页面</div>
+          </article>
+
+          <article class="panel">
+            <h3>前端 API</h3>
+            <div id="doc-api-methods" class="card-stack empty-state">暂无数据</div>
+          </article>
+
+          <article class="panel">
+            <h3>后端接口</h3>
+            <div id="doc-backend-endpoints" class="card-stack empty-state">暂无数据</div>
+          </article>
+
+          <article class="panel">
+            <div class="record-panel-header">
+              <h3>开发日志</h3>
+              <span class="mini-tag">prompt / reasoning / tools</span>
+            </div>
+            <div id="debug-log" class="debug-log empty-state">还没有调试记录。</div>
+          </article>
+
+          <article class="panel">
+            <h3>推荐工作流</h3>
+            <ul class="list">
+              <li>先让 Agent 结合页面背景梳理要改的行为和边界。</li>
+              <li>先看 diff，再决定是否应用到真实前端项目。</li>
+              <li>前端请用 <code>VUE_APP_MOCK=true npm run dev</code> 启动，方便产品直接验收。</li>
+            </ul>
+          </article>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="/assets/workbench.js"></script>
+  <script src="/assets/agent-trace-viewer.js"></script>
+</body>
+</html>

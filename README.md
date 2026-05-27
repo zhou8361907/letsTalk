@@ -1,11 +1,12 @@
 # letsTalk
 
-基于 [Pi SDK](https://github.com/earendil-works/pi) 的代码库对话（最简版）。
+面向产品经理与研发的代码库对话 Agent（基于 [Pi SDK](https://github.com/earendil-works/pi)）。
 
 ## 文档
 
 - 总设计：[docs/AGENT_OS_DESIGN.md](docs/AGENT_OS_DESIGN.md)
 - 分阶段进度：[docs/IMPLEMENTATION_PHASES.md](docs/IMPLEMENTATION_PHASES.md)
+- PM 需求助手方案：[docs/PM_REQUIREMENT_ASSISTANT.md](docs/PM_REQUIREMENT_ASSISTANT.md)
 
 ## 核心代码（带注释，尽量短）
 
@@ -29,4 +30,4 @@ pnpm minimal   # 先在终端测 Pi 是否正常
 pnpm dev       # http://127.0.0.1:3000
 ```
 
-`.env` 放**仓库根目录**即可（Next 会自动加载）。
+`.env` 放**仓库根目录**即可（Next 会自动加载）；**勿提交** `.env`（已在 `.gitignore`）。

@@ -18,6 +18,8 @@ export async function GET() {
     const layout = resolveWorkspaceLayout();
     const anchors = await listVueAnchors(layout.workspaceRoot, {
       scanRoot: layout.frontendRoot,
+      /** 本项目页面在 src/pages，非 src/views */
+      globPrefix: "src/pages",
     });
     return Response.json({ anchors });
   } catch (e) {

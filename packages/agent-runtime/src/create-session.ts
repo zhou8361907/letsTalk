@@ -76,6 +76,7 @@ export async function createPiSession(
       ? createRequirementDraftTools({
           sessionId: options.sessionId,
           getAnchorRef: options.getAnchorRef ?? (() => null),
+          workspaceRoot: workspace,
         })
       : [];
 

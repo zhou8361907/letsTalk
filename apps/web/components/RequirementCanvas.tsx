@@ -70,8 +70,12 @@ export function RequirementCanvas(props: {
   actions: AgentAction[];
   onFinalize?: (action: AgentAction) => void;
   onExport?: () => void;
+  /** 导出 PM 定稿 + lazy 生成研发附录（实验） */
+  onExportWithAppendix?: () => void;
+  exportAppendixBusy?: boolean;
 }) {
-  const { draft, actions, onFinalize, onExport } = props;
+  const { draft, actions, onFinalize, onExport, onExportWithAppendix, exportAppendixBusy } =
+    props;
   const displayItems = draft ? pmDisplayItems(draft) : [];
 
   if (!draft) {
@@ -141,9 +145,20 @@ export function RequirementCanvas(props: {
               {a.label}
             </button>
           ))}
-          <button type="button" className="export-mini" onClick={onExport}>
-            导出说明文档
+          <button type="button" className="export-mini primary-export" onClick={onExport}>
+            导出 PM 定稿
           </button>
+          {onExportWithAppendix && (
+            <button
+              type="button"
+              className="export-mini appendix-export"
+              disabled={exportAppendixBusy}
+              title="另调模型读代码，整理前后端线索（非定稿，仅供参考）"
+              onClick={onExportWithAppendix}
+            >
+              {exportAppendixBusy ? "生成附录中…" : "导出含研发附录"}
+            </button>
+          )}
         </div>
       </footer>
 

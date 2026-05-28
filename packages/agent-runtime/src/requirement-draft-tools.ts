@@ -8,7 +8,13 @@ import type { ToolDefinition } from "@earendil-works/pi-coding-agent";
 import type { RequirementDraftState } from "@lets-talk/shared-types";
 import { notifyDraftUpdated } from "./requirement-draft-runtime.js";
 import {
+  getActiveTurnId,
+  isDebugLoggingEnabled,
+  logDraftUpdate,
+} from "./debug-logger.js";
+import {
   applyDraftUpdate,
+  getDraft,
   type ApplyDraftInput,
 } from "./requirement-draft-store.js";
 
@@ -47,6 +53,8 @@ const params = Type.Object({
 export function createRequirementDraftTools(options: {
   sessionId: string;
   getAnchorRef: () => string | null;
+  /** 调试日志落盘目录（WORKSPACE_ROOT） */
+  workspaceRoot?: string;
 }): ToolDefinition[] {
   const tool = defineTool({
     name: "update_requirement_draft",
@@ -72,13 +80,26 @@ export function createRequirementDraftTools(options: {
         }>;
       };
 
-      const draft = applyDraftUpdate(options.sessionId, options.getAnchorRef(), {
+      const before = getDraft(options.sessionId) ?? null;
+      const anchorRef = options.getAnchorRef();
+
+      const draft = applyDraftUpdate(options.sessionId, anchorRef, {
         items: p.items,
         openQuestions: p.openQuestions,
         blockingQuestion: p.blockingQuestion,
         readyToFinalize: p.readyToFinalize,
         replaceItems: p.replaceItems,
       });
+
+      if (isDebugLoggingEnabled() && options.workspaceRoot) {
+        await logDraftUpdate(options.workspaceRoot, options.sessionId, {
+          turnId: getActiveTurnId(options.sessionId),
+          toolInput: raw,
+          before,
+          after: draft,
+          anchorRef,
+        });
+      }
 
       notifyDraftUpdated(options.sessionId, draft);
 

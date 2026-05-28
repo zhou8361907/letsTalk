@@ -346,9 +346,13 @@
 
 ---
 
-## 9. 阶段 6 — PM 写需求（R002 + R004）
+## 9. 阶段 6 — PM 需求助手（R002 + R004）
 
-**目标：** 产品经理能选「写需求」模式，按规范模板与代码核对产出 PRD 类 Markdown。
+**目标（v0.4，见 `docs/PM_REQUIREMENT_ASSISTANT.md`）：** 帮 PM 读代码、收成业务清单；文档可选。非 PRD 八股、非写码。
+
+**已实现（M1 草案）：** 双轨 + `update_requirement_draft`（与 v0.4 尚有差距）。
+
+**待对齐 v0.4：** business/techTraces 分层、单条 upsert、菜单锚点、清单导出。
 
 ### 9.1 任务清单
 
@@ -613,6 +617,23 @@ letsTalk/
 | `apps/web/app/page.tsx` | 四栏布局；「需求整理」模式；SSE 同步草稿 |
 
 **行为：** 需求整理模式下 Agent 每轮调用 `update_requirement_draft` 更新右侧 JSON；对话最多 1 个阻断问题；草稿随会话 JSON 持久化；定稿受击面扫描留 M3。
+
+---
+
+### 产品方向 v0.4（2026-05-28，文档先行，代码未对齐）
+
+权威说明：`docs/PM_REQUIREMENT_ASSISTANT.md` v0.4。
+
+| 主题 | 目标 |
+|------|------|
+| 用户 | 仅 PM；开发阶段少即是多 |
+| 清单 | `business` 在上 + 每条下方 `techTraces`；业务格不写技术词 |
+| 工具 | 单条 `upsert_requirement` 全量替换；每轮清单快照 |
+| 锚点 | P1：menu-map.json + 点选菜单 |
+| 导出 | P2：清单生成 Markdown（非 transcript）；结构与右侧一致 |
+| 不做 | 评价模块、八章定稿、前后端拆两条 |
+
+**下一刀实现：** 类型与 store/tool/UI 对齐 v0.4（见 PM 文档 §6）。
 
 ---
 

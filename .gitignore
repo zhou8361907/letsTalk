@@ -14,3 +14,17 @@ dist/
 .agent/conversations/pi/*.jsonl
 !.agent/conversations/.gitkeep
 !.agent/conversations/pi/.gitkeep
+.agent/menu-map/*.json
+!.agent/menu-map/.gitkeep
+.agent/debug/**
+!.agent/debug/.gitkeep
+
+# 公司内部待分析代码（本地放置或符号链接，勿提交）
+workFront/
+workFront
+workBack/
+workBack
+legacy/test-project/
+
+# TypeScript 构建缓存
+*.tsbuildinfo

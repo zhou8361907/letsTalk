@@ -39,7 +39,7 @@ export async function buildAgentContext(
   const workspaceRoot = resolve(input.workspaceRoot || layout.workspaceRoot);
   let anchor: AgentAnchor | null = input.anchor ?? null;
 
-  if (anchor) {
+  if (anchor && (anchor.kind === "vue" || anchor.kind === "file")) {
     anchor = { ...anchor, ref: toWorkspaceRef(layout, anchor.ref) };
     if (!(await anchorExists(workspaceRoot, anchor.ref))) {
       anchor = null;
@@ -54,11 +54,30 @@ export async function buildAgentContext(
     .join("\n\n");
   let anchor_preview_content: string | undefined;
   if (anchor) {
-    anchor_preview_content = await readAnchorPreview(
-      workspaceRoot,
-      anchor.ref,
-      input.previewLines ?? 150,
-    );
+    if (anchor.kind === "menu" || anchor.kind === "route") {
+      const crumbs = anchor.breadcrumb?.length
+        ? anchor.breadcrumb.join(" / ")
+        : anchor.menuName ?? anchor.label ?? "";
+      const route = anchor.routePath ?? anchor.ref;
+      anchor_preview_content = [
+        "[系统菜单锚点]",
+        crumbs ? `面包屑: ${crumbs}` : "",
+        anchor.menuName ? `菜单: ${anchor.menuName}` : "",
+        anchor.menuUrl ? `sys_menu.url: ${anchor.menuUrl}` : "",
+        route ? `路由(检索用): ${route}` : "",
+        anchor.menuUrlKind ? `类型: ${anchor.menuUrlKind}` : "",
+        anchor.menuId ? `MENU_ID: ${anchor.menuId}` : "",
+        "说明: 优先用「路由」在仓库 grep；完整 url 对照门户配置；未必对应 workFront 下单个 .vue。",
+      ]
+        .filter(Boolean)
+        .join("\n");
+    } else {
+      anchor_preview_content = await readAnchorPreview(
+        workspaceRoot,
+        anchor.ref,
+        input.previewLines ?? 150,
+      );
+    }
   }
 
   let pm_rules: string | undefined;

@@ -6,3 +6,4 @@ export {
   snapshotContextUsage,
 } from "./context-usage.js";
 export { runChat, getWorkspaceRoot, queryContextUsage } from "./run-chat.js";
+export { generateDevAppendix } from "./generate-dev-appendix.js";

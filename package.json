@@ -7,7 +7,12 @@
     "build": "pnpm -r build",
     "smoke": "pnpm --filter @lets-talk/agent-runtime smoke",
     "minimal": "pnpm --filter @lets-talk/agent-runtime minimal",
-    "lint": "pnpm -r lint"
+    "lint": "pnpm -r lint",
+    "sync-menu": "node scripts/sync-menu-map.mjs all"
+  },
+  "devDependencies": {
+    "dotenv": "^16.4.0",
+    "mysql2": "^3.14.0"
   },
   "engines": {
     "node": ">=20"

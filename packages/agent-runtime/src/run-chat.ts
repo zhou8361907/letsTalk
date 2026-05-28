@@ -19,7 +19,18 @@ import type {
   RequirementDraftState,
   SseEvent,
 } from "@lets-talk/shared-types";
-import { emitContextUsage, getContextUsageForSession } from "./context-usage.js";
+import {
+  emitContextUsage,
+  getContextUsageForSession,
+  snapshotContextUsage,
+} from "./context-usage.js";
+import {
+  logTurnRequest,
+  logTurnResponse,
+  nextTurnId,
+  setActiveTurnId,
+  type DebugToolRecord,
+} from "./debug-logger.js";
 import { createPiSession, type PiSessionHandle } from "./create-session.js";
 import {
   buildAgentActions,
@@ -194,7 +205,47 @@ export async function runChat(options: {
     options.onEvent({ type: "context_usage", ...snap });
   });
 
+  const turnId = nextTurnId(options.sessionId);
+  setActiveTurnId(options.sessionId, turnId);
+  const debugTools: DebugToolRecord[] = [];
+  let debugAssistant = "";
+
   const unsub = session.subscribe((piEvent: unknown) => {
+    const e = piEvent as Record<string, unknown>;
+    if (e.type === "message_update") {
+      const inner = e.assistantMessageEvent as { type?: string; delta?: string };
+      if (inner?.type === "text_delta" && inner.delta) {
+        debugAssistant += inner.delta;
+      }
+    }
+    if (e.type === "tool_execution_start") {
+      debugTools.push({
+        tool: String(e.toolName ?? "?"),
+        callId: String(e.toolCallId ?? ""),
+        preview: "(执行中…)",
+      });
+    }
+    if (e.type === "tool_execution_end") {
+      const callId = String(e.toolCallId ?? "");
+      const toolName = String(e.toolName ?? "?");
+      let preview = "";
+      const result = e.result as { content?: Array<{ text?: string }> } | undefined;
+      if (result?.content) {
+        preview = result.content.map((c) => c.text ?? "").join("\n");
+      }
+      const idx = debugTools.findIndex(
+        (t) => t.callId === callId && t.tool === toolName,
+      );
+      const rec: DebugToolRecord = {
+        tool: toolName,
+        callId,
+        ok: e.isError !== true,
+        preview: preview.slice(0, 8000),
+      };
+      if (idx >= 0) debugTools[idx] = rec;
+      else debugTools.push(rec);
+    }
+
     const sse = piEventToSse(piEvent);
     if (sse) options.onEvent(sse);
   });
@@ -224,11 +275,48 @@ export async function runChat(options: {
       ? `${prefix}\n\n${options.message}`
       : options.message;
 
+    const draftForLog =
+      options.chatMode === "prd"
+        ? (getDraft(options.sessionId) ?? initialDraft)
+        : null;
+
+    await logTurnRequest(cwd, options.sessionId, turnId, {
+      chatMode: options.chatMode ?? "explore",
+      anchor: options.anchor ?? null,
+      userMessage: options.message,
+      contextBlock: prefix,
+      requirementDraft: draftForLog,
+    });
+
     await session.prompt(userText);
     emitContextUsage(session, (snap) => {
       options.onEvent({ type: "context_usage", ...snap });
     });
     options.onEvent({ type: "turn_end" });
+
+    const usageSnap = snapshotContextUsage(session);
+    await logTurnResponse(cwd, options.sessionId, turnId, {
+      assistantText: debugAssistant,
+      tools: debugTools,
+      contextUsage: usageSnap,
+      requirementDraftAfter:
+        options.chatMode === "prd"
+          ? (getDraft(options.sessionId) ?? null)
+          : null,
+    });
+  } catch (err) {
+    const usageSnap = snapshotContextUsage(session);
+    await logTurnResponse(cwd, options.sessionId, turnId, {
+      assistantText: debugAssistant,
+      tools: debugTools,
+      contextUsage: usageSnap,
+      requirementDraftAfter:
+        options.chatMode === "prd"
+          ? (getDraft(options.sessionId) ?? null)
+          : null,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    throw err;
   } finally {
     unsub();
     setDraftListener(options.sessionId, null);

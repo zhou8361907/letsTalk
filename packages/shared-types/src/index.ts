@@ -2,6 +2,11 @@
  * 前后端共用的类型（SSE 事件、聊天请求体、对话记录）
  */
 
+import type { AgentAnchor } from "./anchor.js";
+
+export type { AgentAnchor } from "./anchor.js";
+export type { MenuUrlKind, ParsedMenuUrl } from "./parse-menu-url.js";
+export { EXPORT_PRIMARY_APPENDIX_DIVIDER } from "./export-constants.js";
 export type {
   ConversationRecord,
   ConversationSummary,
@@ -35,14 +40,6 @@ export const REQUIREMENT_FIELD_LABELS: Record<RequirementFieldKey, string> = {
 };
 /** 对话模式：研发探索 vs 产品经理写需求 */
 export type ChatMode = "explore" | "prd";
-
-/** UI / API 传入的锚点（阶段 2） */
-export interface AgentAnchor {
-  kind: "vue" | "java" | "route" | "file";
-  /** 相对 WORKSPACE_ROOT 的路径，或路由 path */
-  ref: string;
-  label?: string;
-}
 
 /** Pi 上下文占用（与 AgentSession.getContextUsage 一致） */
 export interface ContextUsageSnapshot {

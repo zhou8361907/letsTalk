@@ -9,7 +9,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { groupConversationsByDate } from "../lib/conversation-groups";
-import { buildConversationMarkdown, downloadMarkdown } from "../lib/export-prd";
+import {
+  buildConversationMarkdown,
+  buildRequirementPrimaryMarkdown,
+  downloadMarkdown,
+  mergePrimaryAndDevAppendix,
+} from "../lib/export-prd";
 import { buildAgentActionsFromDraft } from "../lib/requirement-draft-actions";
 import { formatContextUsageLabel } from "../lib/format-tokens";
 import {
@@ -17,6 +22,7 @@ import {
   isToolGroup,
   toolGroupFailedCount,
 } from "../lib/group-transcript";
+import { MenuAnchorPicker } from "../components/MenuAnchorPicker";
 import { RequirementCanvas } from "../components/RequirementCanvas";
 import type {
   AgentAction,
@@ -57,7 +63,9 @@ export default function HomePage() {
 
   const [anchor, setAnchor] = useState<AgentAnchor | null>(null);
   const [anchorList, setAnchorList] = useState<AgentAnchor[]>([]);
+  const [exportAppendixBusy, setExportAppendixBusy] = useState(false);
   const [manualPath, setManualPath] = useState("");
+  const [anchorTab, setAnchorTab] = useState<"file" | "menu">("menu");
 
   const [items, setItems] = useState<TranscriptItem[]>([]);
   const [input, setInput] = useState("");
@@ -247,17 +255,69 @@ export default function HomePage() {
     void persistCurrent();
   }, [persistCurrent]);
 
-  const exportMarkdown = useCallback(() => {
+  const exportPrimaryMarkdown = useCallback(() => {
     const title =
-      conversations.find((c) => c.sessionId === sessionId)?.title ?? "letsTalk-对话";
+      conversations.find((c) => c.sessionId === sessionId)?.title ?? "letsTalk-需求";
     const safeName = title.replace(/[/\\?%*:|"<>]/g, "-").slice(0, 60);
-    const md = buildConversationMarkdown(itemsRef.current, {
-      title,
-      chatMode: chatModeRef.current,
-      anchor: anchorRef.current,
-    });
-    downloadMarkdown(`${safeName}.md`, md);
+    const mode = chatModeRef.current;
+    const draft = requirementDraftRef.current;
+    const md =
+      mode === "prd" && draft && draft.items.length > 0
+        ? buildRequirementPrimaryMarkdown(draft, {
+            title,
+            anchor: anchorRef.current,
+          })
+        : buildConversationMarkdown(itemsRef.current, {
+            title,
+            chatMode: mode,
+            anchor: anchorRef.current,
+          });
+    const suffix = mode === "prd" && draft?.items.length ? "PM定稿" : "对话";
+    downloadMarkdown(`${safeName}-${suffix}.md`, md);
   }, [conversations, sessionId]);
+
+  const exportWithDevAppendix = useCallback(async () => {
+    const sid = sessionIdRef.current;
+    const draft = requirementDraftRef.current;
+    if (!sid || !draft?.items.length || chatModeRef.current !== "prd") {
+      exportPrimaryMarkdown();
+      return;
+    }
+    const title =
+      conversations.find((c) => c.sessionId === sid)?.title ?? "letsTalk-需求";
+    const safeName = title.replace(/[/\\?%*:|"<>]/g, "-").slice(0, 60);
+    setExportAppendixBusy(true);
+    try {
+      const res = await fetch("/api/export/dev-appendix", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: sid,
+          title,
+          anchor: anchorRef.current,
+        }),
+      });
+      const data = (await res.json()) as {
+        primary?: string;
+        appendix?: string;
+        error?: string;
+      };
+      if (!res.ok) throw new Error(data.error ?? res.statusText);
+      const merged = mergePrimaryAndDevAppendix(
+        data.primary ?? buildRequirementPrimaryMarkdown(draft, { title, anchor: anchorRef.current }),
+        data.appendix ?? "",
+      );
+      downloadMarkdown(`${safeName}-完整含研发附录.md`, merged);
+    } catch (e) {
+      window.alert(
+        e instanceof Error ? e.message : "生成研发附录失败，可先导出 PM 定稿",
+      );
+    } finally {
+      setExportAppendixBusy(false);
+    }
+  }, [conversations, exportPrimaryMarkdown]);
+
+  const exportMarkdown = exportPrimaryMarkdown;
 
   useEffect(() => {
     setAnchor(loadStoredAnchor());
@@ -506,8 +566,30 @@ export default function HomePage() {
         </div>
       </aside>
 
-      <aside className="anchors">
+      <aside className={anchorTab === "menu" ? "anchors anchors--menu" : "anchors"}>
         <h2>锚点</h2>
+        <div className="anchor-tabs" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={anchorTab === "menu"}
+            className={anchorTab === "menu" ? "anchor-tab active" : "anchor-tab"}
+            onClick={() => setAnchorTab("menu")}
+            disabled={busy}
+          >
+            系统菜单
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={anchorTab === "file"}
+            className={anchorTab === "file" ? "anchor-tab active" : "anchor-tab"}
+            onClick={() => setAnchorTab("file")}
+            disabled={busy}
+          >
+            代码文件
+          </button>
+        </div>
         <button
           type="button"
           className={!anchor ? "anchor-btn active" : "anchor-btn"}
@@ -516,33 +598,58 @@ export default function HomePage() {
         >
           全库探索
         </button>
-        <ul className="anchor-list">
-          {anchorList.map((a) => (
-            <li key={a.ref}>
-              <button
-                type="button"
-                className={anchor?.ref === a.ref ? "anchor-btn active" : "anchor-btn"}
-                onClick={() => persistAnchor(a)}
-                disabled={busy}
-                title={a.ref}
-              >
-                {a.label ?? a.ref}
-              </button>
-            </li>
-          ))}
-        </ul>
-        <div className="manual-anchor">
-          <input
-            type="text"
-            value={manualPath}
-            onChange={(e) => setManualPath(e.target.value)}
-            placeholder="如 src/views/Login.vue"
+        {anchorTab === "menu" ? (
+          <MenuAnchorPicker
+            anchor={anchor}
             disabled={busy}
+            onSelect={persistAnchor}
           />
-          <button type="button" onClick={applyManualAnchor} disabled={busy}>
-            设为锚点
-          </button>
-        </div>
+        ) : (
+          <>
+            <ul className="anchor-list">
+              {anchorList.map((a) => (
+                <li key={a.ref}>
+                  <button
+                    type="button"
+                    className={
+                      anchor?.ref === a.ref ? "anchor-btn active" : "anchor-btn"
+                    }
+                    onClick={() => persistAnchor(a)}
+                    disabled={busy}
+                    title={a.ref}
+                  >
+                    {a.label ?? a.ref}
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="manual-anchor">
+              <input
+                type="text"
+                value={manualPath}
+                onChange={(e) => setManualPath(e.target.value)}
+                placeholder="如 src/views/Login.vue"
+                disabled={busy}
+              />
+              <button type="button" onClick={applyManualAnchor} disabled={busy}>
+                设为锚点
+              </button>
+            </div>
+          </>
+        )}
+        {anchor?.kind === "menu" && (
+          <p
+            className="anchor-current muted small"
+            title={anchor.menuUrl ?? anchor.ref}
+            onDoubleClick={() => !busy && persistAnchor(null)}
+          >
+            已选: {anchor.menuName ?? anchor.label}
+            {anchor.routePath && anchor.routePath !== anchor.menuUrl && (
+              <span className="anchor-route"> · {anchor.routePath}</span>
+            )}
+            <span className="anchor-clear-hint">（双击取消）</span>
+          </p>
+        )}
       </aside>
 
       <div className="main-col">
@@ -659,15 +766,15 @@ export default function HomePage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                   e.preventDefault();
                   void send();
                 }
               }}
               placeholder={
                 chatMode === "prd"
-                  ? "描述需求，例如：在明细页增加导出按钮…"
-                  : "输入消息…"
+                  ? "描述需求…（Ctrl/⌘+Enter 发送，Enter 换行）"
+                  : "输入消息…（Ctrl/⌘+Enter 发送，Enter 换行）"
               }
               rows={2}
               disabled={busy || !sessionId}
@@ -684,6 +791,8 @@ export default function HomePage() {
           draft={requirementDraft}
           actions={agentActions}
           onExport={exportMarkdown}
+          onExportWithAppendix={() => void exportWithDevAppendix()}
+          exportAppendixBusy={exportAppendixBusy}
           onFinalize={(action) => {
             if (action.kind === "finalize_skip_blast") {
               exportMarkdown();
@@ -775,6 +884,42 @@ export default function HomePage() {
           font-size: 12px;
           min-height: 0;
           overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+        }
+        .anchors--menu {
+          width: min(460px, 42vw);
+        }
+        .anchor-tabs {
+          display: flex;
+          gap: 0.25rem;
+          margin-bottom: 0.5rem;
+        }
+        .anchor-tab {
+          flex: 1;
+          font-size: 10px;
+          padding: 0.25rem 0.2rem;
+          border: 1px solid var(--border);
+          border-radius: 4px;
+          background: transparent;
+          color: var(--muted);
+          cursor: pointer;
+        }
+        .anchor-tab.active {
+          color: var(--accent);
+          border-color: var(--accent);
+        }
+        .anchor-current {
+          margin-top: 0.35rem;
+          word-break: break-all;
+          cursor: default;
+        }
+        .anchor-route {
+          color: var(--accent);
+        }
+        .anchor-clear-hint {
+          opacity: 0.65;
+          font-size: 10px;
         }
         .anchors h2 {
           font-size: 11px;

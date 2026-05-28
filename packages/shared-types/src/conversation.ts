@@ -1,3 +1,4 @@
+import type { AgentAnchor } from "./anchor.js";
 import type { RequirementDraftState } from "./requirement-draft.js";
 
 /** 与 page Transcript 一致，持久化到 .agent/conversations */
@@ -20,11 +21,7 @@ export interface ConversationSummary {
 }
 
 export interface ConversationRecord extends ConversationSummary {
-  anchor: {
-    kind: "vue" | "java" | "route" | "file";
-    ref: string;
-    label?: string;
-  } | null;
+  anchor: AgentAnchor | null;
   items: TranscriptItem[];
   /** 相对 WORKSPACE_ROOT 的 Pi session 文件（阶段 5 v2） */
   piSessionFile?: string | null;

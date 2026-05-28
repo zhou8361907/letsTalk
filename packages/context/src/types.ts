@@ -16,6 +16,8 @@ export interface AgentContext {
   pm_rules?: string;
   prd_template_outline?: string;
   hints_directory_hint?: string;
+  /** 需求整理：当前清单快照，供 Agent 增量更新 */
+  requirement_draft_snapshot?: string;
 }
 
 import type { WorkspaceLayout } from "./workspace-paths.js";
@@ -28,4 +30,6 @@ export interface BuildAgentContextInput {
   previewLines?: number;
   /** 默认 explore */
   chatMode?: ChatMode;
+  /** 需求整理：当前草稿，注入 prompt 避免丢上下文 */
+  requirementDraft?: import("@lets-talk/shared-types").RequirementDraftState | null;
 }

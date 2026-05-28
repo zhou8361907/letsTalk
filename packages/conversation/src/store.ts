@@ -4,6 +4,7 @@ import { join, resolve } from "node:path";
 import type {
   ConversationRecord,
   ConversationSummary,
+  RequirementDraftState,
   TranscriptItem,
 } from "@lets-talk/shared-types";
 import type { AgentAnchor } from "@lets-talk/shared-types";
@@ -124,6 +125,7 @@ export async function saveConversation(
     title?: string;
     piSessionFile?: string | null;
     chatMode?: "explore" | "prd";
+    requirementDraft?: RequirementDraftState | null;
   },
 ): Promise<ConversationRecord> {
   await ensureDir(workspaceRoot);
@@ -149,6 +151,10 @@ export async function saveConversation(
       input.chatMode !== undefined
         ? input.chatMode
         : (existing?.chatMode ?? "explore"),
+    requirementDraft:
+      input.requirementDraft !== undefined
+        ? input.requirementDraft
+        : (existing?.requirementDraft ?? null),
   };
 
   await writeFile(

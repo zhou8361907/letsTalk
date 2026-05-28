@@ -10,17 +10,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { groupConversationsByDate } from "../lib/conversation-groups";
 import { buildConversationMarkdown, downloadMarkdown } from "../lib/export-prd";
+import { buildAgentActionsFromDraft } from "../lib/requirement-draft-actions";
 import { formatContextUsageLabel } from "../lib/format-tokens";
 import {
   groupTranscriptForDisplay,
   isToolGroup,
   toolGroupFailedCount,
 } from "../lib/group-transcript";
+import { RequirementCanvas } from "../components/RequirementCanvas";
 import type {
+  AgentAction,
   AgentAnchor,
   ChatMode,
   ContextUsageSnapshot,
   ConversationSummary,
+  RequirementDraftState,
   SseEvent,
   TranscriptItem,
 } from "@lets-talk/shared-types";
@@ -63,6 +67,9 @@ export default function HomePage() {
     null,
   );
   const [chatMode, setChatMode] = useState<ChatMode>("explore");
+  const [requirementDraft, setRequirementDraft] =
+    useState<RequirementDraftState | null>(null);
+  const [agentActions, setAgentActions] = useState<AgentAction[]>([]);
   const [workspace, setWorkspace] = useState<{
     root: string | null;
     front: string | null;
@@ -75,12 +82,14 @@ export default function HomePage() {
   const sessionIdRef = useRef("");
   const anchorRef = useRef<AgentAnchor | null>(null);
   const chatModeRef = useRef<ChatMode>("explore");
+  const requirementDraftRef = useRef<RequirementDraftState | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement | null>(null);
 
   itemsRef.current = items;
   sessionIdRef.current = sessionId;
   anchorRef.current = anchor;
   chatModeRef.current = chatMode;
+  requirementDraftRef.current = requirementDraft;
 
   const persistAnchor = useCallback((next: AgentAnchor | null) => {
     setAnchor(next);
@@ -89,6 +98,24 @@ export default function HomePage() {
       sessionStorage.setItem(ANCHOR_STORAGE_KEY, JSON.stringify(next));
     } else {
       sessionStorage.removeItem(ANCHOR_STORAGE_KEY);
+    }
+  }, []);
+
+  const refreshRequirementDraft = useCallback(async (sid?: string) => {
+    const id = sid ?? sessionIdRef.current;
+    if (!id || chatModeRef.current !== "prd") return;
+    try {
+      const res = await fetch(`/api/conversations/${id}`);
+      if (!res.ok) return;
+      const record = (await res.json()) as {
+        requirementDraft?: RequirementDraftState | null;
+      };
+      const draft = record.requirementDraft ?? null;
+      setRequirementDraft(draft);
+      requirementDraftRef.current = draft;
+      setAgentActions(buildAgentActionsFromDraft(draft));
+    } catch {
+      // ignore
     }
   }, []);
 
@@ -130,6 +157,7 @@ export default function HomePage() {
         items: snapshot ?? itemsRef.current,
         anchor: anchorRef.current,
         chatMode: chatModeRef.current,
+        requirementDraft: requirementDraftRef.current,
       };
       await fetch(`/api/conversations/${sid}`, {
         method: "PUT",
@@ -147,6 +175,7 @@ export default function HomePage() {
       items?: TranscriptItem[];
       anchor?: AgentAnchor | null;
       chatMode?: ChatMode;
+      requirementDraft?: RequirementDraftState | null;
     }) => {
       setSessionId(record.sessionId);
       sessionIdRef.current = record.sessionId;
@@ -162,6 +191,10 @@ export default function HomePage() {
       } else if (record.anchor === null) {
         persistAnchor(null);
       }
+      const draft = record.requirementDraft ?? null;
+      setRequirementDraft(draft);
+      requirementDraftRef.current = draft;
+      setAgentActions([]);
       void refreshContextUsage(record.sessionId);
       scrollTranscriptToBottom("auto");
     },
@@ -183,6 +216,9 @@ export default function HomePage() {
     applyConversation(record);
     setItems([]);
     itemsRef.current = [];
+    setRequirementDraft(null);
+    requirementDraftRef.current = null;
+    setAgentActions([]);
     setContextUsage(null);
     void refreshContextUsage(record.sessionId);
     await refreshConversationList();
@@ -385,6 +421,13 @@ export default function HomePage() {
               }
             }
             setItems([...snapshot]);
+          } else if (event.type === "requirement_state") {
+            setRequirementDraft(event.draft);
+            requirementDraftRef.current = event.draft;
+          } else if (event.type === "agent_actions") {
+            setAgentActions(event.actions);
+          } else if (event.type === "turn_end") {
+            await refreshRequirementDraft(sid);
           } else if (event.type === "error") {
             throw new Error(event.message);
           }
@@ -401,9 +444,10 @@ export default function HomePage() {
     } finally {
       setBusy(false);
       itemsRef.current = snapshot;
+      await refreshRequirementDraft(sid);
       await persistCurrent(snapshot);
     }
-  }, [appendAssistantDelta, busy, input, persistCurrent]);
+  }, [appendAssistantDelta, busy, input, persistCurrent, refreshRequirementDraft]);
 
   const applyManualAnchor = () => {
     const ref = manualPath.trim().replace(/^\/+/, "");
@@ -520,7 +564,7 @@ export default function HomePage() {
                 onClick={() => setChatModePersist("prd")}
                 disabled={busy}
               >
-                写需求
+                需求整理
               </button>
             </div>
             <span className={`dot ${status === "error" ? "err" : busy ? "on" : ""}`} />
@@ -550,7 +594,7 @@ export default function HomePage() {
           {items.length === 0 && (
             <p className="muted empty-hint">
               {chatMode === "prd"
-                ? "写需求模式：选页面锚点，描述变更；Agent 会按 PRD 模板输出并核对代码。"
+                ? "需求整理：左侧用口语说就行，右侧会自动整理成清单；选好页面锚点更准确。"
                 : "探索模式：选会话或锚点后提问。回答以实际代码为准。"}
             </p>
           )}
@@ -622,7 +666,7 @@ export default function HomePage() {
               }}
               placeholder={
                 chatMode === "prd"
-                  ? "描述你想做的需求，例如：在明细页增加导出按钮…"
+                  ? "描述需求，例如：在明细页增加导出按钮…"
                   : "输入消息…"
               }
               rows={2}
@@ -634,6 +678,19 @@ export default function HomePage() {
           </div>
         </footer>
       </div>
+
+      {chatMode === "prd" && (
+        <RequirementCanvas
+          draft={requirementDraft}
+          actions={agentActions}
+          onExport={exportMarkdown}
+          onFinalize={(action) => {
+            if (action.kind === "finalize_skip_blast") {
+              exportMarkdown();
+            }
+          }}
+        />
+      )}
 
       <style jsx>{`
         .layout {
@@ -777,9 +834,9 @@ export default function HomePage() {
           flex: 1;
           display: flex;
           flex-direction: column;
-          min-width: 0;
+          min-width: 280px;
           min-height: 0;
-          padding: 0.75rem 0.75rem 0.75rem 0.5rem;
+          padding: 0.75rem 0.5rem 0.75rem 0.5rem;
         }
         .header {
           flex-shrink: 0;

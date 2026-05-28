@@ -22,6 +22,11 @@ const nextConfig: NextConfig = {
   transpilePackages: ["@lets-talk/shared-types"],
   serverExternalPackages: NODE_ONLY_PACKAGES,
   webpack(config, { isServer }) {
+    config.resolve ??= {};
+    config.resolve.extensionAlias = {
+      ".js": [".ts", ".tsx", ".js"],
+      ".mjs": [".mts", ".mjs"],
+    };
     if (isServer) {
       const prev = config.externals;
       config.externals = [

@@ -8,9 +8,9 @@ import {
   formatHintsDirectoryHint,
   listBusinessHintFiles,
   PM_MODE_RULES,
-  readPrdTemplateOutline,
   trimPmRules,
 } from "./pm-resources.js";
+import { formatRequirementDraftSnapshot } from "./format-requirement-draft.js";
 import {
   formatWorkspaceDirsHint,
   resolveWorkspaceLayout,
@@ -62,13 +62,15 @@ export async function buildAgentContext(
   }
 
   let pm_rules: string | undefined;
-  let prd_template_outline: string | undefined;
   let hints_directory_hint: string | undefined;
+  let requirement_draft_snapshot: string | undefined;
   if (chat_mode === "prd") {
     pm_rules = trimPmRules(PM_MODE_RULES);
-    prd_template_outline = await readPrdTemplateOutline(workspaceRoot);
     const hintFiles = await listBusinessHintFiles(workspaceRoot);
     hints_directory_hint = formatHintsDirectoryHint(hintFiles);
+    requirement_draft_snapshot = formatRequirementDraftSnapshot(
+      input.requirementDraft,
+    );
   }
 
   return {
@@ -80,7 +82,7 @@ export async function buildAgentContext(
     chat_mode,
     anchor_preview_content,
     pm_rules,
-    prd_template_outline,
     hints_directory_hint,
+    requirement_draft_snapshot,
   };
 }

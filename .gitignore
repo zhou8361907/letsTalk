@@ -8,3 +8,9 @@ dist/
 .pi-agent/auth.json
 *.log
 .DS_Store
+
+# 运行时数据（本地会话 / Pi 上下文，勿提交）
+.agent/conversations/*.json
+.agent/conversations/pi/*.jsonl
+!.agent/conversations/.gitkeep
+!.agent/conversations/pi/.gitkeep

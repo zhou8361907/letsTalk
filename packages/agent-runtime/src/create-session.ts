@@ -20,6 +20,7 @@ import {
 import type { AgentSession } from "@earendil-works/pi-coding-agent";
 import { createJavaAstTools } from "./java-ast-tools.js";
 import { createMemoryTools } from "./memory-tools.js";
+import { createRequirementDraftTools } from "./requirement-draft-tools.js";
 
 /** 阶段 4 Agent 自动记忆暂缓；代码保留，想开再改 true */
 const ENABLE_MEMORY_TOOLS = false;
@@ -45,7 +46,11 @@ const READONLY_TOOLS = [
 export async function createPiSession(
   cwd: string,
   useTools = true,
-  options?: { piSessionFile: string },
+  options?: {
+    piSessionFile: string;
+    sessionId?: string;
+    getAnchorRef?: () => string | null;
+  },
 ): Promise<PiSessionHandle> {
   const workspace = resolve(cwd);
 
@@ -66,10 +71,18 @@ export async function createPiSession(
   const modelRegistry = ModelRegistry.create(authStorage);
 
   const memoryTools = ENABLE_MEMORY_TOOLS ? createMemoryTools(workspace) : [];
+  const draftTools =
+    useTools && options?.sessionId
+      ? createRequirementDraftTools({
+          sessionId: options.sessionId,
+          getAnchorRef: options.getAnchorRef ?? (() => null),
+        })
+      : [];
 
   const toolNames: string[] = [
     ...READONLY_TOOLS,
     ...(ENABLE_MEMORY_TOOLS ? (["save_memory", "read_memory"] as const) : []),
+    ...(draftTools.length ? (["update_requirement_draft"] as const) : []),
   ];
 
   const piOptions = {
@@ -81,7 +94,11 @@ export async function createPiSession(
     ...(useTools
       ? {
           tools: toolNames,
-          customTools: [...createJavaAstTools(workspace), ...memoryTools],
+          customTools: [
+            ...createJavaAstTools(workspace),
+            ...memoryTools,
+            ...draftTools,
+          ],
         }
       : { noTools: "all" as const }),
   };

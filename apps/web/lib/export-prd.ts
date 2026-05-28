@@ -17,7 +17,7 @@ export function buildConversationMarkdown(
     `# ${options.title}`,
     "",
     `- 导出时间：${at}`,
-    `- 模式：${options.chatMode === "prd" ? "写需求" : "探索"}`,
+    `- 模式：${options.chatMode === "prd" ? "需求整理" : "探索"}`,
   ];
   if (options.anchor) {
     lines.push(`- 锚点：${options.anchor.label ?? options.anchor.ref} (\`${options.anchor.ref}\`)`);

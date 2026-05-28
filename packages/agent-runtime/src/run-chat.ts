@@ -1,9 +1,5 @@
 /**
  * 跑一轮对话，并把 Pi 事件转成 SSE 推给浏览器
- *
- * 流程：
- *   浏览器 POST → 本文件 runChat() → session.prompt(用户话)
- *   → Pi 内部循环（模型想调工具就调工具）→ subscribe 回调 → SSE
  */
 
 import {
@@ -15,18 +11,61 @@ import {
   bindPiSessionFile,
   getConversation,
   resolvePiSessionFile,
+  saveConversation,
 } from "@lets-talk/conversation";
-import type { AgentAnchor, ChatMode, SseEvent } from "@lets-talk/shared-types";
+import type {
+  AgentAnchor,
+  ChatMode,
+  RequirementDraftState,
+  SseEvent,
+} from "@lets-talk/shared-types";
 import { emitContextUsage, getContextUsageForSession } from "./context-usage.js";
 import { createPiSession, type PiSessionHandle } from "./create-session.js";
+import {
+  buildAgentActions,
+  emptyDraft,
+  ensureDraft,
+  getDraft,
+  setDraft,
+} from "./requirement-draft-store.js";
+import { setDraftListener } from "./requirement-draft-runtime.js";
 
-// 内存里记住「每个 sessionId 对应一个 Pi 会话」；HMR 后 Map 丢失，靠 pi jsonl 恢复
 const sessions = new Map<string, PiSessionHandle>();
+const liveAnchorRefs = new Map<string, string | null>();
+
+function anchorRefFrom(anchor: AgentAnchor | null | undefined): string | null {
+  return anchor?.ref?.trim() || null;
+}
+
+function emitDraftEvents(
+  draft: RequirementDraftState,
+  onEvent: (event: SseEvent) => void,
+): void {
+  onEvent({ type: "requirement_state", draft });
+  onEvent({ type: "agent_actions", actions: buildAgentActions(draft) });
+}
+
+async function persistDraft(
+  cwd: string,
+  sessionId: string,
+  draft: RequirementDraftState,
+): Promise<void> {
+  const record = await getConversation(cwd, sessionId);
+  if (!record) return;
+  await saveConversation(cwd, {
+    sessionId,
+    items: record.items,
+    anchor: record.anchor,
+    title: record.title,
+    requirementDraft: draft,
+  });
+}
 
 async function getOrCreatePiHandle(
   sessionId: string,
   cwd: string,
   useTools: boolean,
+  anchorRef: string | null,
 ): Promise<PiSessionHandle> {
   let handle = sessions.get(sessionId);
   if (handle && handle.cwd === cwd) {
@@ -42,12 +81,21 @@ async function getOrCreatePiHandle(
     record?.piSessionFile,
   );
 
-  handle = await createPiSession(cwd, useTools, { piSessionFile });
+  if (record?.requirementDraft) {
+    setDraft(sessionId, record.requirementDraft);
+  } else {
+    ensureDraft(sessionId, anchorRef);
+  }
+
+  handle = await createPiSession(cwd, useTools, {
+    piSessionFile,
+    sessionId,
+    getAnchorRef: () => liveAnchorRefs.get(sessionId) ?? null,
+  });
   sessions.set(sessionId, handle);
   return handle;
 }
 
-/** 读取工作区布局（WORKSPACE_ROOT = letsTalk 运行根） */
 export function getWorkspaceLayout() {
   const layout = resolveWorkspaceLayout();
   if (!process.env.WORKSPACE_ROOT?.trim()) {
@@ -58,16 +106,14 @@ export function getWorkspaceLayout() {
   return layout;
 }
 
-/** @deprecated 使用 getWorkspaceLayout；保留兼容 */
+/** @deprecated 使用 getWorkspaceLayout */
 export function getWorkspaceRoot(): string {
   return getWorkspaceLayout().workspaceRoot;
 }
 
-/** 把 Pi 内部事件转成前端能消费的 SSE 格式 */
 function piEventToSse(event: unknown): SseEvent | null {
   const e = event as Record<string, unknown>;
 
-  // 流式文字
   if (e.type === "message_update") {
     const inner = e.assistantMessageEvent as { type?: string; delta?: string };
     if (inner?.type === "text_delta" && inner.delta) {
@@ -76,7 +122,6 @@ function piEventToSse(event: unknown): SseEvent | null {
     return null;
   }
 
-  // 工具开始
   if (e.type === "tool_execution_start") {
     return {
       type: "tool_start",
@@ -85,7 +130,6 @@ function piEventToSse(event: unknown): SseEvent | null {
     };
   }
 
-  // 工具结束
   if (e.type === "tool_execution_end") {
     let preview = "";
     const result = e.result as { content?: Array<{ text?: string }> } | undefined;
@@ -101,23 +145,13 @@ function piEventToSse(event: unknown): SseEvent | null {
     };
   }
 
-  // 本轮结束
-  if (e.type === "agent_end") {
-    return { type: "turn_end" };
-  }
-
   return null;
 }
 
-/**
- * 执行一轮用户提问
- * @param onEvent 每有一条 SSE 事件就调用（发给浏览器）
- */
 export async function runChat(options: {
   sessionId: string;
   message: string;
   useTools?: boolean;
-  /** 阶段 2：选中锚点时 JIT 注入文件头；null = 全库探索 */
   anchor?: AgentAnchor | null;
   chatMode?: ChatMode;
   onEvent: (event: SseEvent) => void;
@@ -125,12 +159,30 @@ export async function runChat(options: {
   const layout = getWorkspaceLayout();
   const cwd = layout.workspaceRoot;
   const useTools = options.useTools ?? true;
+  const anchorRef = anchorRefFrom(options.anchor);
 
-  // 1. 取或建 Pi 会话（Map miss 时从 .agent/conversations/pi/*.jsonl 恢复）
-  const handle = await getOrCreatePiHandle(options.sessionId, cwd, useTools);
+  const onDraftUpdated = (draft: RequirementDraftState) => {
+    emitDraftEvents(draft, options.onEvent);
+    void persistDraft(cwd, options.sessionId, draft);
+  };
+
+  setDraftListener(options.sessionId, onDraftUpdated);
+  liveAnchorRefs.set(options.sessionId, anchorRef);
+
+  const handle = await getOrCreatePiHandle(
+    options.sessionId,
+    cwd,
+    useTools,
+    anchorRef,
+  );
   const { session, modelLabel } = handle;
 
-  // 2. 告诉前端：连上了、用的哪个模型
+  ensureDraft(options.sessionId, anchorRef);
+  const initialDraft = getDraft(options.sessionId) ?? emptyDraft(anchorRef);
+  if (options.chatMode === "prd") {
+    emitDraftEvents(initialDraft, options.onEvent);
+  }
+
   options.onEvent({
     type: "session",
     sessionId: options.sessionId,
@@ -142,18 +194,20 @@ export async function runChat(options: {
     options.onEvent({ type: "context_usage", ...snap });
   });
 
-  // 3. 监听 Pi 事件 → 转发 SSE
   const unsub = session.subscribe((piEvent: unknown) => {
     const sse = piEventToSse(piEvent);
     if (sse) options.onEvent(sse);
   });
 
   try {
-    // 4. JIT 上下文前缀 + 用户话（每轮刷新，不写进 Pi 长期 history 的重复块由 Pi 管理）
     const ctx = await buildAgentContext({
       layout,
       anchor: options.anchor ?? null,
       chatMode: options.chatMode ?? "explore",
+      requirementDraft:
+        options.chatMode === "prd"
+          ? (getDraft(options.sessionId) ?? initialDraft)
+          : null,
     });
     const previewLines = ctx.anchor_preview_content
       ? ctx.anchor_preview_content.split("\n").length
@@ -177,6 +231,7 @@ export async function runChat(options: {
     options.onEvent({ type: "turn_end" });
   } finally {
     unsub();
+    setDraftListener(options.sessionId, null);
     const piFile = session.sessionFile ?? handle.piSessionFile;
     if (piFile) {
       await bindPiSessionFile(cwd, options.sessionId, piFile);
@@ -184,7 +239,6 @@ export async function runChat(options: {
   }
 }
 
-/** 供 REST 查询：优先用内存中的 Pi 会话 */
 export function queryContextUsage(sessionId: string) {
   return getContextUsageForSession(sessionId, sessions);
 }

@@ -1,3 +1,5 @@
+import type { RequirementDraftState } from "./requirement-draft.js";
+
 /** 与 page Transcript 一致，持久化到 .agent/conversations */
 export type TranscriptItem =
   | { kind: "user"; text: string }
@@ -28,4 +30,6 @@ export interface ConversationRecord extends ConversationSummary {
   piSessionFile?: string | null;
   /** 对话模式（阶段 6 PM） */
   chatMode?: "explore" | "prd";
+  /** PM 需求草稿板 */
+  requirementDraft?: RequirementDraftState | null;
 }

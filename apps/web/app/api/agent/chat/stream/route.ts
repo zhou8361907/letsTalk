@@ -43,15 +43,22 @@ export async function POST(request: Request) {
 
   const stream = new ReadableStream({
     start(controller) {
+      const enqueue = (event: Parameters<typeof formatSseData>[0]) => {
+        if (controller.desiredSize === null) return;
+        try {
+          controller.enqueue(encoder.encode(formatSseData(event)));
+        } catch {
+          // 流已关闭时忽略（例如工具晚于 turn_end 回调）
+        }
+      };
+
       runChat({
         sessionId: body.sessionId,
         message: body.message.trim(),
         anchor: body.anchor ?? null,
         chatMode: body.chatMode ?? "explore",
         useTools: true,
-        onEvent(event) {
-          controller.enqueue(encoder.encode(formatSseData(event)));
-        },
+        onEvent: enqueue,
       })
         .catch((err: unknown) => {
           const message = err instanceof Error ? err.message : String(err);

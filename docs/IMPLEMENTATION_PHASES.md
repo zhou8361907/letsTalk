@@ -600,6 +600,22 @@ letsTalk/
 
 ---
 
+### CL-2026-05-27-J — PM 助手 M1（双轨 + 需求草稿板 v0.2）
+
+| 影响文件 | 逻辑变化 |
+|----------|----------|
+| `packages/shared-types/src/requirement-draft.ts` | `RequirementDraftState`、字段/条目类型；SSE `requirement_state` / `agent_actions` |
+| `packages/agent-runtime/src/requirement-draft-*.ts` | 内存 store、`update_requirement_draft` Pi 工具、SSE 推送 |
+| `packages/agent-runtime/src/run-chat.ts` | 恢复/持久化草稿；注册 draft 工具 |
+| `packages/conversation/src/store.ts` | `ConversationRecord.requirementDraft` |
+| `packages/context/src/pm-resources.ts` | v0.2 轻量 PM 守则（不再灌整段 PRD 模板） |
+| `apps/web/components/RequirementCanvas.tsx` | 右侧只读草稿板：拆条、字段状态、定稿按钮占位 |
+| `apps/web/app/page.tsx` | 四栏布局；「需求整理」模式；SSE 同步草稿 |
+
+**行为：** 需求整理模式下 Agent 每轮调用 `update_requirement_draft` 更新右侧 JSON；对话最多 1 个阻断问题；草稿随会话 JSON 持久化；定稿受击面扫描留 M3。
+
+---
+
 ## 12. 修订记录
 
 | 版本 | 日期 | 说明 |

@@ -41,6 +41,7 @@ export async function PUT(req: Request, ctx: RouteCtx) {
     anchor?: unknown;
     title?: string;
     chatMode?: "explore" | "prd";
+    requirementDraft?: import("@lets-talk/shared-types").RequirementDraftState | null;
   };
   try {
     body = (await req.json()) as typeof body;
@@ -63,6 +64,7 @@ export async function PUT(req: Request, ctx: RouteCtx) {
     anchor: (body.anchor ?? null) as import("@lets-talk/shared-types").AgentAnchor | null,
     title: body.title,
     chatMode: body.chatMode,
+    requirementDraft: body.requirementDraft,
   });
 
   return Response.json(record);

@@ -45,10 +45,10 @@ export function formatAgentContextBlock(ctx: AgentContext): string {
     lines.push("  </pm_rules>");
   }
 
-  if (ctx.prd_template_outline?.trim()) {
-    lines.push("  <prd_template>");
-    lines.push(escapeXml(ctx.prd_template_outline.trim()));
-    lines.push("  </prd_template>");
+  if (ctx.requirement_draft_snapshot?.trim()) {
+    lines.push("  <requirement_draft_snapshot>");
+    lines.push(escapeXml(ctx.requirement_draft_snapshot.trim()));
+    lines.push("  </requirement_draft_snapshot>");
   }
 
   if (ctx.hints_directory_hint?.trim()) {

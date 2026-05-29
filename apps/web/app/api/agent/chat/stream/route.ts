@@ -4,8 +4,8 @@ import "server-only";
 /**
  * 对话接口：POST /api/agent/chat/stream
  *
- * 请求体：{ sessionId, message }
- * 响应：SSE 流（assistant_delta、tool_start、tool_output、turn_end）
+ * 请求体：ChatStreamRequest（sessionId, message, anchor?, chatMode?）
+ * 响应：SSE 流，事件类型见 @lets-talk/shared-types SseEvent
  *
  * 必须用 nodejs runtime，因为 Pi SDK 不能在 Edge 跑。
  */

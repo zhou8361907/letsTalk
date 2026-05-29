@@ -1,7 +1,10 @@
 import { mkdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
-/** Pi Agent 上下文落盘目录（相对 WORKSPACE_ROOT） */
+/**
+ * Pi Agent 上下文落盘目录（相对 WORKSPACE_ROOT）。
+ * 与 letsTalk 会话 JSON 分离：UI 历史在 conversations/*.json，Pi 原生 turns 在 pi/*.jsonl。
+ */
 export const PI_SESSIONS_SUBDIR = ".agent/conversations/pi";
 
 function safeSessionId(sessionId: string): string {

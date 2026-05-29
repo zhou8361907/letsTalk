@@ -14,6 +14,7 @@ import {
   toWorkspaceRelativePath,
 } from "./pi-session.js";
 
+/** letsTalk 会话元数据目录（相对 WORKSPACE_ROOT） */
 export const CONVERSATIONS_DIR = ".agent/conversations";
 
 const TITLE_MAX = 40;

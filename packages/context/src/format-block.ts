@@ -7,12 +7,13 @@ function escapeXml(text: string): string {
     .replace(/>/g, "&gt;");
 }
 
-/** 把 JIT 上下文格式化成模型可读的前缀块 */
+/** 把 JIT 上下文格式化成模型可读的前缀块（XML 风格，特殊字符转义） */
 export function formatAgentContextBlock(ctx: AgentContext): string {
   const lines: string[] = [
     `<agent_context version="${ctx.version}" mode="${ctx.mode}" chat_mode="${ctx.chat_mode}">`,
   ];
 
+  // 以下各段顺序固定，便于模型形成稳定阅读习惯
   if (ctx.anchor) {
     const label = ctx.anchor.label ? ` label="${escapeXml(ctx.anchor.label)}"` : "";
     lines.push(

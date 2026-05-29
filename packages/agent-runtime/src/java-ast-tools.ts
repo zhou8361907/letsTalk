@@ -24,6 +24,10 @@ const readMethodParams = Type.Object({
   }),
 });
 
+/**
+ * 注册 Pi 自定义工具 list_methods / read_method。
+ * @param workspaceRoot WORKSPACE_ROOT，用于把相对路径 resolve 为绝对路径
+ */
 export function createJavaAstTools(workspaceRoot: string): ToolDefinition[] {
   const resolveFile = (filePath: string) => resolveJavaFile(workspaceRoot, filePath);
 

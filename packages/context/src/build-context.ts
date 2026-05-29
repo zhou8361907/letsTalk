@@ -39,6 +39,7 @@ export async function buildAgentContext(
   const workspaceRoot = resolve(input.workspaceRoot || layout.workspaceRoot);
   let anchor: AgentAnchor | null = input.anchor ?? null;
 
+  // 文件类锚点：规范路径并校验存在；不存在则降级为 explore
   if (anchor && (anchor.kind === "vue" || anchor.kind === "file")) {
     anchor = { ...anchor, ref: toWorkspaceRef(layout, anchor.ref) };
     if (!(await anchorExists(workspaceRoot, anchor.ref))) {
@@ -54,6 +55,7 @@ export async function buildAgentContext(
     .join("\n\n");
   let anchor_preview_content: string | undefined;
   if (anchor) {
+    // 菜单锚点不读单文件，只给 grep 线索；文件锚点读前 N 行
     if (anchor.kind === "menu" || anchor.kind === "route") {
       const crumbs = anchor.breadcrumb?.length
         ? anchor.breadcrumb.join(" / ")
@@ -83,6 +85,7 @@ export async function buildAgentContext(
   let pm_rules: string | undefined;
   let hints_directory_hint: string | undefined;
   let requirement_draft_snapshot: string | undefined;
+  // PRD 模式额外注入：写作规则、业务 hints 目录、当前草稿快照
   if (chat_mode === "prd") {
     pm_rules = trimPmRules(PM_MODE_RULES);
     const hintFiles = await listBusinessHintFiles(workspaceRoot);

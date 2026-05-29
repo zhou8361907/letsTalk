@@ -4,6 +4,7 @@
 
 ## 文档
 
+- **代码结构导读（中文）**：[docs/CODEBASE_GUIDE.md](docs/CODEBASE_GUIDE.md) — 目录、关键文件、请求链路
 - 总设计：[docs/AGENT_OS_DESIGN.md](docs/AGENT_OS_DESIGN.md)
 - 分阶段进度：[docs/IMPLEMENTATION_PHASES.md](docs/IMPLEMENTATION_PHASES.md)
 - PM 需求助手方案：[docs/PM_REQUIREMENT_ASSISTANT.md](docs/PM_REQUIREMENT_ASSISTANT.md)

@@ -1,13 +1,17 @@
 import { readFile } from "node:fs/promises";
 
+/** list_methods 返回的单个方法摘要（不含方法体） */
 export interface JavaMethodInfo {
   name: string;
   /** 方法声明行（含修饰符，不含注解块） */
   signature: string;
+  /** 紧贴方法上方的 Spring 映射注解，如 @GetMapping、@PostMapping */
   annotations: string[];
+  /** 方法签名所在行号，1-based */
   startLine: number;
 }
 
+/** list_methods 的完整返回值，供 Agent 选择 read_method 的 methodName */
 export interface ListMethodsResult {
   filePath: string;
   className: string;

@@ -41,7 +41,9 @@ import {
 } from "./requirement-draft-store.js";
 import { setDraftListener } from "./requirement-draft-runtime.js";
 
+/** 进程内 Pi 会话缓存：sessionId → handle（Next dev HMR 后仍靠 jsonl 恢复） */
 const sessions = new Map<string, PiSessionHandle>();
+/** 每会话当前锚点 ref，供 createRequirementDraftTools 的 getAnchorRef 读取 */
 const liveAnchorRefs = new Map<string, string | null>();
 
 function anchorRefFrom(anchor: AgentAnchor | null | undefined): string | null {
@@ -72,6 +74,10 @@ async function persistDraft(
   });
 }
 
+/**
+ * 获取或创建 Pi 句柄。
+ * cwd 变化时 dispose 旧句柄；从 conversation JSON 恢复 piSessionFile 与 requirementDraft。
+ */
 async function getOrCreatePiHandle(
   sessionId: string,
   cwd: string,
@@ -122,6 +128,7 @@ export function getWorkspaceRoot(): string {
   return getWorkspaceLayout().workspaceRoot;
 }
 
+/** 将 Pi 原生事件转为前端消费的 SseEvent；未映射的类型返回 null */
 function piEventToSse(event: unknown): SseEvent | null {
   const e = event as Record<string, unknown>;
 
@@ -159,14 +166,23 @@ function piEventToSse(event: unknown): SseEvent | null {
   return null;
 }
 
-export async function runChat(options: {
+/** runChat 的入参；onEvent 由 API route 写入 SSE */
+export interface RunChatOptions {
   sessionId: string;
   message: string;
   useTools?: boolean;
   anchor?: AgentAnchor | null;
   chatMode?: ChatMode;
   onEvent: (event: SseEvent) => void;
-}): Promise<void> {
+}
+
+/**
+ * 执行一轮 Agent 对话的主入口。
+ *
+ * 流程：恢复 Pi → 订阅事件 → buildAgentContext → session.prompt → turn_end
+ * PRD 模式下工具更新草稿会通过 onEvent 推送 requirement_state。
+ */
+export async function runChat(options: RunChatOptions): Promise<void> {
   const layout = getWorkspaceLayout();
   const cwd = layout.workspaceRoot;
   const useTools = options.useTools ?? true;
@@ -270,6 +286,7 @@ export async function runChat(options: {
       previewLines,
     });
 
+    // JIT 上下文拼在用户消息前；Pi 仍把整段当 user turn 写入 jsonl
     const prefix = formatAgentContextBlock(ctx);
     const userText = prefix.trim()
       ? `${prefix}\n\n${options.message}`
@@ -320,6 +337,7 @@ export async function runChat(options: {
   } finally {
     unsub();
     setDraftListener(options.sessionId, null);
+    // 首轮 prompt 后 Pi 可能生成新 jsonl 路径，写回 conversation JSON 供下次 open
     const piFile = session.sessionFile ?? handle.piSessionFile;
     if (piFile) {
       await bindPiSessionFile(cwd, options.sessionId, piFile);

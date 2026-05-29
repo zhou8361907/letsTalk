@@ -1,3 +1,11 @@
+/**
+ * 需求草稿内存存储 + 字段校验。
+ *
+ * - 运行时：Map<sessionId, RequirementDraftState>
+ * - 持久化：run-chat 在工具回调时写入 ConversationRecord
+ * - Agent 更新入口：requirement-draft-tools → applyDraftUpdate
+ */
+
 import { randomUUID } from "node:crypto";
 import type {
   RequirementDraftState,

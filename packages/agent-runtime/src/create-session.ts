@@ -25,15 +25,24 @@ import { createRequirementDraftTools } from "./requirement-draft-tools.js";
 /** 阶段 4 Agent 自动记忆暂缓；代码保留，想开再改 true */
 const ENABLE_MEMORY_TOOLS = false;
 
+/**
+ * 内存中缓存的 Pi 会话句柄。
+ * run-chat 按 sessionId 复用，避免每轮重建 AgentSession。
+ */
 export interface PiSessionHandle {
+  /** Pi SDK 会话对象，负责 prompt / subscribe / getContextUsage */
   session: AgentSession;
+  /** 已 resolve 的 WORKSPACE_ROOT */
   cwd: string;
+  /** 如 deepseek/deepseek-chat，用于 SSE session 事件 */
   modelLabel: string;
-  /** Pi 落盘的 jsonl 绝对路径 */
+  /** Pi 多轮上下文 jsonl 的绝对路径 */
   piSessionFile: string;
+  /** 进程内释放 Pi 资源；切换 cwd 或 evict 缓存时调用 */
   dispose: () => void;
 }
 
+/** Pi 内置只读工具 + 我们注册的 list_methods/read_method 名称 */
 const READONLY_TOOLS = [
   "read",
   "grep",
@@ -43,17 +52,29 @@ const READONLY_TOOLS = [
   "read_method",
 ] as const;
 
+export interface CreatePiSessionOptions {
+  /** 已有 jsonl 时 open 恢复多轮上下文；新建会话时由 SessionManager.create */
+  piSessionFile: string;
+  /** 传入后启用 update_requirement_draft（PRD 模式） */
+  sessionId?: string;
+  /** 草稿工具写入 anchorRef 时读取当前锚点 */
+  getAnchorRef?: () => string | null;
+}
+
+/**
+ * 创建或恢复 Pi AgentSession。
+ *
+ * @param cwd WORKSPACE_ROOT
+ * @param useTools false 时等价阶段 0 冒烟（noTools: all）
+ */
 export async function createPiSession(
   cwd: string,
   useTools = true,
-  options?: {
-    piSessionFile: string;
-    sessionId?: string;
-    getAnchorRef?: () => string | null;
-  },
+  options?: CreatePiSessionOptions,
 ): Promise<PiSessionHandle> {
   const workspace = resolve(cwd);
 
+  // 有 piSessionFile → 恢复历史；否则新建（仅内存，落盘在首轮 prompt 后）
   const sessionManager = options?.piSessionFile
     ? SessionManager.open(
         resolve(options.piSessionFile),
@@ -71,6 +92,7 @@ export async function createPiSession(
   const modelRegistry = ModelRegistry.create(authStorage);
 
   const memoryTools = ENABLE_MEMORY_TOOLS ? createMemoryTools(workspace) : [];
+  // 需求草稿工具依赖 sessionId，explore 模式不传则不会注册
   const draftTools =
     useTools && options?.sessionId
       ? createRequirementDraftTools({
@@ -80,6 +102,7 @@ export async function createPiSession(
         })
       : [];
 
+  // toolNames 声明给 Pi 哪些工具可用；customTools 提供 list_methods 等实现
   const toolNames: string[] = [
     ...READONLY_TOOLS,
     ...(ENABLE_MEMORY_TOOLS ? (["save_memory", "read_memory"] as const) : []),

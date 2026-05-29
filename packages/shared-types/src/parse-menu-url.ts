@@ -1,5 +1,11 @@
 /** sys_menu.url 解析结果 */
-export type MenuUrlKind = "hash" | "html" | "path";
+export type MenuUrlKind =
+  /** 门户 hash 路由，如 `#/smc/dictionary` */
+  | "hash"
+  /** 独立 .html 页面路径 */
+  | "html"
+  /** 其它 path 形态 */
+  | "path";
 
 export interface ParsedMenuUrl {
   /** 库表原值，完整菜单 URL */

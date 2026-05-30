@@ -18,6 +18,28 @@ import type {
 import { REQUIREMENT_FIELD_LABELS } from "@lets-talk/shared-types";
 
 const sessions = new Map<string, RequirementDraftState>();
+/** sessionId → 草稿写版本（乐观锁） */
+const draftRevisions = new Map<string, number>();
+
+export function getDraftRevision(sessionId: string): number {
+  return draftRevisions.get(sessionId) ?? 0;
+}
+
+function bumpDraftRevision(sessionId: string): number {
+  const next = getDraftRevision(sessionId) + 1;
+  draftRevisions.set(sessionId, next);
+  return next;
+}
+
+export function initDraftRevision(sessionId: string, fromDraft?: boolean): void {
+  if (!draftRevisions.has(sessionId)) {
+    draftRevisions.set(sessionId, fromDraft ? 1 : 0);
+  }
+}
+
+export function clearDraftRevision(sessionId: string): void {
+  draftRevisions.delete(sessionId);
+}
 
 const MODIFY_KEYS: RequirementFieldKey[] = [
   "page",
@@ -57,6 +79,7 @@ export function getDraft(sessionId: string): RequirementDraftState | undefined {
 
 export function setDraft(sessionId: string, draft: RequirementDraftState): void {
   sessions.set(sessionId, draft);
+  initDraftRevision(sessionId, true);
 }
 
 export function ensureDraft(
@@ -263,49 +286,75 @@ function postProcessItems(
   return list;
 }
 
-export function applyDraftUpdate(
+function mergeDraftItem(existing: RequirementItem, raw: DraftItemInput): RequirementItem {
+  const type: RequirementItemType =
+    raw.type && raw.type !== "unknown" ? raw.type : existing.type;
+  const mergedRaw: Record<string, string> = {};
+  for (const f of existing.fields) {
+    mergedRaw[String(f.key)] = f.value;
+  }
+  if (raw.fields) {
+    for (const [key, value] of Object.entries(raw.fields)) {
+      mergedRaw[key] = value;
+    }
+  }
+  const fields = normalizeFields(type, mergedRaw);
+  return {
+    id: existing.id,
+    title: raw.title?.trim() || existing.title,
+    type,
+    status: raw.status ?? itemReadiness(fields),
+    fields,
+  };
+}
+
+function mapDraftItemInput(
+  raw: DraftItemInput,
+  existingById: Map<string, RequirementItem>,
+  replaceItems: boolean | undefined,
+): RequirementItem {
+  const existingId = raw.id?.trim();
+  if (existingId && !replaceItems && existingById.has(existingId)) {
+    return mergeDraftItem(existingById.get(existingId)!, raw);
+  }
+  const type: RequirementItemType = raw.type ?? "unknown";
+  const fields = normalizeFields(type, raw.fields);
+  return {
+    id: existingId || randomUUID(),
+    title: raw.title.trim() || "未命名需求",
+    type,
+    status: raw.status ?? itemReadiness(fields),
+    fields,
+  };
+}
+
+function buildDraftUpdate(
   sessionId: string,
   anchorRef: string | null,
   input: ApplyDraftInput,
 ): RequirementDraftState {
   const base = ensureDraft(sessionId, anchorRef);
   const now = new Date().toISOString();
+  const existingById = new Map(base.items.map((i) => [i.id, i]));
 
   let items = base.items;
   if (input.items?.length) {
-    const mapped: RequirementItem[] = input.items.map((raw) => {
-      const type: RequirementItemType = raw.type ?? "unknown";
-      const fields = normalizeFields(type, raw.fields);
-      return {
-        id: raw.id?.trim() || randomUUID(),
-        title: raw.title.trim() || "未命名需求",
-        type,
-        status: raw.status ?? itemReadiness(fields),
-        fields,
-      };
-    });
-
     if (input.replaceItems === true) {
-      items = mapped;
-    } else if (input.replaceItems === false) {
-      const byId = new Map(base.items.map((i) => [i.id, i]));
-      for (const m of mapped) {
-        byId.set(m.id, m);
-      }
-      items = [...byId.values()];
-    } else if (base.items.length === 0) {
-      items = mapped;
+      items = input.items.map((raw) =>
+        mapDraftItemInput(raw, existingById, true),
+      );
     } else {
       const byId = new Map(base.items.map((i) => [i.id, i]));
-      for (const m of mapped) {
-        byId.set(m.id, m);
+      for (const raw of input.items) {
+        const merged = mapDraftItemInput(raw, existingById, false);
+        byId.set(merged.id, merged);
       }
       items = [...byId.values()];
     }
     items = postProcessItems(items, anchorRef ?? base.anchorRef);
   }
 
-  const draft: RequirementDraftState = {
+  return {
     ...base,
     updatedAt: now,
     anchorRef: anchorRef ?? base.anchorRef,
@@ -317,8 +366,41 @@ export function applyDraftUpdate(
         : base.blockingQuestion,
     readyToFinalize: input.readyToFinalize ?? base.readyToFinalize,
   };
+}
 
+/** G：modify 条目至少要有 page 或 control（postProcess 之后校验） */
+export function validateDraftUpdateInput(
+  sessionId: string,
+  anchorRef: string | null,
+  input: ApplyDraftInput,
+): string | null {
+  if (!input.items?.length) return null;
+  const preview = buildDraftUpdate(sessionId, anchorRef, input);
+  const problems: string[] = [];
+  for (const item of preview.items) {
+    if (item.type === "add") continue;
+    const page = fieldValue(item, "page");
+    const control = fieldValue(item, "control");
+    if (!page && !control) {
+      problems.push(`「${item.title}」(id=${item.id})`);
+    }
+  }
+  if (!problems.length) return null;
+  return [
+    "ValidationError: modify/unknown 条目须至少填写 page 或 control 之一。",
+    `缺少：${problems.join("；")}`,
+    "请 get_requirement_draft 后补全 fields，或从锚点/对话中填写 page/control。",
+  ].join("\n");
+}
+
+export function applyDraftUpdate(
+  sessionId: string,
+  anchorRef: string | null,
+  input: ApplyDraftInput,
+): RequirementDraftState {
+  const draft = buildDraftUpdate(sessionId, anchorRef, input);
   sessions.set(sessionId, draft);
+  bumpDraftRevision(sessionId);
   return draft;
 }
 

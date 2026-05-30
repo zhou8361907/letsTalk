@@ -13,6 +13,7 @@ export {
   runChat,
   getWorkspaceRoot,
   queryContextUsage,
+  disposePiSession,
   type RunChatOptions,
 } from "./run-chat.js";
 export { generateDevAppendix } from "./generate-dev-appendix.js";

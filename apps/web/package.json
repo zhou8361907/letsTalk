@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "pnpm --filter @lets-talk/conversation build && pnpm --filter @lets-talk/memory build && pnpm --filter @lets-talk/ast-tools build && pnpm --filter @lets-talk/context build && pnpm --filter @lets-talk/agent-runtime build && next dev --port ${PORT:-3000}",
-    "build": "pnpm --filter @lets-talk/conversation build && pnpm --filter @lets-talk/memory build && pnpm --filter @lets-talk/ast-tools build && pnpm --filter @lets-talk/context build && pnpm --filter @lets-talk/agent-runtime build && next build",
+    "dev": "pnpm --filter @lets-talk/shared-types build && pnpm --filter @lets-talk/conversation build && pnpm --filter @lets-talk/memory build && pnpm --filter @lets-talk/ast-tools build && pnpm --filter @lets-talk/context build && pnpm --filter @lets-talk/agent-runtime build && next dev --port ${PORT:-3000}",
+    "build": "pnpm --filter @lets-talk/shared-types build && pnpm --filter @lets-talk/conversation build && pnpm --filter @lets-talk/memory build && pnpm --filter @lets-talk/ast-tools build && pnpm --filter @lets-talk/context build && pnpm --filter @lets-talk/agent-runtime build && next build",
     "start": "next start",
     "lint": "tsc --noEmit"
   },

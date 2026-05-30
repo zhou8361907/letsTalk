@@ -48,4 +48,6 @@ export interface ConversationRecord extends ConversationSummary {
   chatMode?: "explore" | "prd";
   /** PRD 模式下的需求草稿板快照 */
   requirementDraft?: RequirementDraftState | null;
+  /** 用户手动重命名后为 true，save 时不再用首条消息覆盖标题 */
+  titleLocked?: boolean;
 }

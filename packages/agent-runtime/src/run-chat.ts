@@ -1,10 +1,23 @@
 /**
- * 跑一轮对话，并把 Pi 事件转成 SSE 推给浏览器
+ * 跑一轮对话，并把 Pi 事件转成 SSE 推给浏览器。
+ *
+ * 调用链（从外到内）：
+ *   route.ts POST
+ *     → runChat({ onEvent })          ← 本文件
+ *       → getOrCreatePiHandle         ← 复用/恢复 Pi AgentSession
+ *         → createPiSession           ← create-session.ts
+ *       → buildAgentContext           ← @lets-talk/context
+ *       → session.prompt(userText)    ← Pi SDK：调 LLM + 执行 grep/read 等工具
+ *       → session.subscribe           ← Pi 流式事件 → onEvent → SSE
+ *
+ * 持久化分工：
+ *   - Pi 多轮记忆：.agent/conversations/pi/{sessionId}.jsonl（bindPiSessionFile）
+ *   - UI Transcript：.agent/conversations/{sessionId}.json（由前端 PUT，本文件只写 requirementDraft）
  */
 
 import {
-  buildAgentContext,
-  formatAgentContextBlock,
+  buildRulesContext,
+  formatTurnPrefix,
   resolveWorkspaceLayout,
 } from "@lets-talk/context";
 import {
@@ -37,19 +50,36 @@ import {
   emptyDraft,
   ensureDraft,
   getDraft,
+  getDraftRevision,
+  initDraftRevision,
   setDraft,
+  clearDraftRevision,
 } from "./requirement-draft-store.js";
 import { setDraftListener } from "./requirement-draft-runtime.js";
+import {
+  clearSessionContext,
+} from "./session-context.js";
+import { buildTurnPromptPrefix } from "./turn-prefix.js";
 
-/** 进程内 Pi 会话缓存：sessionId → handle（Next dev HMR 后仍靠 jsonl 恢复） */
+// ─── 进程内状态（Next dev HMR 后 Map 会清空，靠 jsonl + conversation JSON 恢复）───
+
+/** sessionId → Pi 句柄；同一会话多轮对话复用，避免重复 createAgentSession */
 const sessions = new Map<string, PiSessionHandle>();
-/** 每会话当前锚点 ref，供 createRequirementDraftTools 的 getAnchorRef 读取 */
+/**
+ * sessionId → 当前锚点 ref。
+ * createRequirementDraftTools 通过 getAnchorRef 闭包读取，工具执行时可能晚于 runChat 入参。
+ */
 const liveAnchorRefs = new Map<string, string | null>();
+/** sessionId → 完整锚点（供 get_anchor_preview） */
+const liveAnchors = new Map<string, AgentAnchor | null>();
+
+// ─── 小工具函数 ─────────────────────────────────────────────────────────────
 
 function anchorRefFrom(anchor: AgentAnchor | null | undefined): string | null {
   return anchor?.ref?.trim() || null;
 }
 
+/** PRD 模式：把草稿 + 底部建议动作一次性推给前端（两条 SSE） */
 function emitDraftEvents(
   draft: RequirementDraftState,
   onEvent: (event: SseEvent) => void,
@@ -58,6 +88,7 @@ function emitDraftEvents(
   onEvent({ type: "agent_actions", actions: buildAgentActions(draft) });
 }
 
+/** 工具改草稿后异步写入 conversation JSON（不碰 items，那是前端 PUT 负责） */
 async function persistDraft(
   cwd: string,
   sessionId: string,
@@ -75,17 +106,21 @@ async function persistDraft(
 }
 
 /**
- * 获取或创建 Pi 句柄。
- * cwd 变化时 dispose 旧句柄；从 conversation JSON 恢复 piSessionFile 与 requirementDraft。
+ * 获取或创建 Pi 句柄（Agent 实例）。
+ *
+ * 命中缓存：同 sessionId + 同 cwd → 直接返回，保留内存中的 AgentSession。
+ * 未命中：dispose 旧句柄 → 读 conversation JSON → SessionManager.open(jsonl) → createPiSession。
  */
 async function getOrCreatePiHandle(
   sessionId: string,
   cwd: string,
   useTools: boolean,
   anchorRef: string | null,
+  chatMode: ChatMode,
+  anchor: AgentAnchor | null,
 ): Promise<PiSessionHandle> {
   let handle = sessions.get(sessionId);
-  if (handle && handle.cwd === cwd) {
+  if (handle && handle.cwd === cwd && handle.chatMode === chatMode) {
     return handle;
   }
 
@@ -98,6 +133,8 @@ async function getOrCreatePiHandle(
     record?.piSessionFile,
   );
 
+  // 内存草稿与磁盘对齐，供 get_requirement_draft / update_requirement_draft 使用
+  initDraftRevision(sessionId, Boolean(record?.requirementDraft?.items?.length));
   if (record?.requirementDraft) {
     setDraft(sessionId, record.requirementDraft);
   } else {
@@ -107,10 +144,24 @@ async function getOrCreatePiHandle(
   handle = await createPiSession(cwd, useTools, {
     piSessionFile,
     sessionId,
+    chatMode,
     getAnchorRef: () => liveAnchorRefs.get(sessionId) ?? null,
+    getAnchor: () => liveAnchors.get(sessionId) ?? null,
   });
   sessions.set(sessionId, handle);
   return handle;
+}
+
+/** 删除会话时释放 Pi 句柄与进程内上下文 */
+export function disposePiSession(sessionId: string): void {
+  const handle = sessions.get(sessionId);
+  handle?.dispose();
+  sessions.delete(sessionId);
+  liveAnchorRefs.delete(sessionId);
+  liveAnchors.delete(sessionId);
+  clearSessionContext(sessionId);
+  clearDraftRevision(sessionId);
+  setDraftListener(sessionId, null);
 }
 
 export function getWorkspaceLayout() {
@@ -128,7 +179,10 @@ export function getWorkspaceRoot(): string {
   return getWorkspaceLayout().workspaceRoot;
 }
 
-/** 将 Pi 原生事件转为前端消费的 SseEvent；未映射的类型返回 null */
+/**
+ * Pi SDK 原生事件 → 前端 SseEvent。
+ * 只映射 UI 需要展示的几类；其余 Pi 事件忽略。
+ */
 function piEventToSse(event: unknown): SseEvent | null {
   const e = event as Record<string, unknown>;
 
@@ -166,41 +220,56 @@ function piEventToSse(event: unknown): SseEvent | null {
   return null;
 }
 
-/** runChat 的入参；onEvent 由 API route 写入 SSE */
+/** runChat 的入参；onEvent 由 API route 编码为 SSE 行 */
 export interface RunChatOptions {
   sessionId: string;
+  /** 用户原始输入；JIT 前缀在内部拼接，不会改写此字段的持久化 */
   message: string;
   useTools?: boolean;
   anchor?: AgentAnchor | null;
   chatMode?: ChatMode;
+  /** 每产生一个 SseEvent 调用一次；route.ts 里对应 enqueue → ReadableStream */
   onEvent: (event: SseEvent) => void;
 }
 
 /**
- * 执行一轮 Agent 对话的主入口。
+ * 执行一轮 Agent 对话的主入口（用户点一次「发送」= 调用一次）。
  *
- * 流程：恢复 Pi → 订阅事件 → buildAgentContext → session.prompt → turn_end
- * PRD 模式下工具更新草稿会通过 onEvent 推送 requirement_state。
+ * 阶段概览：
+ *   1. 准备：草稿 listener、取 Pi session
+ *   2. 预热 SSE：session / context_usage /（prd）requirement_state
+ *   3. 订阅 Pi 事件（在 prompt 之前注册，否则丢流式 delta）
+ *   4. 组装 JIT 上下文 → session.prompt（此处进入 Pi SDK 黑盒）
+ *   5. 收尾：turn_end、调试日志、bindPiSessionFile
  */
 export async function runChat(options: RunChatOptions): Promise<void> {
   const layout = getWorkspaceLayout();
   const cwd = layout.workspaceRoot;
   const useTools = options.useTools ?? true;
+  const chatMode = options.chatMode ?? "explore";
   const anchorRef = anchorRefFrom(options.anchor);
 
+  // ── 阶段 1a：PRD 草稿旁路 ──────────────────────────────────────────────
+  // update_requirement_draft 工具不走 piEventToSse，而是 notifyDraftUpdated → 这里
   const onDraftUpdated = (draft: RequirementDraftState) => {
     emitDraftEvents(draft, options.onEvent);
-    void persistDraft(cwd, options.sessionId, draft);
+    void persistDraft(cwd, options.sessionId, draft).catch(() => {
+      // 落盘失败不阻断 SSE；下轮 GET 仍可从内存 store 恢复
+    });
   };
 
   setDraftListener(options.sessionId, onDraftUpdated);
   liveAnchorRefs.set(options.sessionId, anchorRef);
+  liveAnchors.set(options.sessionId, options.anchor ?? null);
 
+  // ── 阶段 1b：取 Pi AgentSession（创建逻辑在 create-session.ts）──────────
   const handle = await getOrCreatePiHandle(
     options.sessionId,
     cwd,
     useTools,
     anchorRef,
+    chatMode,
+    options.anchor ?? null,
   );
   const { session, modelLabel } = handle;
 
@@ -210,6 +279,7 @@ export async function runChat(options: RunChatOptions): Promise<void> {
     emitDraftEvents(initialDraft, options.onEvent);
   }
 
+  // ── 阶段 2：prompt 前的 SSE 握手 ───────────────────────────────────────
   options.onEvent({
     type: "session",
     sessionId: options.sessionId,
@@ -226,8 +296,11 @@ export async function runChat(options: RunChatOptions): Promise<void> {
   const debugTools: DebugToolRecord[] = [];
   let debugAssistant = "";
 
+  // ── 阶段 3：订阅 Pi（必须在 prompt 之前；prompt 期间异步推送）────────────
   const unsub = session.subscribe((piEvent: unknown) => {
     const e = piEvent as Record<string, unknown>;
+
+    // 下面三块仅服务于 LETS_TALK_DEBUG 落盘，与 SSE 无关
     if (e.type === "message_update") {
       const inner = e.assistantMessageEvent as { type?: string; delta?: string };
       if (inner?.type === "text_delta" && inner.delta) {
@@ -262,50 +335,45 @@ export async function runChat(options: RunChatOptions): Promise<void> {
       else debugTools.push(rec);
     }
 
+    // 转成 SseEvent 推给浏览器
     const sse = piEventToSse(piEvent);
     if (sse) options.onEvent(sse);
   });
 
   try {
-    const ctx = await buildAgentContext({
+    // ── 阶段 4a：V1 上下文 — 普通轮仅 pointer；首条 / 切模式才 Rule Push ──
+    const turnCtx = await buildTurnPromptPrefix({
+      sessionId: options.sessionId,
       layout,
+      chatMode,
       anchor: options.anchor ?? null,
-      chatMode: options.chatMode ?? "explore",
-      requirementDraft:
-        options.chatMode === "prd"
-          ? (getDraft(options.sessionId) ?? initialDraft)
-          : null,
+      draftRevision: getDraftRevision(options.sessionId),
     });
-    const previewLines = ctx.anchor_preview_content
-      ? ctx.anchor_preview_content.split("\n").length
-      : 0;
+    const prefix = turnCtx.prefix;
     options.onEvent({
       type: "context",
-      mode: ctx.mode,
-      anchorRef: ctx.anchor?.ref ?? null,
-      previewLines,
+      mode: turnCtx.mode,
+      anchorRef: turnCtx.anchorRef,
+      previewLines: 0,
     });
-
-    // JIT 上下文拼在用户消息前；Pi 仍把整段当 user turn 写入 jsonl
-    const prefix = formatAgentContextBlock(ctx);
     const userText = prefix.trim()
       ? `${prefix}\n\n${options.message}`
       : options.message;
 
-    const draftForLog =
-      options.chatMode === "prd"
-        ? (getDraft(options.sessionId) ?? initialDraft)
-        : null;
-
     await logTurnRequest(cwd, options.sessionId, turnId, {
-      chatMode: options.chatMode ?? "explore",
+      chatMode,
       anchor: options.anchor ?? null,
       userMessage: options.message,
       contextBlock: prefix,
-      requirementDraft: draftForLog,
+      requirementDraft:
+        chatMode === "prd" ? (getDraft(options.sessionId) ?? initialDraft) : null,
     });
 
+    // ── 阶段 4b：进入 Pi SDK ─────────────────────────────────────────────
+    // 内部：调 LLM → 可能多轮 tool_execution（grep/read/…）→ subscribe 推事件
+    // 本仓库在此行之后无代码，直到 prompt Promise resolve
     await session.prompt(userText);
+
     emitContextUsage(session, (snap) => {
       options.onEvent({ type: "context_usage", ...snap });
     });
@@ -317,9 +385,7 @@ export async function runChat(options: RunChatOptions): Promise<void> {
       tools: debugTools,
       contextUsage: usageSnap,
       requirementDraftAfter:
-        options.chatMode === "prd"
-          ? (getDraft(options.sessionId) ?? null)
-          : null,
+        chatMode === "prd" ? (getDraft(options.sessionId) ?? null) : null,
     });
   } catch (err) {
     const usageSnap = snapshotContextUsage(session);
@@ -328,16 +394,15 @@ export async function runChat(options: RunChatOptions): Promise<void> {
       tools: debugTools,
       contextUsage: usageSnap,
       requirementDraftAfter:
-        options.chatMode === "prd"
-          ? (getDraft(options.sessionId) ?? null)
-          : null,
+        chatMode === "prd" ? (getDraft(options.sessionId) ?? null) : null,
       error: err instanceof Error ? err.message : String(err),
     });
     throw err;
   } finally {
+    // ── 阶段 5：清理 ─────────────────────────────────────────────────────
     unsub();
     setDraftListener(options.sessionId, null);
-    // 首轮 prompt 后 Pi 可能生成新 jsonl 路径，写回 conversation JSON 供下次 open
+    // 把 jsonl 路径写回 conversation JSON，下次 getOrCreatePiHandle 可 SessionManager.open
     const piFile = session.sessionFile ?? handle.piSessionFile;
     if (piFile) {
       await bindPiSessionFile(cwd, options.sessionId, piFile);
@@ -345,6 +410,7 @@ export async function runChat(options: RunChatOptions): Promise<void> {
   }
 }
 
+/** 会话切换时查询 token 占用；无内存缓存则短暂 open jsonl 后释放 */
 export function queryContextUsage(sessionId: string) {
   return getContextUsageForSession(sessionId, sessions);
 }

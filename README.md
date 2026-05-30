@@ -5,6 +5,11 @@
 ## 文档
 
 - **代码结构导读（中文）**：[docs/CODEBASE_GUIDE.md](docs/CODEBASE_GUIDE.md) — 目录、关键文件、请求链路
+- **Cursor 调试指南**：[docs/DEBUG_GUIDE.md](docs/DEBUG_GUIDE.md) — 断点跟读：普通对话、需求清单、关键路径
+- **TypeScript 语法导读（初学者）**：[docs/TYPESCRIPT_FOR_BEGINNERS.md](docs/TYPESCRIPT_FOR_BEGINNERS.md) — 本项目常用 TS 写法详解
+- **TypeScript 进阶（事件与深层写法）**：[docs/TYPESCRIPT_DEEP_DIVE.md](docs/TYPESCRIPT_DEEP_DIVE.md) — Pi/SSE/Transcript 三层事件、Extract、类型谓词
+- **按功能学 TypeScript**：[docs/TYPESCRIPT_BY_FEATURE.md](docs/TYPESCRIPT_BY_FEATURE.md) — 顺着探索/锚点/PRD 等功能查该学哪些语法
+- **发消息 + SSE 详解**：[docs/FEATURE_00_SEND_AND_SSE.md](docs/FEATURE_00_SEND_AND_SSE.md) — 功能 0 专题（初学者向）
 - 总设计：[docs/AGENT_OS_DESIGN.md](docs/AGENT_OS_DESIGN.md)
 - 分阶段进度：[docs/IMPLEMENTATION_PHASES.md](docs/IMPLEMENTATION_PHASES.md)
 - PM 需求助手方案：[docs/PM_REQUIREMENT_ASSISTANT.md](docs/PM_REQUIREMENT_ASSISTANT.md)

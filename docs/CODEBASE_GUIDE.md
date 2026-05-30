@@ -44,6 +44,36 @@ sequenceDiagram
 
 ---
 
+sequenceDiagram
+  participant U as 用户
+  participant P as page.tsx send()
+  participant R as route.ts POST
+  participant RC as runChat()
+  participant G as getOrCreatePiHandle
+  participant CS as createPiSession
+  participant Pi as AgentSession (Pi SDK)
+  participant LLM as DeepSeek API
+  participant T as grep/read/工具
+
+  U->>P: 点击发送
+  P->>R: fetch POST /api/agent/chat/stream
+  R->>RC: runChat({ onEvent: enqueue })
+  RC->>G: 取/建 Pi 句柄
+  G->>CS: createPiSession
+  CS->>Pi: createAgentSession
+  RC->>RC: buildAgentContext + subscribe
+  RC->>Pi: session.prompt(userText)
+  Pi->>LLM: 多轮推理
+  Pi->>T: tool_execution
+  T-->>Pi: 工具结果
+  Pi-->>RC: subscribe 事件
+  RC-->>R: onEvent(SseEvent)
+  R-->>P: SSE data: {...}
+  P->>P: 更新 Transcript UI
+  RC->>RC: turn_end, bindPiSessionFile
+  P->>P: PUT /api/conversations/:id 持久化 UI 历史
+
+
 ## 3. 目录结构（只看这些）
 
 ```text
@@ -293,12 +323,18 @@ pnpm sync-menu         # 同步菜单到 .agent/menu-map/
 
 ---
 
-## 14. 进一步阅读
+## 相关文档
 
 | 文档 | 何时看 |
 |------|--------|
 | [AGENT_OS_DESIGN.md](./AGENT_OS_DESIGN.md) | 架构决策、契约、原则 |
+| [CONTEXT_MANAGEMENT_V1.md](./CONTEXT_MANAGEMENT_V1.md) | **上下文 V1 推荐方案**（Pointer + Pull + 乐观锁，评审稿） |
 | [IMPLEMENTATION_PHASES.md](./IMPLEMENTATION_PHASES.md) | 阶段验收与 backlog |
+| [DEBUG_GUIDE.md](./DEBUG_GUIDE.md) | Cursor 断点跟读：普通对话、需求清单 |
+| [TYPESCRIPT_BY_FEATURE.md](./TYPESCRIPT_BY_FEATURE.md) | **按功能学语法**：探索 / 锚点 / PRD / 会话… |
+| [TYPESCRIPT_FOR_BEGINNERS.md](./TYPESCRIPT_FOR_BEGINNERS.md) | 本项目常用 TypeScript 语法（初学者） |
+| [TYPESCRIPT_DEEP_DIVE.md](./TYPESCRIPT_DEEP_DIVE.md) | 事件体系、联合类型进阶、类型谓词 |
+| [DEBUG_LOGGING.md](./DEBUG_LOGGING.md) | `LETS_TALK_DEBUG` 落盘日志 |
 | [PI_SDK_NODE_INTEGRATION.md](./PI_SDK_NODE_INTEGRATION.md) | Pi API 细节 |
 | [PM_REQUIREMENT_ASSISTANT.md](./PM_REQUIREMENT_ASSISTANT.md) | 写需求模式产品方案 |
 | [AGENTS.md](../AGENTS.md) | 注入模型的运行时规则（与代码同步维护） |

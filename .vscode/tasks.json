@@ -1,0 +1,14 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "letsTalk: build packages",
+      "type": "shell",
+      "command": "pnpm --filter @lets-talk/shared-types build && pnpm --filter @lets-talk/conversation build && pnpm --filter @lets-talk/memory build && pnpm --filter @lets-talk/ast-tools build && pnpm --filter @lets-talk/context build && pnpm --filter @lets-talk/agent-runtime build",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

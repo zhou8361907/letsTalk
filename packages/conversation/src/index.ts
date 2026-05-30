@@ -6,6 +6,7 @@ export {
   deriveTitle,
   getConversation,
   listConversations,
+  renameConversation,
   saveConversation,
   bindPiSessionFile,
 } from "./store.js";

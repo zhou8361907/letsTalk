@@ -12,9 +12,12 @@ import {
   isDebugLoggingEnabled,
   logDraftUpdate,
 } from "./debug-logger.js";
+import { logDraftIo } from "./draft-io-log.js";
 import {
   applyDraftUpdate,
   getDraft,
+  getDraftRevision,
+  validateDraftUpdateInput,
   type ApplyDraftInput,
 } from "./requirement-draft-store.js";
 
@@ -37,6 +40,9 @@ const itemSchema = Type.Object({
 });
 
 const params = Type.Object({
+  draftRevision: Type.Number({
+    description: "必须先 get_requirement_draft 取得当前 draftRevision",
+  }),
   items: Type.Optional(Type.Array(itemSchema)),
   openQuestions: Type.Optional(Type.Array(Type.String())),
   blockingQuestion: Type.Optional(
@@ -64,14 +70,17 @@ export function createRequirementDraftTools(options: {
     promptSnippet: "update_requirement_draft — 同步需求清单（业务语言）",
     promptGuidelines: [
       "读者是不懂代码的 PM：右侧只写业务话。",
-      "requirement_draft_snapshot 里有 id：更新时必须带上，在同一页/同一需求上改，勿新建空第二条。",
+      "写前必须先 get_requirement_draft 取得 draftRevision 与条目 id。",
+      "小补充：带 id，可只传要改的 fields，未传字段会保留。",
       "PM 一件事 = 1 条；禁止「后端支持xxx」单独成条，后端写 codePaths。",
-      "modify 改现有：page、control、asIs、toBe、acceptance。",
-      "PM 大改 replaceItems: true；小补充 merge 并带 id。",
+      "modify 改现有：至少填 page 或 control 之一，以及 asIs/toBe/acceptance。",
+      "PM 大改 replaceItems: true 且须传全量 items+fields；勿 replace 后漏字段。",
+      "换菜单/换页后清单默认保留，勿擅自清空。",
     ],
     parameters: params,
     execute: async (_id, raw) => {
       const p = raw as ApplyDraftInput & {
+        draftRevision?: number;
         items?: Array<{
           id?: string;
           title: string;
@@ -80,8 +89,59 @@ export function createRequirementDraftTools(options: {
         }>;
       };
 
+      const expected = getDraftRevision(options.sessionId);
+      if (p.draftRevision !== expected) {
+        const textOut = [
+          "RevisionMismatch",
+          `Current draftRevision = ${expected}`,
+          "Please call get_requirement_draft() before updating.",
+        ].join("\n");
+        await logDraftIo(
+          options.workspaceRoot,
+          options.sessionId,
+          "update_revision_mismatch",
+          {
+            input: raw,
+            output: textOut,
+            error: "RevisionMismatch",
+          },
+        );
+        return {
+          content: [{ type: "text", text: textOut }],
+          details: undefined,
+        };
+      }
+
       const before = getDraft(options.sessionId) ?? null;
       const anchorRef = options.getAnchorRef();
+
+      const validationError = validateDraftUpdateInput(
+        options.sessionId,
+        anchorRef,
+        {
+          items: p.items,
+          openQuestions: p.openQuestions,
+          blockingQuestion: p.blockingQuestion,
+          readyToFinalize: p.readyToFinalize,
+          replaceItems: p.replaceItems,
+        },
+      );
+      if (validationError) {
+        await logDraftIo(
+          options.workspaceRoot,
+          options.sessionId,
+          "update_requirement_draft",
+          {
+            input: raw,
+            output: validationError,
+            error: "ValidationError",
+          },
+        );
+        return {
+          content: [{ type: "text", text: validationError }],
+          details: undefined,
+        };
+      }
 
       const draft = applyDraftUpdate(options.sessionId, anchorRef, {
         items: p.items,
@@ -110,22 +170,28 @@ export function createRequirementDraftTools(options: {
         )
         .join("\n");
 
+      const textOut = [
+        "已更新需求草稿板。",
+        `draftRevision: ${getDraftRevision(options.sessionId)}`,
+        summary || "（暂无条目）",
+        draft.blockingQuestion ? `阻断问题：${draft.blockingQuestion}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n");
+
+      await logDraftIo(
+        options.workspaceRoot,
+        options.sessionId,
+        "update_requirement_draft",
+        {
+          input: raw,
+          output: textOut,
+        },
+      );
+
       return {
-        content: [
-          {
-            type: "text",
-            text: [
-              "已更新需求草稿板。",
-              summary || "（暂无条目）",
-              draft.blockingQuestion
-                ? `阻断问题：${draft.blockingQuestion}`
-                : "",
-            ]
-              .filter(Boolean)
-              .join("\n"),
-          },
-        ],
-        details: draft,
+        content: [{ type: "text", text: textOut }],
+        details: { draft, draftRevision: getDraftRevision(options.sessionId) },
       };
     },
   });

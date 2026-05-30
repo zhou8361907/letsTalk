@@ -78,6 +78,8 @@ export default function HomePage() {
   const [requirementDraft, setRequirementDraft] =
     useState<RequirementDraftState | null>(null);
   const [agentActions, setAgentActions] = useState<AgentAction[]>([]);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
   const [workspace, setWorkspace] = useState<{
     root: string | null;
     front: string | null;
@@ -118,10 +120,17 @@ export default function HomePage() {
       const record = (await res.json()) as {
         requirementDraft?: RequirementDraftState | null;
       };
-      const draft = record.requirementDraft ?? null;
-      setRequirementDraft(draft);
-      requirementDraftRef.current = draft;
-      setAgentActions(buildAgentActionsFromDraft(draft));
+      const remote = record.requirementDraft ?? null;
+      const local = requirementDraftRef.current;
+      // 避免 turn 结束时 GET 早于 persistDraft，用旧/空数据覆盖 SSE 刚推的新草稿
+      if (local?.updatedAt && remote?.updatedAt) {
+        if (remote.updatedAt < local.updatedAt) return;
+      } else if (local?.items?.length && !remote?.items?.length) {
+        return;
+      }
+      setRequirementDraft(remote);
+      requirementDraftRef.current = remote;
+      setAgentActions(buildAgentActionsFromDraft(remote));
     } catch {
       // ignore
     }
@@ -161,12 +170,16 @@ export default function HomePage() {
     async (snapshot?: TranscriptItem[]) => {
       const sid = sessionIdRef.current;
       if (!sid) return;
-      const body = {
+      const draft = requirementDraftRef.current;
+      const body: Record<string, unknown> = {
         items: snapshot ?? itemsRef.current,
         anchor: anchorRef.current,
         chatMode: chatModeRef.current,
-        requirementDraft: requirementDraftRef.current,
       };
+      // 仅在有草稿时写入；避免 null 覆盖服务端 Agent 刚 persist 的清单
+      if (draft) {
+        body.requirementDraft = draft;
+      }
       await fetch(`/api/conversations/${sid}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -235,6 +248,7 @@ export default function HomePage() {
   const switchConversation = useCallback(
     async (id: string) => {
       if (busy || id === sessionIdRef.current) return;
+      setRenamingId(null);
       await persistCurrent();
       const res = await fetch(`/api/conversations/${id}`);
       if (!res.ok) return;
@@ -246,6 +260,40 @@ export default function HomePage() {
       applyConversation(record);
     },
     [applyConversation, busy, persistCurrent],
+  );
+
+  const commitRename = useCallback(
+    async (id: string, title: string) => {
+      const t = title.trim();
+      setRenamingId(null);
+      if (!t) return;
+      const res = await fetch(`/api/conversations/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: t }),
+      });
+      if (res.ok) await refreshConversationList();
+    },
+    [refreshConversationList],
+  );
+
+  const deleteConversationById = useCallback(
+    async (id: string) => {
+      if (busy) return;
+      if (!window.confirm("确定删除此对话？删除后不可恢复。")) return;
+      const wasCurrent = id === sessionIdRef.current;
+      const res = await fetch(`/api/conversations/${id}`, { method: "DELETE" });
+      if (!res.ok) return;
+      const list = await refreshConversationList();
+      if (wasCurrent) {
+        if (list.length > 0) {
+          await switchConversation(list[0]!.sessionId);
+        } else {
+          await startNewConversation();
+        }
+      }
+    },
+    [busy, refreshConversationList, startNewConversation, switchConversation],
   );
 
   const setChatModePersist = useCallback((mode: ChatMode) => {
@@ -436,6 +484,8 @@ export default function HomePage() {
         buffer = lines.pop() ?? "";
 
         for (const line of lines) {
+          //打印每一行完整信息
+          console.log("stream返回line", line);
           if (!line.startsWith("data: ")) continue;
           const payload = line.slice(6).trim();
           if (!payload) continue;
@@ -487,7 +537,7 @@ export default function HomePage() {
           } else if (event.type === "agent_actions") {
             setAgentActions(event.actions);
           } else if (event.type === "turn_end") {
-            await refreshRequirementDraft(sid);
+            // 草稿以 requirement_state SSE 为准；不在此 GET，避免竞态覆盖
           } else if (event.type === "error") {
             throw new Error(event.message);
           }
@@ -504,10 +554,9 @@ export default function HomePage() {
     } finally {
       setBusy(false);
       itemsRef.current = snapshot;
-      await refreshRequirementDraft(sid);
       await persistCurrent(snapshot);
     }
-  }, [appendAssistantDelta, busy, input, persistCurrent, refreshRequirementDraft]);
+  }, [appendAssistantDelta, busy, input, persistCurrent]);
 
   const applyManualAnchor = () => {
     const ref = manualPath.trim().replace(/^\/+/, "");
@@ -543,18 +592,68 @@ export default function HomePage() {
               <div className="conv-group-label">{g.label}</div>
               <ul className="conv-list">
                 {g.sessions.map((c) => (
-                  <li key={c.sessionId}>
-                    <button
-                      type="button"
-                      className={
-                        c.sessionId === sessionId ? "conv-item active" : "conv-item"
-                      }
-                      onClick={() => void switchConversation(c.sessionId)}
-                      disabled={busy}
-                      title={c.title}
-                    >
-                      {c.title}
-                    </button>
+                  <li key={c.sessionId} className="conv-row">
+                    {renamingId === c.sessionId ? (
+                      <input
+                        className="conv-rename-input"
+                        value={renameValue}
+                        autoFocus
+                        disabled={busy}
+                        onChange={(e) => setRenameValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            void commitRename(c.sessionId, renameValue);
+                          }
+                          if (e.key === "Escape") setRenamingId(null);
+                        }}
+                        onBlur={() => void commitRename(c.sessionId, renameValue)}
+                      />
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className={
+                            c.sessionId === sessionId
+                              ? "conv-item active"
+                              : "conv-item"
+                          }
+                          onClick={() => void switchConversation(c.sessionId)}
+                          disabled={busy}
+                          title={c.title}
+                        >
+                          {c.title}
+                        </button>
+                        <div className="conv-actions">
+                          <button
+                            type="button"
+                            className="conv-action-btn"
+                            title="重命名"
+                            disabled={busy}
+                            aria-label="重命名"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRenamingId(c.sessionId);
+                              setRenameValue(c.title);
+                            }}
+                          >
+                            ✎
+                          </button>
+                          <button
+                            type="button"
+                            className="conv-action-btn conv-action-delete"
+                            title="删除"
+                            disabled={busy}
+                            aria-label="删除"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void deleteConversationById(c.sessionId);
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -854,9 +953,19 @@ export default function HomePage() {
           margin: 0;
           padding: 0;
         }
+        .conv-row {
+          display: flex;
+          align-items: center;
+          gap: 0.15rem;
+          margin-bottom: 2px;
+        }
+        .conv-row:hover .conv-actions {
+          opacity: 1;
+        }
         .conv-item {
+          flex: 1;
+          min-width: 0;
           display: block;
-          width: 100%;
           text-align: left;
           padding: 0.4rem 0.5rem;
           border: none;
@@ -868,6 +977,41 @@ export default function HomePage() {
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+        }
+        .conv-actions {
+          display: flex;
+          flex-shrink: 0;
+          opacity: 0.35;
+          gap: 0.1rem;
+        }
+        .conv-action-btn {
+          width: 1.35rem;
+          height: 1.35rem;
+          padding: 0;
+          border: none;
+          border-radius: 4px;
+          background: transparent;
+          color: var(--muted);
+          font-size: 12px;
+          line-height: 1;
+          cursor: pointer;
+        }
+        .conv-action-btn:hover:not(:disabled) {
+          background: var(--panel);
+          color: var(--text);
+        }
+        .conv-action-delete:hover:not(:disabled) {
+          color: #f85149;
+        }
+        .conv-rename-input {
+          flex: 1;
+          min-width: 0;
+          font-size: 12px;
+          padding: 0.35rem 0.45rem;
+          background: var(--panel);
+          border: 1px solid var(--accent);
+          color: var(--text);
+          border-radius: 6px;
         }
         .conv-item:hover:not(:disabled) {
           background: var(--panel);

@@ -1,5 +1,9 @@
 {
   "git.openRepositoryInParentFolders": "never",
   "git.autoRepositoryDetection": true,
-  "git.scanRepositories": ["."]
+  "git.scanRepositories": [
+    "."
+  ],
+  "java.compile.nullAnalysis.mode": "automatic",
+  "debug.javascript.autoAttachFilter": "disabled"
 }

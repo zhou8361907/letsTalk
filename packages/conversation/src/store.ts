@@ -10,6 +10,7 @@ import type {
 import type { AgentAnchor } from "@lets-talk/shared-types";
 import {
   ensurePiSessionsDir,
+  piSessionFilePath,
   relativePiSessionFile,
   toWorkspaceRelativePath,
 } from "./pi-session.js";
@@ -133,15 +134,18 @@ export async function saveConversation(
   const existing = await getConversation(workspaceRoot, input.sessionId);
   const now = new Date().toISOString();
   const items = input.items;
-  const title =
-    input.title?.trim() ||
-    deriveTitle(items, existing?.title ?? DEFAULT_TITLE);
+  const title = (() => {
+    if (input.title?.trim()) return input.title.trim();
+    if (existing?.titleLocked && existing.title) return existing.title;
+    return deriveTitle(items, existing?.title ?? DEFAULT_TITLE);
+  })();
 
   const record: ConversationRecord = {
     sessionId: input.sessionId,
     title: title || DEFAULT_TITLE,
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
+    titleLocked: existing?.titleLocked,
     anchor: input.anchor !== undefined ? input.anchor : (existing?.anchor ?? null),
     items,
     piSessionFile:
@@ -153,7 +157,7 @@ export async function saveConversation(
         ? input.chatMode
         : (existing?.chatMode ?? "explore"),
     requirementDraft:
-      input.requirementDraft !== undefined
+      input.requirementDraft != null
         ? input.requirementDraft
         : (existing?.requirementDraft ?? null),
   };
@@ -187,14 +191,48 @@ export async function bindPiSessionFile(
   });
 }
 
+export async function renameConversation(
+  workspaceRoot: string,
+  sessionId: string,
+  title: string,
+): Promise<ConversationRecord | null> {
+  const existing = await getConversation(workspaceRoot, sessionId);
+  if (!existing) return null;
+  const next = title.trim();
+  if (!next) {
+    throw new Error("标题不能为空");
+  }
+  const now = new Date().toISOString();
+  const record: ConversationRecord = {
+    ...existing,
+    title: next,
+    titleLocked: true,
+    updatedAt: now,
+  };
+  await writeFile(
+    conversationPath(workspaceRoot, sessionId),
+    JSON.stringify(record, null, 2),
+    "utf8",
+  );
+  return record;
+}
+
+/** 删除会话 JSON 与 Pi jsonl */
 export async function deleteConversation(
   workspaceRoot: string,
   sessionId: string,
 ): Promise<boolean> {
+  let deleted = false;
   try {
     await unlink(conversationPath(workspaceRoot, sessionId));
-    return true;
+    deleted = true;
   } catch {
-    return false;
+    // json may already be gone
   }
+  try {
+    await unlink(piSessionFilePath(workspaceRoot, sessionId));
+  } catch {
+    // pi file optional
+  }
+  return deleted;
 }

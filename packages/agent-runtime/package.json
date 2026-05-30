@@ -7,6 +7,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./draft-io-log": {
+      "types": "./dist/draft-io-log.d.ts",
+      "import": "./dist/draft-io-log.js"
     }
   },
   "scripts": {

@@ -32,3 +32,31 @@ export function formatRequirementDraftSnapshot(
 
   return lines.join("\n");
 }
+
+/** C1：每轮 prefix 用的紧凑摘要（id | title | page | control） */
+export function formatRequirementDraftBriefSummary(
+  draft: RequirementDraftState | null | undefined,
+  maxItems = 8,
+): string {
+  if (!draft?.items.length) return "";
+  const lines: string[] = [
+    "当前需求清单摘要（更新时须带 id；未传 fields 会保留旧值；详情请 get_requirement_draft）：",
+  ];
+  for (const it of draft.items.slice(0, maxItems)) {
+    const page =
+      it.fields.find((f) => f.key === "page")?.value.trim() ?? "";
+    const control =
+      it.fields.find((f) => f.key === "control")?.value.trim() ?? "";
+    const bits = [
+      `id=${it.id}`,
+      `title=${it.title}`,
+      page ? `page=${page}` : "",
+      control ? `control=${control}` : "",
+    ].filter(Boolean);
+    lines.push(`- ${bits.join(" | ")}`);
+  }
+  if (draft.items.length > maxItems) {
+    lines.push(`… 另有 ${draft.items.length - maxItems} 条，请 get_requirement_draft`);
+  }
+  return lines.join("\n");
+}

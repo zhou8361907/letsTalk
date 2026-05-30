@@ -55,7 +55,7 @@
 | 1 | **M1 做 Anchor UI** | 用户可在页面上选择/切换锚点，不只靠 API 传参 |
 | 2 | **记忆跟着项目走** | 路径固定为 `{WORKSPACE_ROOT}/.agent/memory/`；**按用户存储**为远期（M4+），当前不设计 |
 | 3 | **搜索：Agent 自主 grep/find** | 与 Claude Code / Pi 默认一致；**不在 server 替模型做 memory rg**（§5.2、§6.3） |
-| 4 | **Anchor 送文件头** | JIT 注入 `anchor_preview_content`（前 150 行），减少首轮 read 往返（§4.1） |
+| 4 | **Anchor 送文件头** | 现网：JIT 注入 `anchor_preview_content`（前 150 行）。**演进：** 见 [CONTEXT_MANAGEMENT_V1.md](./CONTEXT_MANAGEMENT_V1.md)（State Pointer + `get_anchor_preview` Pull，待评审） |
 | 5 | **Java 用 AST 工具** | `list_methods` / `read_method` 为 **M1.5** 必做，非 M3 选修（§6.1） |
 | 6 | **HMR 会话兜底** | 开发态序列化到 `.agent/.cache/sessions.json`（§12.1） |
 | 7 | **先文档后代码** | 未通知前不开工 scaffold |

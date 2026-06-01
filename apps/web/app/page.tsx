@@ -29,17 +29,19 @@ import { MenuAnchorPicker } from "../components/MenuAnchorPicker";
 import { MemoryEditorModal } from "../components/MemoryEditorModal";
 import { RequirementCanvas } from "../components/RequirementCanvas";
 import { TurnDebugModal } from "../components/TurnDebugModal";
-import type {
-  AgentAction,
-  AgentAnchor,
-  ChatMode,
-  ContextUsageSnapshot,
-  ConversationSummary,
-  DevAppendixExportJob,
-  RequirementDraftState,
-  SseEvent,
-  TranscriptItem,
-  TurnDebugSnapshot,
+import {
+  evaluateContextBudget,
+  type AgentAction,
+  type AgentAnchor,
+  type ChatMode,
+  type ContextBudgetHint,
+  type ContextUsageSnapshot,
+  type ConversationSummary,
+  type DevAppendixExportJob,
+  type RequirementDraftState,
+  type SseEvent,
+  type TranscriptItem,
+  type TurnDebugSnapshot,
 } from "@lets-talk/shared-types";
 
 const ANCHOR_STORAGE_KEY = "letsTalk.anchor";
@@ -130,6 +132,11 @@ export default function HomePage() {
   const [contextUsage, setContextUsage] = useState<ContextUsageSnapshot | null>(
     null,
   );
+  const [contextBudgetHint, setContextBudgetHint] =
+    useState<ContextBudgetHint | null>(null);
+  const [compactionStatus, setCompactionStatus] = useState<string | null>(
+    null,
+  );
   const [chatMode, setChatMode] = useState<ChatMode>("explore");
   const [requirementDraft, setRequirementDraft] =
     useState<RequirementDraftState | null>(null);
@@ -206,12 +213,17 @@ export default function HomePage() {
     const id = sid ?? sessionIdRef.current;
     if (!id) {
       setContextUsage(null);
+      setContextBudgetHint(null);
+      setCompactionStatus(null);
       return;
     }
     try {
       const res = await fetch(`/api/conversations/${id}/context`);
       if (!res.ok) return;
-      setContextUsage((await res.json()) as ContextUsageSnapshot);
+      const usage = (await res.json()) as ContextUsageSnapshot;
+      setContextUsage(usage);
+      setContextBudgetHint(evaluateContextBudget(usage));
+      setCompactionStatus(null);
     } catch {
       // ignore
     }
@@ -295,6 +307,8 @@ export default function HomePage() {
     requirementDraftRef.current = null;
     setAgentActions([]);
     setContextUsage(null);
+    setContextBudgetHint(null);
+    setCompactionStatus(null);
     setRenamingId(null);
   }, []);
 
@@ -347,7 +361,8 @@ export default function HomePage() {
     setRequirementDraft(null);
     requirementDraftRef.current = null;
     setAgentActions([]);
-    setContextUsage(null);
+    setContextBudgetHint(null);
+    setCompactionStatus(null);
     void refreshContextUsage(record.sessionId);
     await refreshConversationList();
   }, [applyConversation, busy, persistCurrent, refreshConversationList]);
@@ -812,11 +827,34 @@ export default function HomePage() {
           if (event.type === "assistant_delta") {
             appendAssistantDelta(event.text, snapshot);
           } else if (event.type === "context_usage") {
-            setContextUsage({
+            const usage = {
               tokens: event.tokens,
               contextWindow: event.contextWindow,
               percent: event.percent,
+            };
+            setContextUsage(usage);
+            setContextBudgetHint(evaluateContextBudget(usage));
+          } else if (event.type === "context_budget_hint") {
+            setContextBudgetHint({
+              level: event.level,
+              message: event.message,
             });
+          } else if (event.type === "context_compaction") {
+            if (event.phase === "start") {
+              setCompactionStatus("正在压缩较早对话…");
+            } else if (event.ok) {
+              const before =
+                event.tokensBefore != null
+                  ? `（压缩前约 ${Math.round(event.tokensBefore / 1000)}k tokens）`
+                  : "";
+              setCompactionStatus(`对话已压缩${before}`);
+            } else {
+              setCompactionStatus(
+                event.message
+                  ? `压缩未完成：${event.message}`
+                  : "压缩未完成",
+              );
+            }
           } else if (event.type === "context") {
             snapshot.push({
               kind: "context",
@@ -1166,11 +1204,33 @@ export default function HomePage() {
             >
               导出
             </button>
-            <span className="context-usage" title="Pi 模型上下文占用（估算）">
+            <span
+              className={`context-usage${
+                contextBudgetHint?.level === "critical"
+                  ? " critical"
+                  : contextBudgetHint?.level === "warn"
+                    ? " warn"
+                    : ""
+              }`}
+              title="Pi 模型上下文占用（估算）"
+            >
               {formatContextUsageLabel(contextUsage)}
             </span>
           </div>
         </header>
+
+        {(contextBudgetHint || compactionStatus) && (
+          <div
+            className={`context-budget-banner context-budget-${
+              compactionStatus
+                ? "compacting"
+                : contextBudgetHint?.level ?? "warn"
+            }`}
+            role="status"
+          >
+            {compactionStatus ?? contextBudgetHint?.message}
+          </div>
+        )}
 
         <section
           className="transcript-scroll"
@@ -1640,6 +1700,35 @@ export default function HomePage() {
           font-size: 11px;
           color: var(--accent);
           font-variant-numeric: tabular-nums;
+        }
+        .context-usage.warn {
+          color: #d29922;
+        }
+        .context-usage.critical {
+          color: #f85149;
+        }
+        .context-budget-banner {
+          flex-shrink: 0;
+          margin: 0 0 0.5rem;
+          padding: 0.45rem 0.65rem;
+          border-radius: 6px;
+          font-size: 12px;
+          line-height: 1.45;
+        }
+        .context-budget-warn {
+          background: rgba(210, 153, 34, 0.12);
+          border: 1px solid rgba(210, 153, 34, 0.45);
+          color: #e3b341;
+        }
+        .context-budget-critical {
+          background: rgba(248, 81, 73, 0.12);
+          border: 1px solid rgba(248, 81, 73, 0.45);
+          color: #ff7b72;
+        }
+        .context-budget-compacting {
+          background: rgba(88, 166, 255, 0.12);
+          border: 1px solid rgba(88, 166, 255, 0.45);
+          color: var(--accent);
         }
         .dot {
           width: 8px;

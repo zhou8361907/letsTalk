@@ -40,6 +40,7 @@ import { createContextPullTools } from "./context-pull-tools.js";
 import { createJavaAstTools } from "./java-ast-tools.js";
 import { createMemoryTools, createMemoryOnlyTool } from "./memory-tools.js";
 import { createRequirementDraftTools } from "./requirement-draft-tools.js";
+import { wrapToolsWithOutputLimit } from "./tool-output-truncate.js";
 import {
   getDraft,
   getDraftRevision,
@@ -225,7 +226,7 @@ export async function createPiSession(
         ? await createTitleSummaryResourceLoader(workspace)
         : await createLetsTalkResourceLoader(workspace, chatMode);
 
-  const customTools = isMemoryReview
+  const rawCustomTools = isMemoryReview
     ? memoryOnlyTool
       ? [memoryOnlyTool]
       : []
@@ -240,6 +241,8 @@ export async function createPiSession(
             ...registeredPullTools,
             ...draftTools,
           ];
+
+  const customTools = wrapToolsWithOutputLimit(rawCustomTools);
 
   const piOptions = {
     cwd: workspace,

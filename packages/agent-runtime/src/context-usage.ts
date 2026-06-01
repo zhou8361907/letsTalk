@@ -1,5 +1,6 @@
 import type { AgentSession } from "@earendil-works/pi-coding-agent";
-import type { ContextUsageSnapshot } from "@lets-talk/shared-types";
+import type { ContextUsageSnapshot, SseEvent } from "@lets-talk/shared-types";
+import { evaluateContextBudgetFromEnv } from "./context-budget-config.js";
 import { resolveWorkspaceLayout } from "@lets-talk/context";
 import {
   getConversation,
@@ -44,6 +45,21 @@ export function emitContextUsage(
   onEvent: (snap: ContextUsageSnapshot) => void,
 ): void {
   emitSnapshot(session, onEvent);
+}
+
+/** 推送 context_usage + 可选 context_budget_hint（默认 50%/90%） */
+export function pushContextUsageEvents(
+  session: AgentSession,
+  onEvent: (event: SseEvent) => void,
+): ContextUsageSnapshot | null {
+  const snap = snapshotContextUsage(session);
+  if (!snap) return null;
+  onEvent({ type: "context_usage", ...snap });
+  const hint = evaluateContextBudgetFromEnv(snap);
+  if (hint) {
+    onEvent({ type: "context_budget_hint", ...hint });
+  }
+  return snap;
 }
 
 /**

@@ -41,6 +41,14 @@ export {
   formatDraftConventionGapsLine,
   itemToBeNeedsConfirmation,
 } from "./requirement-convention.js";
+export {
+  DEFAULT_CONTEXT_BUDGET_THRESHOLDS,
+  evaluateContextBudget,
+  type ContextBudgetHint,
+  type ContextBudgetLevel,
+  type ContextBudgetThresholds,
+  type ContextUsageLike,
+} from "./context-budget.js";
 
 import type { RequirementFieldKey } from "./requirement-draft.js";
 
@@ -85,6 +93,20 @@ export type SseEvent =
   | { type: "session"; sessionId: string; cwd: string; model: string }
   /** 上下文 token 占用更新（prompt 前后各推一次） */
   | { type: "context_usage"; tokens: number | null; contextWindow: number; percent: number | null }
+  /** 上下文占用提醒（默认 50% 提示，90% 触发压缩） */
+  | {
+      type: "context_budget_hint";
+      level: import("./context-budget.js").ContextBudgetLevel;
+      message: string;
+    }
+  /** Pi 会话上下文压缩（percent≥90% 时在 prompt 前自动执行） */
+  | {
+      type: "context_compaction";
+      phase: "start" | "end";
+      ok?: boolean;
+      tokensBefore?: number;
+      message?: string;
+    }
   /** 助手回复增量文本 */
   | { type: "assistant_delta"; text: string }
   /** 工具开始执行 */

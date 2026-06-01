@@ -29,10 +29,11 @@ import type {
   SseEvent,
 } from "@lets-talk/shared-types";
 import {
-  emitContextUsage,
   getContextUsageForSession,
+  pushContextUsageEvents,
   snapshotContextUsage,
 } from "./context-usage.js";
+import { maybeCompactSessionIfNeeded } from "./session-compaction.js";
 import {
   logTurnRequest,
   logTurnResponse,
@@ -295,9 +296,16 @@ export async function runChat(options: RunChatOptions): Promise<void> {
     model: modelLabel,
   });
 
-  emitContextUsage(session, (snap) => {
-    options.onEvent({ type: "context_usage", ...snap });
+  pushContextUsageEvents(session, options.onEvent);
+  const prePromptUsage = snapshotContextUsage(session);
+  await maybeCompactSessionIfNeeded({
+    session,
+    usage: prePromptUsage,
+    chatMode,
+    draftRevision: getDraftRevision(options.sessionId),
+    onEvent: options.onEvent,
   });
+  pushContextUsageEvents(session, options.onEvent);
 
   const turnId = nextTurnId(options.sessionId);
   setActiveTurnId(options.sessionId, turnId);
@@ -403,9 +411,7 @@ export async function runChat(options: RunChatOptions): Promise<void> {
     // 本仓库在此行之后无代码，直到 prompt Promise resolve
     await session.prompt(userText);
 
-    emitContextUsage(session, (snap) => {
-      options.onEvent({ type: "context_usage", ...snap });
-    });
+    pushContextUsageEvents(session, options.onEvent);
 
     const usageSnap = snapshotContextUsage(session);
     const piFileAbs = session.sessionFile ?? handle.piSessionFile ?? null;

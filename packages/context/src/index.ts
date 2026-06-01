@@ -40,4 +40,6 @@ export {
   formatHintsDirectoryHint,
   listBusinessHintFiles,
 } from "./pm-resources.js";
+export { buildLetsTalkAppendSystemPrompt } from "./lets-talk-system-append.js";
+export { MEMORY_GUIDANCE } from "./memory-guidance.js";
 export type { AgentContext, BuildAgentContextInput } from "./types.js";

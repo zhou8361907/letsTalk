@@ -1,15 +1,26 @@
 export type MemoryConfidence = "draft" | "verified";
+export type MemoryKind = "glossary" | "history";
 
 export interface MemoryMeta {
   topic: string;
+  kind?: MemoryKind;
   confidence: MemoryConfidence;
+  aliases?: string[];
   tags?: string[];
   updated_at: string;
   sources?: string[];
 }
 
 export function buildMemoryMarkdown(meta: MemoryMeta, body: string): string {
-  const lines = ["---", `topic: ${meta.topic}`, `confidence: ${meta.confidence}`];
+  const lines = [
+    "---",
+    `topic: ${meta.topic}`,
+    `kind: ${meta.kind ?? "glossary"}`,
+    `confidence: ${meta.confidence}`,
+  ];
+  if (meta.aliases?.length) {
+    lines.push(`aliases: [${meta.aliases.join(", ")}]`);
+  }
   if (meta.tags?.length) {
     lines.push(`tags: [${meta.tags.join(", ")}]`);
   }
@@ -52,8 +63,16 @@ export function parseMemoryMarkdown(raw: string): {
       inSources = false;
     }
     if (line.startsWith("topic:")) meta.topic = line.slice(6).trim();
-    else if (line.startsWith("confidence:")) {
+    else if (line.startsWith("kind:")) {
+      const k = line.slice(5).trim();
+      if (k === "glossary" || k === "history") meta.kind = k;
+    } else if (line.startsWith("confidence:")) {
       meta.confidence = line.slice(11).trim() as MemoryConfidence;
+    } else if (line.startsWith("aliases:")) {
+      const inner = line.slice(8).trim().replace(/^\[|\]$/g, "");
+      meta.aliases = inner
+        ? inner.split(",").map((t) => t.trim()).filter(Boolean)
+        : [];
     } else if (line.startsWith("tags:")) {
       const inner = line.slice(5).trim().replace(/^\[|\]$/g, "");
       meta.tags = inner

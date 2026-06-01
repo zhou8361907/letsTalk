@@ -6,7 +6,12 @@
 
 import { appendFile, mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { AgentAnchor, ContextUsageSnapshot, RequirementDraftState } from "@lets-talk/shared-types";
+import type {
+  AgentAnchor,
+  ContextUsageSnapshot,
+  RequirementDraftState,
+  SystemPromptSnapshot,
+} from "@lets-talk/shared-types";
 
 export function isDebugLoggingEnabled(): boolean {
   const v =
@@ -46,6 +51,30 @@ function consoleLine(tag: string, msg: string): void {
   console.log(`[letsTalk:debug:${tag}] ${msg}`);
 }
 
+async function writeSessionSystemMeta(
+  dir: string,
+  meta: {
+    systemPrompt: SystemPromptSnapshot;
+    modelLabel?: string;
+    activeTools?: string[];
+  },
+): Promise<void> {
+  await writeFile(
+    join(dir, "session_system.json"),
+    JSON.stringify(
+      {
+        at: new Date().toISOString(),
+        modelLabel: meta.modelLabel,
+        activeTools: meta.activeTools,
+        systemPrompt: meta.systemPrompt,
+      },
+      null,
+      2,
+    ),
+    "utf8",
+  );
+}
+
 export async function logTurnRequest(
   workspaceRoot: string,
   sessionId: string,
@@ -56,12 +85,39 @@ export async function logTurnRequest(
     userMessage: string;
     contextBlock: string;
     requirementDraft: RequirementDraftState | null;
+    systemPrompt?: SystemPromptSnapshot;
+    modelLabel?: string;
+    activeTools?: string[];
   },
 ): Promise<void> {
   if (!isDebugLoggingEnabled()) return;
 
   const dir = await ensureDebugDir(workspaceRoot, sessionId);
+  if (payload.systemPrompt) {
+    await writeSessionSystemMeta(dir, {
+      systemPrompt: payload.systemPrompt,
+      modelLabel: payload.modelLabel,
+      activeTools: payload.activeTools,
+    });
+  }
   const base = `${turnId}_request`;
+  const systemSection = payload.systemPrompt
+    ? [
+        `## System Prompt（会话级，Pi ResourceLoader）`,
+        ``,
+        payload.modelLabel ? `- model: ${payload.modelLabel}` : "",
+        payload.activeTools?.length
+          ? `- tools: ${payload.activeTools.join(", ")}`
+          : "",
+        ``,
+        "```",
+        payload.systemPrompt.combined,
+        "```",
+        ``,
+      ]
+        .filter(Boolean)
+        .join("\n")
+    : "";
   const md = [
     `# ${turnId} 请求`,
     ``,
@@ -69,6 +125,7 @@ export async function logTurnRequest(
     `- chatMode: ${payload.chatMode}`,
     `- anchor: ${payload.anchor ? JSON.stringify(payload.anchor, null, 2) : "(无)"}`,
     ``,
+    systemSection,
     `## 用户消息`,
     ``,
     "```",
@@ -101,6 +158,9 @@ export async function logTurnRequest(
         userMessage: payload.userMessage,
         contextBlock: payload.contextBlock,
         requirementDraft: payload.requirementDraft,
+        systemPrompt: payload.systemPrompt,
+        modelLabel: payload.modelLabel,
+        activeTools: payload.activeTools,
       },
       null,
       2,

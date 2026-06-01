@@ -22,8 +22,14 @@ import {
   isToolGroup,
   toolGroupFailedCount,
 } from "../lib/group-transcript";
+import {
+  buildAssistantTurnIds,
+  mergeTurnDebugSnapshots,
+} from "../lib/turn-debug-client";
 import { MenuAnchorPicker } from "../components/MenuAnchorPicker";
+import { MemoryEditorModal } from "../components/MemoryEditorModal";
 import { RequirementCanvas } from "../components/RequirementCanvas";
+import { TurnDebugModal } from "../components/TurnDebugModal";
 import type {
   AgentAction,
   AgentAnchor,
@@ -33,11 +39,26 @@ import type {
   RequirementDraftState,
   SseEvent,
   TranscriptItem,
+  TurnDebugSnapshot,
 } from "@lets-talk/shared-types";
 
 const ANCHOR_STORAGE_KEY = "letsTalk.anchor";
 const SESSION_STORAGE_KEY = "letsTalk.sessionId";
 const CHAT_MODE_STORAGE_KEY = "letsTalk.chatMode";
+
+interface SessionDebugState {
+  turns: TurnDebugSnapshot[];
+  assistantTurnIds: string[];
+  source?: "debug" | "pi" | "none";
+  loading?: boolean;
+}
+
+function getSessionDebugState(
+  map: Map<string, SessionDebugState>,
+  sessionId: string,
+): SessionDebugState {
+  return map.get(sessionId) ?? { turns: [], assistantTurnIds: [] };
+}
 
 function loadStoredChatMode(): ChatMode {
   if (typeof window === "undefined") return "explore";
@@ -85,6 +106,13 @@ export default function HomePage() {
     front: string | null;
     back: string | null;
   }>({ root: null, front: null, back: null });
+  const [memoryEditorOpen, setMemoryEditorOpen] = useState(false);
+  const [debugModalOpen, setDebugModalOpen] = useState(false);
+  const [debugInitialTurnId, setDebugInitialTurnId] = useState<string | null>(
+    null,
+  );
+  const [debugTick, setDebugTick] = useState(0);
+  const debugBySessionRef = useRef<Map<string, SessionDebugState>>(new Map());
 
   const assistantBuf = useRef("");
   const lastToolName = useRef<string>("tool");
@@ -245,6 +273,46 @@ export default function HomePage() {
     await refreshConversationList();
   }, [applyConversation, busy, persistCurrent, refreshConversationList]);
 
+  const refreshSessionDebugTurns = useCallback(
+    async (sid: string, transcriptItems?: TranscriptItem[]) => {
+      if (!sid) return;
+      const prev = getSessionDebugState(debugBySessionRef.current, sid);
+      debugBySessionRef.current.set(sid, { ...prev, loading: true });
+      setDebugTick((t) => t + 1);
+
+      try {
+        const res = await fetch(`/api/debug/session/${sid}/turns`);
+        const data = (await res.json()) as {
+          turns?: TurnDebugSnapshot[];
+          source?: SessionDebugState["source"];
+          error?: string;
+        };
+        const disk = data.turns ?? [];
+        const live = getSessionDebugState(debugBySessionRef.current, sid).turns;
+        const merged = mergeTurnDebugSnapshots(disk, live);
+        const itemsForMap = transcriptItems ?? itemsRef.current;
+        debugBySessionRef.current.set(sid, {
+          turns: merged,
+          assistantTurnIds: buildAssistantTurnIds(itemsForMap, merged),
+          source: data.source ?? (disk.length ? "debug" : "none"),
+          loading: false,
+        });
+      } catch {
+        const live = getSessionDebugState(debugBySessionRef.current, sid).turns;
+        debugBySessionRef.current.set(sid, {
+          turns: live,
+          assistantTurnIds: buildAssistantTurnIds(
+            transcriptItems ?? itemsRef.current,
+            live,
+          ),
+          loading: false,
+        });
+      }
+      setDebugTick((t) => t + 1);
+    },
+    [],
+  );
+
   const switchConversation = useCallback(
     async (id: string) => {
       if (busy || id === sessionIdRef.current) return;
@@ -258,8 +326,9 @@ export default function HomePage() {
         anchor: AgentAnchor | null;
       };
       applyConversation(record);
+      void refreshSessionDebugTurns(id, record.items);
     },
-    [applyConversation, busy, persistCurrent],
+    [applyConversation, busy, persistCurrent, refreshSessionDebugTurns],
   );
 
   const commitRename = useCallback(
@@ -510,6 +579,16 @@ export default function HomePage() {
               mode: event.mode,
               anchorRef: event.anchorRef,
               previewLines: event.previewLines,
+              m0Refreshed: event.m0Refreshed,
+            });
+            setItems([...snapshot]);
+          } else if (event.type === "memory_refreshed") {
+            snapshot.push({
+              kind: "context",
+              mode: "explore",
+              anchorRef: null,
+              previewLines: 0,
+              m0Refreshed: true,
             });
             setItems([...snapshot]);
           } else if (event.type === "tool_start") {
@@ -536,6 +615,17 @@ export default function HomePage() {
             requirementDraftRef.current = event.draft;
           } else if (event.type === "agent_actions") {
             setAgentActions(event.actions);
+          } else if (event.type === "turn_debug") {
+            const state = getSessionDebugState(debugBySessionRef.current, sid);
+            const merged = mergeTurnDebugSnapshots(state.turns, [
+              event.snapshot,
+            ]);
+            debugBySessionRef.current.set(sid, {
+              ...state,
+              turns: merged,
+              assistantTurnIds: buildAssistantTurnIds(snapshot, merged),
+            });
+            setDebugTick((t) => t + 1);
           } else if (event.type === "turn_end") {
             // 草稿以 requirement_state SSE 为准；不在此 GET，避免竞态覆盖
           } else if (event.type === "error") {
@@ -566,6 +656,32 @@ export default function HomePage() {
 
   const groups = groupConversationsByDate(conversations);
   const displayItems = useMemo(() => groupTranscriptForDisplay(items), [items]);
+  const sessionDebug = sessionId
+    ? getSessionDebugState(debugBySessionRef.current, sessionId)
+    : { turns: [], assistantTurnIds: [] };
+  void debugTick;
+
+  const openDebugModal = useCallback(
+    (turnId?: string | null) => {
+      const sid = sessionIdRef.current;
+      if (sid) void refreshSessionDebugTurns(sid, itemsRef.current);
+      setDebugInitialTurnId(turnId ?? null);
+      setDebugModalOpen(true);
+    },
+    [refreshSessionDebugTurns],
+  );
+
+  const assistantTurnIds = useMemo(
+    () => buildAssistantTurnIds(items, sessionDebug.turns),
+    [items, sessionDebug.turns],
+  );
+
+  useEffect(() => {
+    if (!sessionId || booting) return;
+    void refreshSessionDebugTurns(sessionId, items);
+    // 仅 sessionId 变化时从磁盘加载；同会话新消息靠 SSE turn_debug
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, booting]);
 
   if (booting) {
     return (
@@ -783,6 +899,22 @@ export default function HomePage() {
             <button
               type="button"
               className="export-btn"
+              onClick={() => openDebugModal()}
+              title="查看每轮发给 LLM 的真实内容与 Pi jsonl"
+            >
+              调试
+            </button>
+            <button
+              type="button"
+              className="export-btn"
+              onClick={() => setMemoryEditorOpen(true)}
+              title="查看与编辑 USER / CORE / INDEX / topics"
+            >
+              记忆
+            </button>
+            <button
+              type="button"
+              className="export-btn"
               onClick={exportMarkdown}
               disabled={items.length === 0}
               title="导出为 Markdown"
@@ -804,7 +936,16 @@ export default function HomePage() {
                 : "探索模式：选会话或锚点后提问。回答以实际代码为准。"}
             </p>
           )}
-          {displayItems.map((item, i) => (
+          {displayItems.map((item, i) => {
+            const assistantIdx =
+              item.kind === "assistant"
+                ? displayItems
+                    .slice(0, i + 1)
+                    .filter((x) => x.kind === "assistant").length - 1
+                : -1;
+            const assistantTurnId =
+              assistantIdx >= 0 ? assistantTurnIds[assistantIdx] : undefined;
+            return (
             <div
               key={i}
               className={`bubble ${isToolGroup(item) ? "tool-group-wrap" : item.kind}`}
@@ -843,7 +984,19 @@ export default function HomePage() {
               )}
               {item.kind === "assistant" && (
                 <>
-                  <div className="label">Agent</div>
+                  <div className="label-row">
+                    <div className="label">Agent</div>
+                    {(assistantTurnId || sessionDebug.turns.length > 0) && (
+                      <button
+                        type="button"
+                        className="bubble-debug-btn"
+                        onClick={() => openDebugModal(assistantTurnId || undefined)}
+                        title="查看本回合发给 LLM 的内容"
+                      >
+                        调试
+                      </button>
+                    )}
+                  </div>
                   <pre>{item.text}</pre>
                 </>
               )}
@@ -854,7 +1007,8 @@ export default function HomePage() {
                 </p>
               )}
             </div>
-          ))}
+            );
+          })}
           <div ref={transcriptEndRef} className="transcript-anchor" aria-hidden />
           </div>
         </section>
@@ -899,6 +1053,22 @@ export default function HomePage() {
           }}
         />
       )}
+
+      <MemoryEditorModal
+        open={memoryEditorOpen}
+        sessionId={sessionId}
+        onClose={() => setMemoryEditorOpen(false)}
+      />
+
+      <TurnDebugModal
+        open={debugModalOpen}
+        sessionId={sessionId}
+        turns={sessionDebug.turns}
+        initialTurnId={debugInitialTurnId}
+        source={sessionDebug.source}
+        loading={sessionDebug.loading}
+        onClose={() => setDebugModalOpen(false)}
+      />
 
       <style jsx>{`
         .layout {
@@ -1326,6 +1496,29 @@ export default function HomePage() {
           font-size: 11px;
           color: var(--muted);
           margin-bottom: 0.35rem;
+        }
+        .label-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.5rem;
+          margin-bottom: 0.35rem;
+        }
+        .label-row .label {
+          margin-bottom: 0;
+        }
+        .bubble-debug-btn {
+          font-size: 10px;
+          padding: 0.1rem 0.4rem;
+          border: 1px solid var(--border);
+          border-radius: 4px;
+          background: transparent;
+          color: var(--muted);
+          cursor: pointer;
+        }
+        .bubble-debug-btn:hover {
+          color: var(--accent);
+          border-color: var(--accent);
         }
         pre {
           margin: 0;

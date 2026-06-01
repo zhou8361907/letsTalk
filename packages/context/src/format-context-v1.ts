@@ -68,13 +68,23 @@ export function formatRulesBlock(rules: {
   return lines.join("\n");
 }
 
-/** 单轮 prompt 前缀：有 rules 时带 Rule，否则仅 pointer +（可选）change + 清单摘要 */
+/**
+ * 单轮 user 前缀：仅运行时状态（pointer / change / 清单摘要 / 记忆 Pull）。
+ * 跨会话规则在 Pi system prompt（AGENTS.md + appendSystemPrompt），勿再经 rules 重复注入。
+ */
 export function formatTurnPrefix(opts: {
+  /** @deprecated 业务规则已迁入 system prompt；勿再传入 */
   rules?: { arch_rules: string; pm_rules?: string };
   pointer: ContextPointer;
   change?: ContextChange;
   /** PRD 且 draft_revision>0 时的紧凑清单摘要（C1） */
   draftSummary?: string;
+  /** 用户消息命中 INDEX 黑话时的 L2 片段（静默 Pull） */
+  memoryContext?: string;
+  /** 用户要求本轮忽略 memory */
+  memorySuppressed?: boolean;
+  /** 本会话内 USER/CORE 磁盘更新（覆盖冻结 Tier 1） */
+  coreMemoryRefresh?: string;
 }): string {
   const parts: string[] = [];
   if (opts.rules) {
@@ -83,6 +93,17 @@ export function formatTurnPrefix(opts: {
   parts.push(formatStatePointer(opts.pointer));
   if (opts.change) {
     parts.push(formatContextChange(opts.change));
+  }
+  if (opts.memorySuppressed) {
+    parts.push('<memory_suppressed reason="user_requested" />');
+  }
+  if (opts.coreMemoryRefresh?.trim()) {
+    parts.push(opts.coreMemoryRefresh.trim());
+  }
+  if (opts.memoryContext?.trim()) {
+    parts.push(
+      `<memory_context>\n${escapeXml(opts.memoryContext.trim())}\n</memory_context>`,
+    );
   }
   if (opts.draftSummary?.trim()) {
     parts.push(

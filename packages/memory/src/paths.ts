@@ -1,19 +1,49 @@
 import { mkdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import type { MemoryKind } from "./index-table.js";
 
 export const MEMORY_DIR = ".agent/memory";
+export const INDEX_REL = ".agent/memory/INDEX.md";
+export const ALIASES_REL = ".agent/memory/aliases.json";
+export const TOPICS_DIR = "topics";
 
 export function memoryDir(workspaceRoot: string): string {
   return join(resolve(workspaceRoot), MEMORY_DIR);
 }
 
-export function memoryFilePath(workspaceRoot: string, slug: string): string {
+export function indexFilePath(workspaceRoot: string): string {
+  return join(memoryDir(workspaceRoot), "INDEX.md");
+}
+
+export function aliasesFilePath(workspaceRoot: string): string {
+  return join(memoryDir(workspaceRoot), "aliases.json");
+}
+
+export function topicsDir(workspaceRoot: string): string {
+  return join(memoryDir(workspaceRoot), TOPICS_DIR);
+}
+
+export function topicRelPath(kind: MemoryKind, slug: string): string {
+  return `${TOPICS_DIR}/${kind}-${slug}.md`;
+}
+
+export function topicFilePath(
+  workspaceRoot: string,
+  kind: MemoryKind,
+  slug: string,
+): string {
+  return join(topicsDir(workspaceRoot), `${kind}-${slug}.md`);
+}
+
+/** @deprecated legacy 根目录 flat 文件 */
+export function legacyMemoryFilePath(workspaceRoot: string, slug: string): string {
   return join(memoryDir(workspaceRoot), `${slug}.md`);
 }
 
 export async function ensureMemoryDir(workspaceRoot: string): Promise<string> {
   const dir = memoryDir(workspaceRoot);
   await mkdir(dir, { recursive: true });
+  await mkdir(topicsDir(workspaceRoot), { recursive: true });
   return dir;
 }
 

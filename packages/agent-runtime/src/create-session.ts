@@ -7,7 +7,8 @@
  * 我们只多传：
  *   1. cwd         — WORKSPACE_ROOT（letsTalk 运行根，含 workFront / workBack）
  *   2. API Key     — LLM_API_KEY
- *   3. useTools    — 只读 + Java AST + Context Pull +（prd）草稿工具
+ *   3. useTools    — 只读 + write/edit(.agent) + Java AST + Pull +（prd）草稿
+ *   4. resourceLoader — AGENTS.md + letsTalk append → Pi system prompt（非每轮 user 前缀）
  */
 
 import { dirname, resolve } from "node:path";
@@ -17,19 +18,30 @@ import {
   ModelRegistry,
   SessionManager,
 } from "@earendil-works/pi-coding-agent";
+import {
+  createLetsTalkResourceLoader,
+  createMemoryReviewResourceLoader,
+} from "./pi-resource-loader.js";
+import { captureSystemPromptFromLoader } from "./system-prompt-snapshot.js";
 import type { AgentSession } from "@earendil-works/pi-coding-agent";
-import type { AgentAnchor, ChatMode } from "@lets-talk/shared-types";
+import type {
+  AgentAnchor,
+  ChatMode,
+  SystemPromptSnapshot,
+} from "@lets-talk/shared-types";
+import { createScopedWriteTools } from "./agent-scoped-write-tools.js";
+import {
+  isMemoryToolsEnabled,
+  isScopedWriteEnabled,
+} from "./agent-write-policy.js";
 import { createContextPullTools } from "./context-pull-tools.js";
 import { createJavaAstTools } from "./java-ast-tools.js";
-import { createMemoryTools } from "./memory-tools.js";
+import { createMemoryTools, createMemoryOnlyTool } from "./memory-tools.js";
 import { createRequirementDraftTools } from "./requirement-draft-tools.js";
 import {
   getDraft,
   getDraftRevision,
 } from "./requirement-draft-store.js";
-
-/** 阶段 4 Agent 自动记忆暂缓；代码保留，想开再改 true */
-const ENABLE_MEMORY_TOOLS = false;
 
 /**
  * 内存中缓存的 Pi 会话句柄。
@@ -46,6 +58,12 @@ export interface PiSessionHandle {
   piSessionFile: string;
   /** 创建句柄时的 chatMode；变化时需重建以更新工具集 */
   chatMode: ChatMode;
+  /** 会话创建时冻结的 system prompt 快照 */
+  systemPromptSnapshot: SystemPromptSnapshot;
+  /** 注册的工具名（与 Pi 实际暴露一致） */
+  activeTools: string[];
+  /** 句柄创建时刻（用于 M0 mtime 前缀刷新） */
+  sessionCreatedAtMs: number;
   /** 进程内释放 Pi 资源；切换 cwd 或 evict 缓存时调用 */
   dispose: () => void;
 }
@@ -63,16 +81,21 @@ const READONLY_TOOLS = [
 const CONTEXT_PULL_TOOLS = [
   "get_anchor_preview",
   "get_business_hints",
+  "resolve_memory_terms",
 ] as const;
 
 const PRD_PULL_TOOLS = ["get_requirement_draft"] as const;
 
+export type PiSessionKind = "default" | "memory-review";
+
 export interface CreatePiSessionOptions {
-  /** 已有 jsonl 时 open 恢复多轮上下文；新建会话时由 SessionManager.create */
-  piSessionFile: string;
+  /** 已有 jsonl 时 open 恢复；省略则由 SessionManager.create 新建 */
+  piSessionFile?: string;
   /** 传入后启用 PRD 草稿与 pull 工具 */
   sessionId?: string;
   chatMode?: ChatMode;
+  /** 后台 memory review：仅 memory 工具 + 极简 system */
+  sessionKind?: PiSessionKind;
   /** 草稿工具写入 anchorRef 时读取当前锚点 */
   getAnchorRef?: () => string | null;
   getAnchor?: () => AgentAnchor | null;
@@ -91,6 +114,7 @@ export async function createPiSession(
 ): Promise<PiSessionHandle> {
   const workspace = resolve(cwd);
   const chatMode = options?.chatMode ?? "explore";
+  const isMemoryReview = options?.sessionKind === "memory-review";
 
   // 有 piSessionFile → 恢复历史；否则新建（仅内存，落盘在首轮 prompt 后）
   const sessionManager = options?.piSessionFile
@@ -109,10 +133,18 @@ export async function createPiSession(
 
   const modelRegistry = ModelRegistry.create(authStorage);
 
-  const memoryTools = ENABLE_MEMORY_TOOLS ? createMemoryTools(workspace) : [];
+  const memoryTools = isMemoryToolsEnabled() ? createMemoryTools(workspace) : [];
+  const memoryOnlyTool =
+    isMemoryToolsEnabled() && isMemoryReview
+      ? createMemoryOnlyTool(workspace)
+      : null;
+  const scopedWriteTools =
+    isScopedWriteEnabled() && !isMemoryReview
+      ? createScopedWriteTools(workspace)
+      : [];
 
   const pullTools =
-    useTools && options?.sessionId
+    useTools && !isMemoryReview && options?.sessionId
       ? createContextPullTools({
           sessionId: options.sessionId,
           workspaceRoot: workspace,
@@ -122,11 +154,12 @@ export async function createPiSession(
             options.sessionId ? (getDraft(options.sessionId) ?? null) : null,
           getDraftRevision: () =>
             options.sessionId ? getDraftRevision(options.sessionId) : 0,
+          memoryEnabled: isMemoryToolsEnabled(),
         })
       : [];
 
   const draftTools =
-    useTools && options?.sessionId && chatMode === "prd"
+    useTools && !isMemoryReview && options?.sessionId && chatMode === "prd"
       ? createRequirementDraftTools({
           sessionId: options.sessionId,
           getAnchorRef: options.getAnchorRef ?? (() => null),
@@ -139,31 +172,58 @@ export async function createPiSession(
     pullToolNames.push(...PRD_PULL_TOOLS);
   }
 
-  const toolNames: string[] = [
-    ...READONLY_TOOLS,
-    ...(ENABLE_MEMORY_TOOLS ? (["save_memory", "read_memory"] as const) : []),
-    ...pullToolNames,
-    ...(draftTools.length ? (["update_requirement_draft"] as const) : []),
-  ];
+  const toolNames: string[] = isMemoryReview
+    ? isMemoryToolsEnabled()
+      ? (["memory"] as const)
+      : []
+    : [
+        ...READONLY_TOOLS,
+        ...(isMemoryToolsEnabled()
+          ? ([
+              "memory",
+              "save_memory",
+              "read_memory",
+              "list_memory_index",
+              "update_user_profile",
+              "update_core_memory",
+              "read_user_profile",
+              "read_core_memory",
+            ] as const)
+          : []),
+        ...(isScopedWriteEnabled() ? (["write", "edit"] as const) : []),
+        ...pullToolNames.filter(
+          (n) => n !== "resolve_memory_terms" || isMemoryToolsEnabled(),
+        ),
+        ...(draftTools.length ? (["update_requirement_draft"] as const) : []),
+      ];
 
   const registeredPullTools = pullTools;
+
+  const resourceLoader = isMemoryReview
+    ? await createMemoryReviewResourceLoader(workspace)
+    : await createLetsTalkResourceLoader(workspace, chatMode);
+
+  const customTools = isMemoryReview
+    ? memoryOnlyTool
+      ? [memoryOnlyTool]
+      : []
+    : [
+        ...createJavaAstTools(workspace),
+        ...memoryTools,
+        ...scopedWriteTools,
+        ...registeredPullTools,
+        ...draftTools,
+      ];
 
   const piOptions = {
     cwd: workspace,
     authStorage,
     modelRegistry,
     sessionManager,
+    resourceLoader,
     thinkingLevel: "off" as const,
     ...(useTools
-      ? {
-          tools: toolNames,
-          customTools: [
-            ...createJavaAstTools(workspace),
-            ...memoryTools,
-            ...registeredPullTools,
-            ...draftTools,
-          ],
-        }
+      ? { tools: toolNames, customTools }
       : { noTools: "all" as const }),
   };
 
@@ -183,12 +243,23 @@ export async function createPiSession(
     throw new Error("Pi session 未绑定落盘文件");
   }
 
+  const modelLabel = `${model.provider}/${model.id}`;
+  const systemPromptSnapshot = captureSystemPromptFromLoader(resourceLoader, {
+    workspaceRoot: workspace,
+    chatMode,
+    modelLabel,
+    activeTools: useTools ? [...toolNames] : [],
+  });
+
   return {
     session,
     cwd: workspace,
-    modelLabel: `${model.provider}/${model.id}`,
+    modelLabel,
     piSessionFile: resolve(piSessionFile),
     chatMode,
+    systemPromptSnapshot,
+    activeTools: useTools ? [...toolNames] : [],
+    sessionCreatedAtMs: Date.now(),
     dispose: () => session.dispose(),
   };
 }

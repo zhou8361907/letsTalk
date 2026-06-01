@@ -1,20 +1,26 @@
 /**
- * 组装单轮 user 前缀：按需 Rule Push + 每轮 State Pointer。
- * 部署配置（.env / AGENTS.md）在进程内缓存，不每轮读盘。
+ * 组装单轮 user 前缀：仅运行时状态（pointer / 模式切换 / 记忆 Pull / 清单摘要）。
+ * 跨会话业务规则在 createPiSession 时写入 Pi system prompt（AGENTS.md + append）。
  */
 
 import type { AgentAnchor, ChatMode } from "@lets-talk/shared-types";
 import type { WorkspaceLayout } from "@lets-talk/context";
 import {
-  buildRulesContext,
   formatRequirementDraftBriefSummary,
   formatTurnPrefix,
   resolveAgentAnchor,
 } from "@lets-talk/context";
+import { syncSessionPointer } from "./session-context.js";
 import {
-  markRulesPushed,
-  syncSessionPointer,
-} from "./session-context.js";
+  formatCoreMemoryPrefixRefresh,
+  formatMemoryContextForPrefix,
+  getM0FileMtimes,
+  isMemoryIgnoredMessage,
+  loadCoreMemorySnapshot,
+  resolveMemoryContext,
+  shouldRefreshM0InPrefix,
+} from "@lets-talk/memory";
+import { isMemoryToolsEnabled } from "./agent-write-policy.js";
 import { getDraft } from "./requirement-draft-store.js";
 
 export interface BuildTurnPromptPrefixInput {
@@ -23,12 +29,18 @@ export interface BuildTurnPromptPrefixInput {
   chatMode: ChatMode;
   anchor: AgentAnchor | null;
   draftRevision: number;
+  /** 当前轮用户消息，用于 INDEX 黑话静默 Pull */
+  userMessage?: string;
+  /** Pi 句柄创建时间（ms），用于 M0 前缀刷新 */
+  sessionCreatedAtMs: number;
 }
 
 export interface BuildTurnPromptPrefixResult {
   prefix: string;
   mode: "explore" | "focused";
   anchorRef: string | null;
+  /** 本轮注入了 <core_memory_refresh>（M0 磁盘比句柄创建新） */
+  m0Refreshed: boolean;
 }
 
 export async function buildTurnPromptPrefix(
@@ -40,7 +52,7 @@ export async function buildTurnPromptPrefix(
     input.anchor,
   );
 
-  const { pointer, contextChange, pushRules } = syncSessionPointer(
+  const { pointer, contextChange } = syncSessionPointer(
     {
       sessionId: input.sessionId,
       chatMode: input.chatMode,
@@ -49,17 +61,6 @@ export async function buildTurnPromptPrefix(
     input.draftRevision,
   );
 
-  let rules: { arch_rules: string; pm_rules?: string } | undefined;
-  if (pushRules) {
-    const ctx = await buildRulesContext({
-      layout: input.layout,
-      anchor: input.anchor,
-      chatMode: input.chatMode,
-    });
-    rules = { arch_rules: ctx.arch_rules, pm_rules: ctx.pm_rules };
-    markRulesPushed(input.sessionId);
-  }
-
   let draftSummary: string | undefined;
   if (input.chatMode === "prd" && input.draftRevision > 0) {
     const draft = getDraft(input.sessionId);
@@ -67,14 +68,40 @@ export async function buildTurnPromptPrefix(
     if (summary) draftSummary = summary;
   }
 
+  let memoryContext: string | undefined;
+  let coreMemoryRefresh: string | undefined;
+  let memorySuppressed = false;
+  const userText = input.userMessage?.trim() ?? "";
+  if (userText && isMemoryIgnoredMessage(userText)) {
+    memorySuppressed = true;
+  } else if (isMemoryToolsEnabled()) {
+    const mtimes = await getM0FileMtimes(input.layout.workspaceRoot);
+    if (shouldRefreshM0InPrefix(mtimes, input.sessionCreatedAtMs)) {
+      const snap = await loadCoreMemorySnapshot(input.layout.workspaceRoot);
+      const block = formatCoreMemoryPrefixRefresh(snap);
+      if (block) coreMemoryRefresh = block;
+    }
+    if (userText) {
+      const mem = await resolveMemoryContext(
+        input.layout.workspaceRoot,
+        userText,
+      );
+      const formatted = formatMemoryContextForPrefix(mem);
+      if (formatted) memoryContext = formatted;
+    }
+  }
+
   return {
     prefix: formatTurnPrefix({
-      rules,
       pointer,
       change: contextChange,
       draftSummary,
+      memoryContext,
+      memorySuppressed,
+      coreMemoryRefresh,
     }),
     mode: resolved ? "focused" : "explore",
     anchorRef: resolved?.ref ?? null,
+    m0Refreshed: Boolean(coreMemoryRefresh?.trim()),
   };
 }

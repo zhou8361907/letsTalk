@@ -13,6 +13,11 @@ import {
   listBusinessHintFiles,
   resolveWorkspaceLayout,
 } from "@lets-talk/context";
+import {
+  formatMemoryContextForPrefix,
+  isMemoryIgnoredMessage,
+  resolveMemoryContext,
+} from "@lets-talk/memory";
 import { logDraftIo } from "./draft-io-log.js";
 
 export function createContextPullTools(options: {
@@ -22,6 +27,7 @@ export function createContextPullTools(options: {
   getAnchor: () => AgentAnchor | null;
   getDraft: () => import("@lets-talk/shared-types").RequirementDraftState | null;
   getDraftRevision: () => number;
+  memoryEnabled?: boolean;
 }): ToolDefinition[] {
   const layout = resolveWorkspaceLayout();
 
@@ -140,9 +146,53 @@ export function createContextPullTools(options: {
     },
   });
 
+  const resolveMemoryTerms = defineTool({
+    name: "resolve_memory_terms",
+    label: "Resolve Memory Terms",
+    description:
+      "根据消息文本匹配 INDEX 黑话，Pull 对应 L2 topic 片段（prefix 已静默注入时可作补充）。",
+    promptSnippet: "resolve_memory_terms(message) — INDEX 命中 Pull",
+    promptGuidelines: [
+      "用户提到业务黑话且需背景时调用；命中后先读 memory 再 grep 代码。",
+      "用户要求忽略记忆时勿调用。",
+    ],
+    parameters: Type.Object({
+      message: Type.String({ description: "待匹配的用户消息或关键词" }),
+    }),
+    execute: async (_id, params) => {
+      if (isMemoryIgnoredMessage(params.message)) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "（用户要求忽略 memory，本轮不 Pull）",
+            },
+          ],
+          details: { matchedTerms: [], blocks: [], suppressed: true },
+        };
+      }
+      const ctx = await resolveMemoryContext(
+        options.workspaceRoot,
+        params.message,
+        { maxBodyChars: 2000 },
+      );
+      const text =
+        ctx.blocks.length > 0
+          ? formatMemoryContextForPrefix(ctx)
+          : "（未命中 INDEX 黑话）";
+      return {
+        content: [{ type: "text", text }],
+        details: ctx,
+      };
+    },
+  });
+
+  const memoryPull = options.memoryEnabled ? [resolveMemoryTerms] : [];
+
   return [
     getAnchorPreview,
     ...(options.chatMode === "prd" ? [getRequirementDraft] : []),
     getBusinessHints,
+    ...memoryPull,
   ];
 }

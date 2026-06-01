@@ -17,6 +17,14 @@ export type {
   TranscriptItem,
 } from "./conversation.js";
 export type {
+  TurnDebugSnapshot,
+  TurnDebugToolRecord,
+} from "./turn-debug.js";
+export type {
+  SystemPromptFilePart,
+  SystemPromptSnapshot,
+} from "./system-prompt-debug.js";
+export type {
   AgentAction,
   AgentActionKind,
   RequirementDraftState,
@@ -83,9 +91,15 @@ export type SseEvent =
       mode: "explore" | "focused";
       anchorRef: string | null;
       previewLines: number;
+      /** 本轮 user 前缀含 <core_memory_refresh>（M0 已更新） */
+      m0Refreshed?: boolean;
     }
+  /** M0 磁盘更新后注入前缀（可与 context 同轮） */
+  | { type: "memory_refreshed"; source: "prefix" }
   /** 本轮正常结束 */
   | { type: "turn_end" }
+  /** 调试：本回合发给 LLM 的真实内容与 Pi jsonl 尾部（非 production 或 LETS_TALK_TURN_DEBUG） */
+  | { type: "turn_debug"; snapshot: import("./turn-debug.js").TurnDebugSnapshot }
   /** PRD 模式：需求草稿板全量状态 */
   | { type: "requirement_state"; draft: import("./requirement-draft.js").RequirementDraftState }
   /** PRD 模式：可点击的 Agent 建议动作 */

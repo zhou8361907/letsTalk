@@ -3,6 +3,7 @@ import { join, resolve } from "node:path";
 import type { AgentAnchor } from "@lets-talk/shared-types";
 import { anchorExists } from "./list-anchors.js";
 import type { BuildAgentContextInput } from "./types.js";
+import { MEMORY_ARCH_RULES_SNIPPET } from "./memory-policy.js";
 import { PM_MODE_RULES, trimPmRules } from "./pm-resources.js";
 import {
   formatWorkspaceDirsHint,
@@ -70,7 +71,11 @@ export async function buildRulesContext(input: BuildAgentContextInput): Promise<
   );
   const chat_mode = input.chatMode ?? "explore";
   const rulesFromFile = await readArchRules(workspaceRoot);
-  const arch_rules = [formatWorkspaceDirsHint(layout), rulesFromFile]
+  const arch_rules = [
+    formatWorkspaceDirsHint(layout),
+    rulesFromFile,
+    MEMORY_ARCH_RULES_SNIPPET,
+  ]
     .filter(Boolean)
     .join("\n\n");
 

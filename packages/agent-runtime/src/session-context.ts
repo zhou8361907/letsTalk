@@ -10,8 +10,6 @@ interface SessionContextEntry {
   chatMode: ChatMode;
   anchorRef: string | null;
   anchorKind?: AgentAnchor["kind"];
-  /** 本会话是否已 Push 过 Rule（进程内） */
-  rulesPushed: boolean;
 }
 
 const entries = new Map<string, SessionContextEntry>();
@@ -23,7 +21,6 @@ function getEntry(sessionId: string): SessionContextEntry {
       revision: 0,
       chatMode: "explore",
       anchorRef: null,
-      rulesPushed: false,
     };
     entries.set(sessionId, e);
   }
@@ -39,8 +36,6 @@ export interface SyncSessionPointerInput {
 export interface SyncSessionPointerResult {
   pointer: ContextPointer;
   contextChange?: ContextChange;
-  /** 首条或 chatMode 切换时需 Push Rule；普通轮次仅 pointer */
-  pushRules: boolean;
 }
 
 /**
@@ -66,8 +61,6 @@ export function syncSessionPointer(
     entry.chatMode = input.chatMode;
   }
 
-  const pushRules = !entry.rulesPushed || Boolean(contextChange);
-
   entry.anchorRef = anchorRef;
   entry.anchorKind = anchorKind;
 
@@ -79,12 +72,7 @@ export function syncSessionPointer(
     draft_revision: draftRevision,
   };
 
-  return { pointer, contextChange, pushRules };
-}
-
-/** runChat 在拼完 prefix 且含 rules 后调用 */
-export function markRulesPushed(sessionId: string): void {
-  getEntry(sessionId).rulesPushed = true;
+  return { pointer, contextChange };
 }
 
 export function clearSessionContext(sessionId: string): void {

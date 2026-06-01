@@ -18,6 +18,7 @@ export type TranscriptItem =
       mode: string;
       anchorRef: string | null;
       previewLines: number;
+      m0Refreshed?: boolean;
     };
 
 /** 会话列表项（不含 Transcript 正文，减轻列表接口体积） */

@@ -9,13 +9,13 @@ export async function GET() {
     return Response.json({ error: "未配置 WORKSPACE_ROOT" }, { status: 503 });
   }
 
-  const { listMemoryFiles } = await import(
+  const { listMemoryEditorFiles } = await import(
     /* webpackIgnore: true */
     "@lets-talk/memory"
   );
 
   try {
-    const files = await listMemoryFiles(workspaceRoot);
+    const files = await listMemoryEditorFiles(workspaceRoot);
     return Response.json({ files });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);

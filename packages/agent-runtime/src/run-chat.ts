@@ -6,7 +6,7 @@
  *     → runChat({ onEvent })          ← 本文件
  *       → getOrCreatePiHandle         ← 复用/恢复 Pi AgentSession
  *         → createPiSession           ← create-session.ts
- *       → buildAgentContext           ← @lets-talk/context
+ *       → buildTurnPromptPrefix       ← 每轮仅 pointer / memory / 清单摘要
  *       → session.prompt(userText)    ← Pi SDK：调 LLM + 执行 grep/read 等工具
  *       → session.subscribe           ← Pi 流式事件 → onEvent → SSE
  *
@@ -15,11 +15,7 @@
  *   - UI Transcript：.agent/conversations/{sessionId}.json（由前端 PUT，本文件只写 requirementDraft）
  */
 
-import {
-  buildRulesContext,
-  formatTurnPrefix,
-  resolveWorkspaceLayout,
-} from "@lets-talk/context";
+import { resolveWorkspaceLayout } from "@lets-talk/context";
 import {
   bindPiSessionFile,
   getConversation,
@@ -57,9 +53,20 @@ import {
 } from "./requirement-draft-store.js";
 import { setDraftListener } from "./requirement-draft-runtime.js";
 import {
+  clearMemoryReviewState,
+  markMemoryWrittenThisTurn,
+  maybeSpawnBackgroundMemoryReview,
+  noteUserTurnForMemoryReview,
+} from "./background-memory-review.js";
+import {
   clearSessionContext,
 } from "./session-context.js";
 import { buildTurnPromptPrefix } from "./turn-prefix.js";
+import {
+  buildTurnDebugSnapshot,
+  isTurnDebugSseEnabled,
+  readPiJsonlTail,
+} from "./turn-debug.js";
 
 // ─── 进程内状态（Next dev HMR 后 Map 会清空，靠 jsonl + conversation JSON 恢复）───
 
@@ -160,6 +167,7 @@ export function disposePiSession(sessionId: string): void {
   liveAnchorRefs.delete(sessionId);
   liveAnchors.delete(sessionId);
   clearSessionContext(sessionId);
+  clearMemoryReviewState(sessionId);
   clearDraftRevision(sessionId);
   setDraftListener(sessionId, null);
 }
@@ -317,6 +325,17 @@ export async function runChat(options: RunChatOptions): Promise<void> {
     if (e.type === "tool_execution_end") {
       const callId = String(e.toolCallId ?? "");
       const toolName = String(e.toolName ?? "?");
+      if (
+        e.isError !== true &&
+        [
+          "memory",
+          "update_user_profile",
+          "update_core_memory",
+          "save_memory",
+        ].includes(toolName)
+      ) {
+        markMemoryWrittenThisTurn(options.sessionId);
+      }
       let preview = "";
       const result = e.result as { content?: Array<{ text?: string }> } | undefined;
       if (result?.content) {
@@ -342,12 +361,15 @@ export async function runChat(options: RunChatOptions): Promise<void> {
 
   try {
     // ── 阶段 4a：V1 上下文 — 普通轮仅 pointer；首条 / 切模式才 Rule Push ──
+    noteUserTurnForMemoryReview(options.sessionId);
     const turnCtx = await buildTurnPromptPrefix({
       sessionId: options.sessionId,
       layout,
       chatMode,
       anchor: options.anchor ?? null,
       draftRevision: getDraftRevision(options.sessionId),
+      userMessage: options.message,
+      sessionCreatedAtMs: handle.sessionCreatedAtMs,
     });
     const prefix = turnCtx.prefix;
     options.onEvent({
@@ -355,7 +377,11 @@ export async function runChat(options: RunChatOptions): Promise<void> {
       mode: turnCtx.mode,
       anchorRef: turnCtx.anchorRef,
       previewLines: 0,
+      m0Refreshed: turnCtx.m0Refreshed,
     });
+    if (turnCtx.m0Refreshed) {
+      options.onEvent({ type: "memory_refreshed", source: "prefix" });
+    }
     const userText = prefix.trim()
       ? `${prefix}\n\n${options.message}`
       : options.message;
@@ -367,6 +393,9 @@ export async function runChat(options: RunChatOptions): Promise<void> {
       contextBlock: prefix,
       requirementDraft:
         chatMode === "prd" ? (getDraft(options.sessionId) ?? initialDraft) : null,
+      systemPrompt: handle.systemPromptSnapshot,
+      modelLabel: handle.modelLabel,
+      activeTools: handle.activeTools,
     });
 
     // ── 阶段 4b：进入 Pi SDK ─────────────────────────────────────────────
@@ -377,9 +406,51 @@ export async function runChat(options: RunChatOptions): Promise<void> {
     emitContextUsage(session, (snap) => {
       options.onEvent({ type: "context_usage", ...snap });
     });
-    options.onEvent({ type: "turn_end" });
 
     const usageSnap = snapshotContextUsage(session);
+    const piFileAbs = session.sessionFile ?? handle.piSessionFile ?? null;
+    let piRel: string | null = null;
+    if (piFileAbs) {
+      const { relative } = await import("node:path");
+      piRel = relative(cwd, piFileAbs).replace(/\\/g, "/");
+    }
+
+    if (isTurnDebugSseEnabled()) {
+      const { tail, totalBytes, truncated } = piFileAbs
+        ? await readPiJsonlTail(piFileAbs)
+        : { tail: null, totalBytes: 0, truncated: false };
+      const snapshot = buildTurnDebugSnapshot({
+        turnId,
+        chatMode,
+        anchor: options.anchor ?? null,
+        userMessage: options.message,
+        contextPrefix: prefix,
+        promptUserText: userText,
+        assistantText: debugAssistant,
+        tools: debugTools,
+        contextUsage: usageSnap,
+        piSessionFileAbs: piFileAbs,
+        piSessionFileRel: piRel,
+        piJsonlTail: tail,
+        piJsonlTruncated: truncated,
+        piJsonlTotalBytes: totalBytes,
+        systemPrompt: handle.systemPromptSnapshot,
+        modelLabel: handle.modelLabel,
+        activeTools: handle.activeTools,
+      });
+      options.onEvent({ type: "turn_debug", snapshot });
+    }
+
+    options.onEvent({ type: "turn_end" });
+
+    maybeSpawnBackgroundMemoryReview({
+      sessionId: options.sessionId,
+      workspaceRoot: cwd,
+      chatMode,
+      userMessage: options.message,
+      assistantText: debugAssistant,
+    });
+
     await logTurnResponse(cwd, options.sessionId, turnId, {
       assistantText: debugAssistant,
       tools: debugTools,

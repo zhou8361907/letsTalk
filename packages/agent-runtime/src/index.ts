@@ -10,6 +10,25 @@ export {
   snapshotContextUsage,
 } from "./context-usage.js";
 export {
+  buildTurnDebugSnapshot,
+  isTurnDebugSseEnabled,
+  readPiJsonlFull,
+  readPiJsonlTail,
+} from "./turn-debug.js";
+export {
+  findTurnIdByUserMessage,
+  loadSessionSystemPromptFromDisk,
+  loadSessionTurnDebugFromDisk,
+  mergeTurnDebugSnapshots,
+  type LoadSessionTurnDebugResult,
+  type SessionTurnDebugSource,
+} from "./session-turn-debug.js";
+export {
+  captureSystemPromptFromLoader,
+  formatCombinedSystemPrompt,
+  resolveSystemPromptSnapshot,
+} from "./system-prompt-snapshot.js";
+export {
   runChat,
   getWorkspaceRoot,
   queryContextUsage,

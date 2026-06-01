@@ -13,7 +13,6 @@ import {
   buildConversationMarkdown,
   buildRequirementPrimaryMarkdown,
   downloadMarkdown,
-  mergePrimaryAndDevAppendix,
 } from "../lib/export-prd";
 import { buildAgentActionsFromDraft } from "../lib/requirement-draft-actions";
 import { formatContextUsageLabel } from "../lib/format-tokens";
@@ -36,6 +35,7 @@ import type {
   ChatMode,
   ContextUsageSnapshot,
   ConversationSummary,
+  DevAppendixExportJob,
   RequirementDraftState,
   SseEvent,
   TranscriptItem,
@@ -45,6 +45,38 @@ import type {
 const ANCHOR_STORAGE_KEY = "letsTalk.anchor";
 const SESSION_STORAGE_KEY = "letsTalk.sessionId";
 const CHAT_MODE_STORAGE_KEY = "letsTalk.chatMode";
+
+function findDevAppendixExportReady(items: TranscriptItem[]) {
+  return items.find(
+    (i) => i.kind === "export_ready" && i.exportKind === "dev_appendix",
+  );
+}
+
+/** 客户端保存时保留服务端已写入的「含附录」导出气泡，避免 PUT 冲掉后台结果 */
+function mergeItemsPreservingExportReady(
+  clientItems: TranscriptItem[],
+  serverItems: TranscriptItem[],
+): TranscriptItem[] {
+  const serverReady = serverItems.filter(
+    (i) => i.kind === "export_ready" && i.exportKind === "dev_appendix",
+  );
+  if (serverReady.length === 0) return clientItems;
+  const without = clientItems.filter(
+    (i) => !(i.kind === "export_ready" && i.exportKind === "dev_appendix"),
+  );
+  return [...without, ...serverReady];
+}
+
+function resolveAppendixJobStatus(
+  job?: DevAppendixExportJob | null,
+  items?: TranscriptItem[],
+): "idle" | "running" | "done" | "failed" {
+  const status = job?.status;
+  if (status === "running") return "running";
+  if (status === "done" || findDevAppendixExportReady(items ?? [])) return "done";
+  if (status === "failed") return "failed";
+  return "idle";
+}
 
 interface SessionDebugState {
   turns: TurnDebugSnapshot[];
@@ -85,6 +117,9 @@ export default function HomePage() {
   const [anchor, setAnchor] = useState<AgentAnchor | null>(null);
   const [anchorList, setAnchorList] = useState<AgentAnchor[]>([]);
   const [exportAppendixBusy, setExportAppendixBusy] = useState(false);
+  const [appendixJobStatus, setAppendixJobStatus] = useState<
+    "idle" | "running" | "done" | "failed"
+  >("idle");
   const [manualPath, setManualPath] = useState("");
   const [anchorTab, setAnchorTab] = useState<"file" | "menu">("menu");
 
@@ -122,6 +157,9 @@ export default function HomePage() {
   const chatModeRef = useRef<ChatMode>("explore");
   const requirementDraftRef = useRef<RequirementDraftState | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement | null>(null);
+  const transcriptScrollRef = useRef<HTMLDivElement | null>(null);
+  const convScrollRef = useRef<HTMLDivElement | null>(null);
+  const prevSessionIdForScrollRef = useRef("");
 
   itemsRef.current = items;
   sessionIdRef.current = sessionId;
@@ -180,17 +218,38 @@ export default function HomePage() {
   }, []);
 
   const scrollTranscriptToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    const run = () => {
+      const el = transcriptScrollRef.current;
+      if (!el) return;
+      const top = el.scrollHeight - el.clientHeight;
+      if (behavior === "auto") {
+        el.scrollTop = top;
+      } else {
+        el.scrollTo({ top, behavior: "smooth" });
+      }
+    };
     requestAnimationFrame(() => {
-      transcriptEndRef.current?.scrollIntoView({ behavior, block: "end" });
+      requestAnimationFrame(run);
     });
   }, []);
 
+  const isTranscriptNearBottom = useCallback(() => {
+    const el = transcriptScrollRef.current;
+    if (!el) return true;
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+  }, []);
+
   const refreshConversationList = useCallback(async () => {
+    const scrollEl = convScrollRef.current;
+    const savedScrollTop = scrollEl?.scrollTop ?? 0;
     const res = await fetch("/api/conversations");
     if (!res.ok) return [];
     const data = (await res.json()) as { conversations?: ConversationSummary[] };
     const list = data.conversations ?? [];
     setConversations(list);
+    requestAnimationFrame(() => {
+      if (scrollEl) scrollEl.scrollTop = savedScrollTop;
+    });
     return list;
   }, []);
 
@@ -198,13 +257,21 @@ export default function HomePage() {
     async (snapshot?: TranscriptItem[]) => {
       const sid = sessionIdRef.current;
       if (!sid) return;
+      const exists = await fetch(`/api/conversations/${sid}`);
+      if (!exists.ok) return;
+      const server = (await exists.json()) as { items?: TranscriptItem[] };
+      const clientItems = snapshot ?? itemsRef.current;
+      const items = mergeItemsPreservingExportReady(
+        clientItems,
+        server.items ?? [],
+      );
+
       const draft = requirementDraftRef.current;
       const body: Record<string, unknown> = {
-        items: snapshot ?? itemsRef.current,
+        items,
         anchor: anchorRef.current,
         chatMode: chatModeRef.current,
       };
-      // 仅在有草稿时写入；避免 null 覆盖服务端 Agent 刚 persist 的清单
       if (draft) {
         body.requirementDraft = draft;
       }
@@ -217,6 +284,19 @@ export default function HomePage() {
     },
     [refreshConversationList],
   );
+
+  const resetActiveSessionLocal = useCallback(() => {
+    sessionIdRef.current = "";
+    setSessionId("");
+    sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    setItems([]);
+    itemsRef.current = [];
+    setRequirementDraft(null);
+    requirementDraftRef.current = null;
+    setAgentActions([]);
+    setContextUsage(null);
+    setRenamingId(null);
+  }, []);
 
   const applyConversation = useCallback(
     (record: {
@@ -245,9 +325,8 @@ export default function HomePage() {
       requirementDraftRef.current = draft;
       setAgentActions([]);
       void refreshContextUsage(record.sessionId);
-      scrollTranscriptToBottom("auto");
     },
-    [persistAnchor, refreshContextUsage, scrollTranscriptToBottom],
+    [persistAnchor, refreshContextUsage],
   );
 
   const startNewConversation = useCallback(async () => {
@@ -313,22 +392,59 @@ export default function HomePage() {
     [],
   );
 
+  const requestSummarizeTitle = useCallback(
+    async (sid?: string) => {
+      const id = sid ?? sessionIdRef.current;
+      if (!id || chatModeRef.current !== "prd") return;
+      try {
+        const res = await fetch(`/api/conversations/${id}/summarize-title`, {
+          method: "POST",
+        });
+        if (res.ok) {
+          await refreshConversationList();
+        }
+      } catch {
+        // 标题摘要失败不影响导出
+      }
+    },
+    [refreshConversationList],
+  );
+
+  const syncAppendixJobFromRecord = useCallback(
+    (job?: DevAppendixExportJob | null, items?: TranscriptItem[]) => {
+      setAppendixJobStatus(resolveAppendixJobStatus(job, items));
+    },
+    [],
+  );
+
+  const loadConversationById = useCallback(
+    async (id: string) => {
+      const res = await fetch(`/api/conversations/${id}`);
+      if (!res.ok) return false;
+      const record = (await res.json()) as {
+        sessionId: string;
+        items: TranscriptItem[];
+        anchor: AgentAnchor | null;
+        chatMode?: ChatMode;
+        requirementDraft?: RequirementDraftState | null;
+        devAppendixExport?: DevAppendixExportJob | null;
+      };
+      applyConversation(record);
+      syncAppendixJobFromRecord(record.devAppendixExport, record.items);
+      void refreshSessionDebugTurns(id, record.items);
+      return true;
+    },
+    [applyConversation, refreshSessionDebugTurns, syncAppendixJobFromRecord],
+  );
+
   const switchConversation = useCallback(
     async (id: string) => {
       if (busy || id === sessionIdRef.current) return;
       setRenamingId(null);
       await persistCurrent();
-      const res = await fetch(`/api/conversations/${id}`);
-      if (!res.ok) return;
-      const record = (await res.json()) as {
-        sessionId: string;
-        items: TranscriptItem[];
-        anchor: AgentAnchor | null;
-      };
-      applyConversation(record);
-      void refreshSessionDebugTurns(id, record.items);
+      await loadConversationById(id);
     },
-    [applyConversation, busy, persistCurrent, refreshSessionDebugTurns],
+    [busy, loadConversationById, persistCurrent],
   );
 
   const commitRename = useCallback(
@@ -350,19 +466,50 @@ export default function HomePage() {
     async (id: string) => {
       if (busy) return;
       if (!window.confirm("确定删除此对话？删除后不可恢复。")) return;
+
       const wasCurrent = id === sessionIdRef.current;
       const res = await fetch(`/api/conversations/${id}`, { method: "DELETE" });
-      if (!res.ok) return;
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: string };
+        window.alert(err.error ?? "删除失败");
+        return;
+      }
+
+      debugBySessionRef.current.delete(id);
+      if (renamingId === id) {
+        setRenamingId(null);
+      }
+
       const list = await refreshConversationList();
+
       if (wasCurrent) {
+        resetActiveSessionLocal();
         if (list.length > 0) {
-          await switchConversation(list[0]!.sessionId);
+          await loadConversationById(list[0]!.sessionId);
         } else {
-          await startNewConversation();
+          const createRes = await fetch("/api/conversations", { method: "POST" });
+          if (createRes.ok) {
+            const record = (await createRes.json()) as {
+              sessionId: string;
+              items: TranscriptItem[];
+              anchor: AgentAnchor | null;
+            };
+            applyConversation(record);
+            void refreshSessionDebugTurns(record.sessionId, record.items);
+            await refreshConversationList();
+          }
         }
       }
     },
-    [busy, refreshConversationList, startNewConversation, switchConversation],
+    [
+      applyConversation,
+      busy,
+      loadConversationById,
+      refreshConversationList,
+      refreshSessionDebugTurns,
+      renamingId,
+      resetActiveSessionLocal,
+    ],
   );
 
   const setChatModePersist = useCallback((mode: ChatMode) => {
@@ -391,7 +538,10 @@ export default function HomePage() {
           });
     const suffix = mode === "prd" && draft?.items.length ? "PM定稿" : "对话";
     downloadMarkdown(`${safeName}-${suffix}.md`, md);
-  }, [conversations, sessionId]);
+    if (mode === "prd" && draft?.items.length && sessionId) {
+      void requestSummarizeTitle(sessionId);
+    }
+  }, [conversations, requestSummarizeTitle, sessionId]);
 
   const exportWithDevAppendix = useCallback(async () => {
     const sid = sessionIdRef.current;
@@ -403,7 +553,16 @@ export default function HomePage() {
     const title =
       conversations.find((c) => c.sessionId === sid)?.title ?? "letsTalk-需求";
     const safeName = title.replace(/[/\\?%*:|"<>]/g, "-").slice(0, 60);
+    const primary = buildRequirementPrimaryMarkdown(draft, {
+      title,
+      anchor: anchorRef.current,
+    });
+
+    downloadMarkdown(`${safeName}-PM定稿.md`, primary);
+    void requestSummarizeTitle(sid);
+
     setExportAppendixBusy(true);
+    setAppendixJobStatus("running");
     try {
       const res = await fetch("/api/export/dev-appendix", {
         method: "POST",
@@ -412,29 +571,36 @@ export default function HomePage() {
           sessionId: sid,
           title,
           anchor: anchorRef.current,
+          background: true,
         }),
       });
       const data = (await res.json()) as {
-        primary?: string;
-        appendix?: string;
+        status?: string;
         error?: string;
       };
-      if (!res.ok) throw new Error(data.error ?? res.statusText);
-      const merged = mergePrimaryAndDevAppendix(
-        data.primary ?? buildRequirementPrimaryMarkdown(draft, { title, anchor: anchorRef.current }),
-        data.appendix ?? "",
-      );
-      downloadMarkdown(`${safeName}-完整含研发附录.md`, merged);
+      if (!res.ok) {
+        throw new Error(data.error ?? res.statusText);
+      }
     } catch (e) {
+      setAppendixJobStatus("failed");
       window.alert(
-        e instanceof Error ? e.message : "生成研发附录失败，可先导出 PM 定稿",
+        e instanceof Error ? e.message : "启动研发附录任务失败，可先使用 PM 定稿",
       );
     } finally {
       setExportAppendixBusy(false);
     }
-  }, [conversations, exportPrimaryMarkdown]);
+  }, [conversations, exportPrimaryMarkdown, requestSummarizeTitle]);
 
   const exportMarkdown = exportPrimaryMarkdown;
+
+  const downloadMergedAppendix = useCallback(() => {
+    const ready = findDevAppendixExportReady(itemsRef.current);
+    if (ready) {
+      downloadMarkdown(ready.filename, ready.markdown);
+      return;
+    }
+    window.alert("未找到含附录文档，请稍候或重新生成。");
+  }, []);
 
   useEffect(() => {
     setAnchor(loadStoredAnchor());
@@ -468,18 +634,28 @@ export default function HomePage() {
             .catch(() => setAnchorList([])),
         ]);
 
+        const restoreRecord = (record: {
+          devAppendixExport?: DevAppendixExportJob | null;
+          items?: TranscriptItem[];
+        }) => {
+          applyConversation(record);
+          setAppendixJobStatus(
+            resolveAppendixJobStatus(record.devAppendixExport, record.items),
+          );
+        };
+
         const lastId = sessionStorage.getItem(SESSION_STORAGE_KEY);
         if (lastId && list.some((c) => c.sessionId === lastId)) {
           const res = await fetch(`/api/conversations/${lastId}`);
           if (res.ok) {
-            applyConversation(await res.json());
+            restoreRecord(await res.json());
             return;
           }
         }
         if (list.length > 0) {
           const res = await fetch(`/api/conversations/${list[0]!.sessionId}`);
           if (res.ok) {
-            applyConversation(await res.json());
+            restoreRecord(await res.json());
             return;
           }
         }
@@ -492,8 +668,76 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    scrollTranscriptToBottom(busy ? "auto" : "smooth");
-  }, [items, busy, scrollTranscriptToBottom]);
+    if (booting || !sessionId) return;
+
+    const switched = prevSessionIdForScrollRef.current !== sessionId;
+    prevSessionIdForScrollRef.current = sessionId;
+
+    if (switched) {
+      scrollTranscriptToBottom("auto");
+      return;
+    }
+    if (busy || isTranscriptNearBottom()) {
+      scrollTranscriptToBottom(busy ? "auto" : "smooth");
+    }
+  }, [
+    booting,
+    busy,
+    isTranscriptNearBottom,
+    items,
+    scrollTranscriptToBottom,
+    sessionId,
+  ]);
+
+  useEffect(() => {
+    if (appendixJobStatus !== "running" || !sessionId) return;
+
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const res = await fetch(
+          `/api/export/dev-appendix?sessionId=${encodeURIComponent(sessionId)}`,
+        );
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as {
+          devAppendixExport?: DevAppendixExportJob;
+          items?: TranscriptItem[];
+          title?: string;
+        };
+        const job = data.devAppendixExport;
+        const items = data.items;
+        const settled = resolveAppendixJobStatus(job, items);
+        if (settled === "done") {
+          setAppendixJobStatus("done");
+          if (items) {
+            setItems(items);
+            itemsRef.current = items;
+          }
+          scrollTranscriptToBottom("smooth");
+          await refreshConversationList();
+        } else if (settled === "failed") {
+          setAppendixJobStatus("failed");
+          if (job?.error) {
+            window.alert(`研发附录生成失败：${job.error}`);
+          }
+        }
+      } catch {
+        // 下轮再试
+      }
+    };
+
+    void poll();
+    const timer = window.setInterval(() => void poll(), 2500);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [
+    appendixJobStatus,
+    refreshConversationList,
+    scrollTranscriptToBottom,
+    sessionId,
+  ]);
 
   const appendAssistantDelta = useCallback((delta: string, snapshot: TranscriptItem[]) => {
     assistantBuf.current += delta;
@@ -702,7 +946,7 @@ export default function HomePage() {
         >
           + 开启新对话
         </button>
-        <div className="conv-scroll">
+        <div className="conv-scroll" ref={convScrollRef}>
           {groups.map((g) => (
             <div key={g.label} className="conv-group">
               <div className="conv-group-label">{g.label}</div>
@@ -733,6 +977,7 @@ export default function HomePage() {
                               ? "conv-item active"
                               : "conv-item"
                           }
+                          onMouseDown={(e) => e.preventDefault()}
                           onClick={() => void switchConversation(c.sessionId)}
                           disabled={busy}
                           title={c.title}
@@ -927,7 +1172,11 @@ export default function HomePage() {
           </div>
         </header>
 
-        <section className="transcript-scroll" aria-label="对话记录">
+        <section
+          className="transcript-scroll"
+          aria-label="对话记录"
+          ref={transcriptScrollRef}
+        >
           <div className="transcript-inner">
           {items.length === 0 && (
             <p className="muted empty-hint">
@@ -948,7 +1197,13 @@ export default function HomePage() {
             return (
             <div
               key={i}
-              className={`bubble ${isToolGroup(item) ? "tool-group-wrap" : item.kind}`}
+              className={`bubble ${
+                isToolGroup(item)
+                  ? "tool-group-wrap"
+                  : item.kind === "export_ready"
+                    ? "export-ready"
+                    : item.kind
+              }`}
             >
               {isToolGroup(item) && (
                 <details className="tool-group">
@@ -1006,6 +1261,21 @@ export default function HomePage() {
                   {item.anchorRef ? ` · ${item.anchorRef}` : ""}
                 </p>
               )}
+              {item.kind === "export_ready" && (
+                <div className="export-ready-bubble">
+                  <div className="label">导出</div>
+                  <p>{item.label}</p>
+                  <button
+                    type="button"
+                    className="export-ready-btn"
+                    onClick={() =>
+                      downloadMarkdown(item.filename, item.markdown)
+                    }
+                  >
+                    下载 {item.filename}
+                  </button>
+                </div>
+              )}
             </div>
             );
           })}
@@ -1045,7 +1315,11 @@ export default function HomePage() {
           actions={agentActions}
           onExport={exportMarkdown}
           onExportWithAppendix={() => void exportWithDevAppendix()}
-          exportAppendixBusy={exportAppendixBusy}
+          onDownloadMergedAppendix={downloadMergedAppendix}
+          exportAppendixBusy={
+            exportAppendixBusy || appendixJobStatus === "running"
+          }
+          appendixJobStatus={appendixJobStatus}
           onFinalize={(action) => {
             if (action.kind === "finalize_skip_blast") {
               exportMarkdown();
@@ -1418,6 +1692,28 @@ export default function HomePage() {
         }
         .bubble.assistant {
           background: var(--assistant);
+        }
+        .bubble.export-ready {
+          background: var(--panel);
+          border-color: var(--accent);
+        }
+        .export-ready-bubble {
+          display: flex;
+          flex-direction: column;
+          gap: 0.45rem;
+        }
+        .export-ready-btn {
+          align-self: flex-start;
+          font-size: 11px;
+          padding: 0.35rem 0.65rem;
+          border: 1px solid var(--accent);
+          border-radius: 6px;
+          background: transparent;
+          color: var(--accent);
+          cursor: pointer;
+        }
+        .export-ready-btn:hover {
+          background: rgba(255, 255, 255, 0.04);
         }
         .bubble.tool,
         .bubble.tool-group-wrap {

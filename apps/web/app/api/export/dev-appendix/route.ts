@@ -3,7 +3,7 @@ import "server-only";
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
-/** 根据 PM 定稿 lazy 生成研发附录（实验） */
+/** 根据 PM 定稿生成研发附录；支持后台模式 */
 export async function POST(req: Request) {
   if (!process.env.LLM_API_KEY?.trim()) {
     return Response.json({ error: "未配置 LLM_API_KEY" }, { status: 503 });
@@ -13,6 +13,7 @@ export async function POST(req: Request) {
     sessionId?: string;
     title?: string;
     anchor?: import("@lets-talk/shared-types").AgentAnchor | null;
+    background?: boolean;
   };
 
   const sessionId = body.sessionId?.trim();
@@ -20,9 +21,16 @@ export async function POST(req: Request) {
     return Response.json({ error: "缺少 sessionId" }, { status: 400 });
   }
 
-  const { getConversation } = await import("@lets-talk/conversation");
-  const { generateDevAppendix } = await import("@lets-talk/agent-runtime");
-  const { buildRequirementPrimaryMarkdown } = await import("../../../../lib/export-prd");
+  const { getConversation, updateDevAppendixExport } = await import(
+    "@lets-talk/conversation"
+  );
+  const {
+    generateDevAppendix,
+    isDevAppendixJobRunning,
+    runDevAppendixExportJob,
+  } = await import("@lets-talk/agent-runtime");
+  const { buildRequirementPrimaryMarkdown, mergePrimaryAndDevAppendix } =
+    await import("../../../../lib/export-prd");
   const { resolveWorkspaceLayout } = await import("@lets-talk/context");
 
   const cwd = resolveWorkspaceLayout().workspaceRoot;
@@ -37,15 +45,82 @@ export async function POST(req: Request) {
     title,
     anchor,
   });
+  const safeName = title.replace(/[/\\?%*:|"<>]/g, "-").slice(0, 60);
+  const mergedFilename = `${safeName}-完整含研发附录.md`;
+
+  if (body.background) {
+    if (
+      isDevAppendixJobRunning(sessionId) ||
+      record.devAppendixExport?.status === "running"
+    ) {
+      return Response.json({
+        status: "running",
+        devAppendixExport: record.devAppendixExport,
+      });
+    }
+
+    await updateDevAppendixExport(cwd, sessionId, {
+      status: "running",
+      startedAt: new Date().toISOString(),
+      primaryMarkdown: primary,
+    });
+
+    void runDevAppendixExportJob({
+      workspaceRoot: cwd,
+      sessionId,
+      primaryMarkdown: primary,
+      mergedMarkdownFilename: mergedFilename,
+      anchor,
+      mergeFn: mergePrimaryAndDevAppendix,
+      summarizeTitle: false,
+    }).catch((err) => {
+      console.warn(
+        `[letsTalk:dev-appendix] ${sessionId} background failed:`,
+        err instanceof Error ? err.message : err,
+      );
+    });
+
+    return Response.json({
+      status: "running",
+      primary,
+      filename: mergedFilename,
+    });
+  }
 
   try {
     const appendix = await generateDevAppendix({
       primaryMarkdown: primary,
       anchor,
     });
-    return Response.json({ primary, appendix });
+    const merged = mergePrimaryAndDevAppendix(primary, appendix);
+    return Response.json({ primary, appendix, merged, filename: mergedFilename });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     return Response.json({ error: message }, { status: 500 });
   }
+}
+
+/** 查询后台附录任务状态 */
+export async function GET(req: Request) {
+  const root = process.env.WORKSPACE_ROOT?.trim();
+  if (!root) {
+    return Response.json({ error: "未配置 WORKSPACE_ROOT" }, { status: 503 });
+  }
+
+  const sessionId = new URL(req.url).searchParams.get("sessionId")?.trim();
+  if (!sessionId) {
+    return Response.json({ error: "缺少 sessionId" }, { status: 400 });
+  }
+
+  const { getConversation } = await import("@lets-talk/conversation");
+  const record = await getConversation(root, sessionId);
+  if (!record) {
+    return Response.json({ error: "会话不存在" }, { status: 404 });
+  }
+
+  return Response.json({
+    devAppendixExport: record.devAppendixExport ?? { status: "idle" },
+    items: record.items,
+    title: record.title,
+  });
 }

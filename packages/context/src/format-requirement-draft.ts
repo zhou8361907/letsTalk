@@ -1,4 +1,8 @@
 import type { RequirementDraftState } from "@lets-talk/shared-types";
+import {
+  formatDraftConventionGapsLine,
+  itemToBeNeedsConfirmation,
+} from "@lets-talk/shared-types";
 
 /** 每轮 JIT 注入：让 Agent 更新草稿时带上已有 id 与上下文 */
 export function formatRequirementDraftSnapshot(
@@ -26,6 +30,9 @@ export function formatRequirementDraftSnapshot(
     lines.push(`待确认：${draft.blockingQuestion.trim()}`);
   }
 
+  const gaps = formatDraftConventionGapsLine(draft);
+  if (gaps) lines.push(gaps);
+
   lines.push(
     "规则：PM 一件事 = 清单 1 条；后端/数据库改造写在 codePaths，勿新建「后端支持」条目。",
   );
@@ -33,7 +40,7 @@ export function formatRequirementDraftSnapshot(
   return lines.join("\n");
 }
 
-/** C1：每轮 prefix 用的紧凑摘要（id | title | page | control） */
+/** C1：每轮 prefix 用的紧凑摘要（id | title | page | control + 公约缺口） */
 export function formatRequirementDraftBriefSummary(
   draft: RequirementDraftState | null | undefined,
   maxItems = 8,
@@ -47,16 +54,21 @@ export function formatRequirementDraftBriefSummary(
       it.fields.find((f) => f.key === "page")?.value.trim() ?? "";
     const control =
       it.fields.find((f) => f.key === "control")?.value.trim() ?? "";
+    const toBe =
+      it.fields.find((f) => f.key === "toBe")?.value.trim() ?? "";
     const bits = [
       `id=${it.id}`,
       `title=${it.title}`,
       page ? `page=${page}` : "",
       control ? `control=${control}` : "",
+      toBe && itemToBeNeedsConfirmation(it) ? "toBe=待确认" : "",
     ].filter(Boolean);
     lines.push(`- ${bits.join(" | ")}`);
   }
   if (draft.items.length > maxItems) {
     lines.push(`… 另有 ${draft.items.length - maxItems} 条，请 get_requirement_draft`);
   }
+  const gaps = formatDraftConventionGapsLine(draft);
+  if (gaps) lines.push(gaps);
   return lines.join("\n");
 }

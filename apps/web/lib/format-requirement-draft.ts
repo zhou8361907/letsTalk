@@ -5,6 +5,7 @@ import type {
   RequirementItem,
   RequirementItemStatus,
 } from "@lets-talk/shared-types";
+import { canMarkReadyToFinalize } from "@lets-talk/shared-types";
 import { REQUIREMENT_FIELD_LABELS } from "@lets-talk/shared-types";
 
 /** PM 界面不展示的内部字段 */
@@ -131,11 +132,33 @@ export function pmDisplayItems(draft: RequirementDraftState): RequirementItem[] 
   });
 }
 
+/** 公约待确认/待补计数（用于右栏摘要，非流程阶段） */
+export function pmConventionGapCount(draft: RequirementDraftState): number {
+  let n = 0;
+  if (draft.blockingQuestion?.trim()) n += 1;
+  n += draft.openQuestions.length;
+  for (const item of pmDisplayItems(draft)) {
+    for (const f of pmVisibleFields(item)) {
+      if (f.status === "missing" || f.status === "pending") n += 1;
+    }
+  }
+  return n;
+}
+
+/** 公约已齐，可导出定稿（与 agent-runtime 同一规则） */
+export function pmCanExportDraft(draft: RequirementDraftState): boolean {
+  return canMarkReadyToFinalize(draft);
+}
+
 export function pmDraftSummary(draft: RequirementDraftState): string {
   const items = pmDisplayItems(draft);
   const n = items.length;
-  if (n === 0) return "还没有拆出具体需求";
-  const ready = items.filter((i) => i.status === "ready").length;
-  if (ready === n) return `${n} 条需求，大多可以定稿了`;
-  return `${n} 条需求，Agent 会帮你逐条补全`;
+  if (n === 0) return "和研发对齐的最小说明 · 还没有条目";
+  const gaps = pmConventionGapCount(draft);
+  if (gaps === 0) {
+    const ready = items.filter((i) => i.status === "ready").length;
+    if (ready === n) return `${n} 条需求 · 公约较齐，可导出定稿`;
+    return `${n} 条需求 · Agent 会帮你逐条补全`;
+  }
+  return `${n} 条需求 · ${gaps} 处待确认或待补`;
 }

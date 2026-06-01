@@ -7,6 +7,7 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { canMarkReadyToFinalize } from "@lets-talk/shared-types";
 import type {
   RequirementDraftState,
   RequirementField,
@@ -364,8 +365,20 @@ function buildDraftUpdate(
       input.blockingQuestion !== undefined
         ? input.blockingQuestion
         : base.blockingQuestion,
-    readyToFinalize: input.readyToFinalize ?? base.readyToFinalize,
+    readyToFinalize: false,
   };
+}
+
+function finalizeReadyFlag(
+  draft: RequirementDraftState,
+  requested?: boolean,
+): RequirementDraftState {
+  const want = requested ?? draft.readyToFinalize;
+  if (!want) return { ...draft, readyToFinalize: false };
+  if (!canMarkReadyToFinalize(draft)) {
+    return { ...draft, readyToFinalize: false };
+  }
+  return { ...draft, readyToFinalize: true };
 }
 
 /** G：modify 条目至少要有 page 或 control（postProcess 之后校验） */
@@ -398,14 +411,15 @@ export function applyDraftUpdate(
   anchorRef: string | null,
   input: ApplyDraftInput,
 ): RequirementDraftState {
-  const draft = buildDraftUpdate(sessionId, anchorRef, input);
+  const built = buildDraftUpdate(sessionId, anchorRef, input);
+  const draft = finalizeReadyFlag(built, input.readyToFinalize);
   sessions.set(sessionId, draft);
   bumpDraftRevision(sessionId);
   return draft;
 }
 
 export function buildAgentActions(draft: RequirementDraftState) {
-  if (!draft.readyToFinalize || draft.items.length === 0) {
+  if (!canMarkReadyToFinalize(draft) || draft.items.length === 0) {
     return [];
   }
   return [

@@ -4,19 +4,9 @@
 
 import { resolve } from "node:path";
 import { getConversation } from "@lets-talk/conversation";
+import { resolveMemoryReviewPrompt } from "@lets-talk/context";
 import { isMemoryToolsEnabled } from "./agent-write-policy.js";
 import { createPiSession } from "./create-session.js";
-
-const REVIEW_PROMPT = `请回顾下面的对话片段，判断是否值得写入跨会话 M0 记忆。
-
-你**只能**调用工具 \`memory\`（本任务未注册 grep/read/save_memory 等其它工具）。
-
-写入示例（action 必须为 add / replace / remove）：
-- 用户称呼/偏好 → memory(action="add", target="user", content="用户希望被称呼为…")
-- 仓库惯例/踩坑 → memory(action="add", target="core", content="…")
-
-若无值得保存的内容，只回复「无需保存。」并结束。
-禁止写入：任务进度、PR/分支、本单需求、接口清单、jargon（jargon 用 save_memory，本回顾不写）。`;
 
 interface SessionReviewState {
   userTurns: number;
@@ -35,7 +25,7 @@ function stateFor(sessionId: string): SessionReviewState {
   return s;
 }
 
-/** LETS_TALK_MEMORY_NUDGE_INTERVAL：默认 dev=10，production=0（关闭） */
+/** LETS_TALK_MEMORY_NUDGE_INTERVAL：默认 10；0 / false / no 关闭 */
 export function memoryReviewInterval(): number {
   const raw = process.env.LETS_TALK_MEMORY_NUDGE_INTERVAL?.trim();
   if (raw === "0" || raw === "false" || raw === "no") return 0;
@@ -43,7 +33,7 @@ export function memoryReviewInterval(): number {
     const n = Number(raw);
     if (Number.isFinite(n) && n > 0) return Math.floor(n);
   }
-  return process.env.NODE_ENV === "production" ? 0 : 10;
+  return 10;
 }
 
 export function noteUserTurnForMemoryReview(sessionId: string): void {
@@ -113,7 +103,8 @@ async function runReviewInBackground(input: {
   });
 
   try {
-    const prompt = `${REVIEW_PROMPT}\n\n---\n\n${transcript}`;
+    const reviewPrompt = await resolveMemoryReviewPrompt(input.workspaceRoot);
+    const prompt = `${reviewPrompt}\n\n---\n\n${transcript}`;
     await handle.session.prompt(prompt);
   } finally {
     handle.dispose();

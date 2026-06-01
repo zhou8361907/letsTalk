@@ -27,6 +27,7 @@ export async function generateDevAppendix(options: {
   const handle = await createPiSession(cwd, true, {
     piSessionFile,
     sessionId: `export-${Date.now()}`,
+    sessionKind: "export-appendix",
     getAnchorRef: () => options.anchor?.routePath ?? options.anchor?.ref ?? null,
   });
 

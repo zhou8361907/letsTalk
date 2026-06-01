@@ -9,21 +9,16 @@ import {
   SettingsManager,
 } from "@earendil-works/pi-coding-agent";
 import type { ResourceLoader } from "@earendil-works/pi-coding-agent";
-import { buildLetsTalkAppendSystemPrompt } from "@lets-talk/context";
+import {
+  buildLetsTalkAppendSystemPrompt,
+  resolveMemoryReviewPrompt,
+} from "@lets-talk/context";
 import {
   formatCoreMemorySystemBlock,
   loadCoreMemorySnapshot,
   TIER1_VIRTUAL_REL,
 } from "@lets-talk/memory";
 import type { ChatMode } from "@lets-talk/shared-types";
-
-const MEMORY_REVIEW_SYSTEM_APPEND = `# 记忆回顾（后台任务）
-
-你仅判断是否将**跨会话**事实写入 **memory** 工具。
-- 称呼/偏好 → \`memory\` action=add, target=user, content=...
-- 惯例/踩坑 → \`memory\` action=add, target=core, content=...
-无值得保存时只回复「无需保存。」
-禁止：grep/read/save_memory/写 topics 或 INDEX；禁止任务进度、PR、本单需求。`;
 
 export async function createLetsTalkResourceLoader(
   workspaceRoot: string,
@@ -34,7 +29,7 @@ export async function createLetsTalkResourceLoader(
   const settingsManager = SettingsManager.create(workspace, agentDir);
   const coreSnapshot = await loadCoreMemorySnapshot(workspace);
   const tier1Block = formatCoreMemorySystemBlock(coreSnapshot);
-  const append = buildLetsTalkAppendSystemPrompt(chatMode);
+  const append = await buildLetsTalkAppendSystemPrompt(chatMode, workspace);
 
   const loader = new DefaultResourceLoader({
     cwd: workspace,
@@ -56,8 +51,19 @@ export async function createLetsTalkResourceLoader(
   return loader;
 }
 
-/** 后台 memory review：无 AGENTS/Tier1，仅极简 append + memory 工具 */
-export async function createMemoryReviewResourceLoader(
+const EXPORT_APPENDIX_SYSTEM_APPEND = `# 研发附录（导出任务）
+
+你是研发线索整理助手。用 grep/read 适度查代码，输出 Markdown 三节：前端可能涉及、后端可能涉及、联调与注意。
+- 路径/接口写「可能」；读不到就写「需在仓库内进一步定位」
+- 不要改写 PM 定稿；不要 JSON；尽量简洁`;
+
+const TITLE_SUMMARY_SYSTEM_APPEND = `# 标题摘要（单次任务）
+
+根据用户给出的需求清单，输出一句中文侧栏标题（≤28字）。
+只输出标题一行，不要引号、不要前缀、不要解释。`;
+
+/** 研发附录导出：无 AGENTS/Tier1，短 append + 只读工具 */
+export async function createExportAppendixResourceLoader(
   workspaceRoot: string,
 ): Promise<ResourceLoader> {
   const workspace = resolve(workspaceRoot);
@@ -72,7 +78,52 @@ export async function createMemoryReviewResourceLoader(
     noSkills: true,
     noPromptTemplates: true,
     noThemes: true,
-    appendSystemPrompt: [MEMORY_REVIEW_SYSTEM_APPEND],
+    appendSystemPrompt: [EXPORT_APPENDIX_SYSTEM_APPEND],
+  });
+  await loader.reload();
+  return loader;
+}
+
+/** 侧栏标题摘要：无工具 */
+export async function createTitleSummaryResourceLoader(
+  workspaceRoot: string,
+): Promise<ResourceLoader> {
+  const workspace = resolve(workspaceRoot);
+  const agentDir = getAgentDir();
+  const settingsManager = SettingsManager.create(workspace, agentDir);
+  const loader = new DefaultResourceLoader({
+    cwd: workspace,
+    agentDir,
+    settingsManager,
+    noContextFiles: true,
+    noExtensions: true,
+    noSkills: true,
+    noPromptTemplates: true,
+    noThemes: true,
+    appendSystemPrompt: [TITLE_SUMMARY_SYSTEM_APPEND],
+  });
+  await loader.reload();
+  return loader;
+}
+
+/** 后台 memory review：无 AGENTS/Tier1，仅极简 append + memory 工具 */
+export async function createMemoryReviewResourceLoader(
+  workspaceRoot: string,
+): Promise<ResourceLoader> {
+  const workspace = resolve(workspaceRoot);
+  const agentDir = getAgentDir();
+  const settingsManager = SettingsManager.create(workspace, agentDir);
+  const reviewPrompt = await resolveMemoryReviewPrompt(workspace);
+  const loader = new DefaultResourceLoader({
+    cwd: workspace,
+    agentDir,
+    settingsManager,
+    noContextFiles: true,
+    noExtensions: true,
+    noSkills: true,
+    noPromptTemplates: true,
+    noThemes: true,
+    appendSystemPrompt: [reviewPrompt],
   });
   await loader.reload();
   return loader;

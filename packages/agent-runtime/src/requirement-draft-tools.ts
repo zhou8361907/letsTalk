@@ -34,7 +34,7 @@ const itemSchema = Type.Object({
   fields: Type.Optional(
     Type.Record(Type.String(), Type.String(), {
       description:
-        "业务语言填写。常用：page 页面名, control 改哪里, asIs 现在怎样, toBe 希望改成, acceptance 怎么验收, province 适用范围。codePaths 可填路径仅供研发，勿在其它字段写技术词。",
+        "业务语言填写。常用：page 页面名, control 改哪里, asIs 现在怎样, toBe 希望改成（流程/交互用 1）2）编号步骤）, acceptance 怎么验收（与 toBe 步骤对应）, province 适用范围。codePaths 可填路径仅供研发，勿在其它字段写技术词。",
     }),
   ),
 });
@@ -48,7 +48,12 @@ const params = Type.Object({
   blockingQuestion: Type.Optional(
     Type.Union([Type.String(), Type.Null()]),
   ),
-  readyToFinalize: Type.Optional(Type.Boolean()),
+  readyToFinalize: Type.Optional(
+    Type.Boolean({
+      description:
+        "true=认为可导出定稿；仅当无 blockingQuestion、每条 toBe/acceptance 已填且 toBe 无「待确认」未核实规则时生效",
+    }),
+  ),
   replaceItems: Type.Optional(
     Type.Boolean({
       description: "true=用 items 整体替换；false=按 id 合并。默认首次替换、后续合并",
@@ -69,13 +74,10 @@ export function createRequirementDraftTools(options: {
       "更新右侧「需求清单」（给产品经理看）。用业务语言拆条，禁止把代码术语写进 page/control/toBe 等字段。",
     promptSnippet: "update_requirement_draft — 同步需求清单（业务语言）",
     promptGuidelines: [
-      "读者是不懂代码的 PM：右侧只写业务话。",
-      "写前必须先 get_requirement_draft 取得 draftRevision 与条目 id。",
-      "小补充：带 id，可只传要改的 fields，未传字段会保留。",
-      "PM 一件事 = 1 条；禁止「后端支持xxx」单独成条，后端写 codePaths。",
-      "modify 改现有：至少填 page 或 control 之一，以及 asIs/toBe/acceptance。",
-      "PM 大改 replaceItems: true 且须传全量 items+fields；勿 replace 后漏字段。",
-      "换菜单/换页后清单默认保留，勿擅自清空。",
+      "有需求变更时：先 get_requirement_draft，再 update（非每轮必调）。",
+      "update 前自检 toBe：你猜的规则（PM 未说的口径/阈值）改为「待确认：…」。",
+      "小改：带 id，只传要改的 fields；大改：replaceItems: true + 全量 items。",
+      "modify 至少填 page 或 control 之一。",
     ],
     parameters: params,
     execute: async (_id, raw) => {

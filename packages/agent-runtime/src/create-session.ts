@@ -19,8 +19,10 @@ import {
   SessionManager,
 } from "@earendil-works/pi-coding-agent";
 import {
+  createExportAppendixResourceLoader,
   createLetsTalkResourceLoader,
   createMemoryReviewResourceLoader,
+  createTitleSummaryResourceLoader,
 } from "./pi-resource-loader.js";
 import { captureSystemPromptFromLoader } from "./system-prompt-snapshot.js";
 import type { AgentSession } from "@earendil-works/pi-coding-agent";
@@ -86,7 +88,11 @@ const CONTEXT_PULL_TOOLS = [
 
 const PRD_PULL_TOOLS = ["get_requirement_draft"] as const;
 
-export type PiSessionKind = "default" | "memory-review";
+export type PiSessionKind =
+  | "default"
+  | "memory-review"
+  | "export-appendix"
+  | "title-summary";
 
 export interface CreatePiSessionOptions {
   /** 已有 jsonl 时 open 恢复；省略则由 SessionManager.create 新建 */
@@ -114,7 +120,11 @@ export async function createPiSession(
 ): Promise<PiSessionHandle> {
   const workspace = resolve(cwd);
   const chatMode = options?.chatMode ?? "explore";
-  const isMemoryReview = options?.sessionKind === "memory-review";
+  const sessionKind = options?.sessionKind ?? "default";
+  const isMemoryReview = sessionKind === "memory-review";
+  const isExportAppendix = sessionKind === "export-appendix";
+  const isTitleSummary = sessionKind === "title-summary";
+  const isMinimalTask = isMemoryReview || isExportAppendix || isTitleSummary;
 
   // 有 piSessionFile → 恢复历史；否则新建（仅内存，落盘在首轮 prompt 后）
   const sessionManager = options?.piSessionFile
@@ -139,12 +149,12 @@ export async function createPiSession(
       ? createMemoryOnlyTool(workspace)
       : null;
   const scopedWriteTools =
-    isScopedWriteEnabled() && !isMemoryReview
+    isScopedWriteEnabled() && !isMinimalTask
       ? createScopedWriteTools(workspace)
       : [];
 
   const pullTools =
-    useTools && !isMemoryReview && options?.sessionId
+    useTools && !isMinimalTask && options?.sessionId
       ? createContextPullTools({
           sessionId: options.sessionId,
           workspaceRoot: workspace,
@@ -159,7 +169,7 @@ export async function createPiSession(
       : [];
 
   const draftTools =
-    useTools && !isMemoryReview && options?.sessionId && chatMode === "prd"
+    useTools && !isMinimalTask && options?.sessionId && chatMode === "prd"
       ? createRequirementDraftTools({
           sessionId: options.sessionId,
           getAnchorRef: options.getAnchorRef ?? (() => null),
@@ -172,48 +182,64 @@ export async function createPiSession(
     pullToolNames.push(...PRD_PULL_TOOLS);
   }
 
-  const toolNames: string[] = isMemoryReview
-    ? isMemoryToolsEnabled()
-      ? (["memory"] as const)
-      : []
-    : [
-        ...READONLY_TOOLS,
-        ...(isMemoryToolsEnabled()
-          ? ([
-              "memory",
-              "save_memory",
-              "read_memory",
-              "list_memory_index",
-              "update_user_profile",
-              "update_core_memory",
-              "read_user_profile",
-              "read_core_memory",
-            ] as const)
-          : []),
-        ...(isScopedWriteEnabled() ? (["write", "edit"] as const) : []),
-        ...pullToolNames.filter(
-          (n) => n !== "resolve_memory_terms" || isMemoryToolsEnabled(),
-        ),
-        ...(draftTools.length ? (["update_requirement_draft"] as const) : []),
-      ];
+  const exportAppendixToolNames = [
+    ...READONLY_TOOLS,
+  ] as const;
+
+  const toolNames: string[] = isTitleSummary
+    ? []
+    : isMemoryReview
+      ? isMemoryToolsEnabled()
+        ? (["memory"] as const)
+        : []
+      : isExportAppendix
+        ? [...exportAppendixToolNames]
+        : [
+            ...READONLY_TOOLS,
+            ...(isMemoryToolsEnabled()
+              ? ([
+                  "memory",
+                  "save_memory",
+                  "read_memory",
+                  "list_memory_index",
+                  "update_user_profile",
+                  "update_core_memory",
+                  "read_user_profile",
+                  "read_core_memory",
+                ] as const)
+              : []),
+            ...(isScopedWriteEnabled() ? (["write", "edit"] as const) : []),
+            ...pullToolNames.filter(
+              (n) => n !== "resolve_memory_terms" || isMemoryToolsEnabled(),
+            ),
+            ...(draftTools.length ? (["update_requirement_draft"] as const) : []),
+          ];
 
   const registeredPullTools = pullTools;
 
   const resourceLoader = isMemoryReview
     ? await createMemoryReviewResourceLoader(workspace)
-    : await createLetsTalkResourceLoader(workspace, chatMode);
+    : isExportAppendix
+      ? await createExportAppendixResourceLoader(workspace)
+      : isTitleSummary
+        ? await createTitleSummaryResourceLoader(workspace)
+        : await createLetsTalkResourceLoader(workspace, chatMode);
 
   const customTools = isMemoryReview
     ? memoryOnlyTool
       ? [memoryOnlyTool]
       : []
-    : [
-        ...createJavaAstTools(workspace),
-        ...memoryTools,
-        ...scopedWriteTools,
-        ...registeredPullTools,
-        ...draftTools,
-      ];
+    : isExportAppendix
+      ? [...createJavaAstTools(workspace)]
+      : isTitleSummary
+        ? []
+        : [
+            ...createJavaAstTools(workspace),
+            ...memoryTools,
+            ...scopedWriteTools,
+            ...registeredPullTools,
+            ...draftTools,
+          ];
 
   const piOptions = {
     cwd: workspace,

@@ -5,11 +5,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 interface MemoryEditorFileEntry {
   path: string;
   label: string;
-  group: "m0" | "m2" | "m1";
+  group: "prompt" | "m0" | "m2" | "m1";
   description: string;
 }
 
 const GROUP_LABEL: Record<MemoryEditorFileEntry["group"], string> = {
+  prompt: "Prompt · system append（可热调）",
   m0: "M0 · 核心记忆（每会话注入）",
   m2: "M2 · jargon 索引",
   m1: "M1 · 主题 topics",
@@ -42,7 +43,7 @@ export function MemoryEditorModal(props: {
       list.push(f);
       map.set(f.group, list);
     }
-    return (["m0", "m2", "m1"] as const)
+    return (["prompt", "m0", "m2", "m1"] as const)
       .filter((g) => (map.get(g)?.length ?? 0) > 0)
       .map((g) => ({ group: g, items: map.get(g)! }));
   }, [files]);
@@ -111,6 +112,7 @@ export function MemoryEditorModal(props: {
         const list = data.files ?? [];
         setFiles(list);
         const preferred =
+          list.find((f) => f.path.endsWith("/memory-guidance.md"))?.path ??
           list.find((f) => f.path.endsWith("/USER.md"))?.path ??
           list[0]?.path ??
           null;
@@ -205,9 +207,9 @@ export function MemoryEditorModal(props: {
       >
         <header className="mem-header">
           <div>
-            <h2 id="mem-editor-title">记忆编辑</h2>
+            <h2 id="mem-editor-title">记忆与 Prompt</h2>
             <p className="mem-sub">
-              编辑 USER / CORE / INDEX / topics；保存后下一条回复生效
+              编辑 system prompt 规则、USER / CORE / INDEX / topics；保存后下一条回复生效
             </p>
           </div>
           <button

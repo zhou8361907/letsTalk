@@ -7,6 +7,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./prompt-editor": {
+      "types": "./dist/prompt/prompt-editor.d.ts",
+      "import": "./dist/prompt/prompt-editor.js"
     }
   },
   "scripts": {

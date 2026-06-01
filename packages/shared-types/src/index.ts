@@ -14,6 +14,7 @@ export { EXPORT_PRIMARY_APPENDIX_DIVIDER } from "./export-constants.js";
 export type {
   ConversationRecord,
   ConversationSummary,
+  DevAppendixExportJob,
   TranscriptItem,
 } from "./conversation.js";
 export type {
@@ -35,6 +36,11 @@ export type {
   RequirementItemStatus,
   RequirementItemType,
 } from "./requirement-draft.js";
+export {
+  canMarkReadyToFinalize,
+  formatDraftConventionGapsLine,
+  itemToBeNeedsConfirmation,
+} from "./requirement-convention.js";
 
 import type { RequirementFieldKey } from "./requirement-draft.js";
 
@@ -44,7 +50,7 @@ export const REQUIREMENT_FIELD_LABELS: Record<RequirementFieldKey, string> = {
   control: "改哪里",
   province: "适用范围",
   asIs: "现在怎样",
-  toBe: "希望改成",
+  toBe: "希望改成（流程用编号步骤）",
   table: "涉及的数据",
   configTables: "依赖的配置",
   actions: "有哪些操作",

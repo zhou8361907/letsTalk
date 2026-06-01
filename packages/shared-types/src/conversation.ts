@@ -19,7 +19,28 @@ export type TranscriptItem =
       anchorRef: string | null;
       previewLines: number;
       m0Refreshed?: boolean;
+    }
+  /** 后台生成的导出物（如含研发附录的完整文档） */
+  | {
+      kind: "export_ready";
+      exportKind: "dev_appendix";
+      label: string;
+      filename: string;
+      markdown: string;
+      completedAt: string;
     };
+
+/** 研发附录后台导出状态（持久化在会话 JSON） */
+export interface DevAppendixExportJob {
+  status: "idle" | "running" | "done" | "failed";
+  startedAt?: string;
+  completedAt?: string;
+  primaryMarkdown?: string;
+  appendixMarkdown?: string;
+  mergedMarkdown?: string;
+  filename?: string;
+  error?: string;
+}
 
 /** 会话列表项（不含 Transcript 正文，减轻列表接口体积） */
 export interface ConversationSummary {
@@ -51,4 +72,6 @@ export interface ConversationRecord extends ConversationSummary {
   requirementDraft?: RequirementDraftState | null;
   /** 用户手动重命名后为 true，save 时不再用首条消息覆盖标题 */
   titleLocked?: boolean;
+  /** 含研发附录的后台导出任务（最近一次） */
+  devAppendixExport?: DevAppendixExportJob | null;
 }

@@ -35,4 +35,10 @@ export {
   disposePiSession,
   type RunChatOptions,
 } from "./run-chat.js";
+export { cleanupSessionDebug } from "./debug-logger.js";
 export { generateDevAppendix } from "./generate-dev-appendix.js";
+export {
+  isDevAppendixJobRunning,
+  runDevAppendixExportJob,
+} from "./dev-appendix-job.js";
+export { summarizeConversationTitle } from "./summarize-conversation-title.js";

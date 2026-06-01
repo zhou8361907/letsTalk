@@ -4,7 +4,7 @@
  * 落盘：{WORKSPACE_ROOT}/.agent/debug/{sessionId}/
  */
 
-import { appendFile, mkdir, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type {
   AgentAnchor,
@@ -343,4 +343,18 @@ export function setActiveTurnId(sessionId: string, turnId: string): void {
 
 export function getActiveTurnId(sessionId: string): string | undefined {
   return activeTurnBySession.get(sessionId);
+}
+
+/** 删除会话时清理 debug 目录与进程内计数 */
+export async function cleanupSessionDebug(
+  workspaceRoot: string,
+  sessionId: string,
+): Promise<void> {
+  turnCounters.delete(sessionId);
+  activeTurnBySession.delete(sessionId);
+  try {
+    await rm(debugDir(workspaceRoot, sessionId), { recursive: true, force: true });
+  } catch {
+    // 目录可能不存在
+  }
 }

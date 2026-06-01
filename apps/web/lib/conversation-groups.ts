@@ -17,7 +17,7 @@ export function groupConversationsByDate(
   const order: string[] = [];
 
   for (const s of sessions) {
-    const d = new Date(s.updatedAt);
+    const d = new Date(s.createdAt);
     let label: string;
     if (d >= startOfToday) {
       label = "今天";
@@ -38,6 +38,9 @@ export function groupConversationsByDate(
 
   return order.map((label) => ({
     label,
-    sessions: buckets.get(label) ?? [],
+    sessions: (buckets.get(label) ?? []).sort((a, b) => {
+      const byCreated = b.createdAt.localeCompare(a.createdAt);
+      return byCreated !== 0 ? byCreated : b.sessionId.localeCompare(a.sessionId);
+    }),
   }));
 }

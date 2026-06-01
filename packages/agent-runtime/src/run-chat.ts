@@ -360,7 +360,7 @@ export async function runChat(options: RunChatOptions): Promise<void> {
   });
 
   try {
-    // ── 阶段 4a：V1 上下文 — 普通轮仅 pointer；首条 / 切模式才 Rule Push ──
+    // ── 阶段 4a：V1 上下文 — 每轮仅 pointer / memory Pull / 清单摘要（规则在 system）──
     noteUserTurnForMemoryReview(options.sessionId);
     const turnCtx = await buildTurnPromptPrefix({
       sessionId: options.sessionId,

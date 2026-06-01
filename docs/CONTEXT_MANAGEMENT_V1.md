@@ -25,25 +25,19 @@
 
 ## 2. 核心原则
 
-### 原则一：Rule Push
+### 原则一：Rule Push → System（已落地 · V2）
 
-**行为约束始终 Push。**
+**行为约束在会话创建时写入 Pi system prompt**，不通过 Tool 查询，也**不**在每轮 user 前缀重复注入。
 
-例如：
+**单一权威来源（2026-06）：**
 
-- Controller 分析前必须先 `list_methods`
-- 禁止编造代码逻辑
-- PRD 必须使用业务语言
-- Tool 使用规范
+| 内容 | 载体 |
+|------|------|
+| 编码/读码/回答 | 仓库根 `AGENTS.md` → Pi `project_context` |
+| 记忆、目录、PRD 细则 | `buildLetsTalkAppendSystemPrompt` → `appendSystemPrompt` |
+| M0 画像 | Tier1 USER/CORE（虚拟 `_tier1.md`） |
 
-这些属于 **Behavior Constraint**，而不是 **Runtime State**，因此 **不应** 通过 Tool 查询。
-
-**落地候选（评审时择一，避免双份）：**
-
-- Pi `DefaultResourceLoader` 加载的 `AGENTS.md`（session 级）
-- 和/或每轮 user 前缀中的 `<arch_rules>` / `<pm_rules>` 短块
-
-> 与现状关系：当前 `buildAgentContext` 每轮把 `AGENTS.md` 截断后注入 `<arch_rules>`；Pi 也可能已加载同文件。V1 实施前需明确 **单一权威来源**，避免 Rule 双份或版本不一致。
+每轮 user 前缀仅：`<context>` 指针、模式切换、`<core_memory_refresh>`、`<memory_context>` Pull、清单摘要。详见 [PROMPT_OPTIMIZATION_V2.md](./PROMPT_OPTIMIZATION_V2.md)。
 
 ---
 

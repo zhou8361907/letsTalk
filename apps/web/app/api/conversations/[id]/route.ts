@@ -121,15 +121,16 @@ export async function DELETE(_req: Request, ctx: RouteCtx) {
     /* webpackIgnore: true */
     "@lets-talk/conversation"
   );
-  const { disposePiSession } = await import(
+  const { cleanupSessionDebug, disposePiSession } = await import(
     /* webpackIgnore: true */
     "@lets-talk/agent-runtime"
   );
 
   const ok = await deleteConversation(root, id);
-  disposePiSession(id);
   if (!ok) {
     return Response.json({ error: "会话不存在" }, { status: 404 });
   }
+  disposePiSession(id);
+  await cleanupSessionDebug(root, id);
   return Response.json({ ok: true, sessionId: id });
 }

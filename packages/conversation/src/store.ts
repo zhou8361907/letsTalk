@@ -4,14 +4,15 @@ import { join, resolve } from "node:path";
 import type {
   ConversationRecord,
   ConversationSummary,
+  DevAppendixExportJob,
   RequirementDraftState,
   TranscriptItem,
 } from "@lets-talk/shared-types";
 import type { AgentAnchor } from "@lets-talk/shared-types";
 import {
   ensurePiSessionsDir,
-  piSessionFilePath,
   relativePiSessionFile,
+  resolvePiSessionFile,
   toWorkspaceRelativePath,
 } from "./pi-session.js";
 
@@ -73,7 +74,10 @@ export async function listConversations(
     }
   }
 
-  out.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  out.sort((a, b) => {
+    const byCreated = b.createdAt.localeCompare(a.createdAt);
+    return byCreated !== 0 ? byCreated : b.sessionId.localeCompare(a.sessionId);
+  });
   return out;
 }
 
@@ -160,6 +164,7 @@ export async function saveConversation(
       input.requirementDraft != null
         ? input.requirementDraft
         : (existing?.requirementDraft ?? null),
+    devAppendixExport: existing?.devAppendixExport ?? null,
   };
 
   await writeFile(
@@ -217,22 +222,108 @@ export async function renameConversation(
   return record;
 }
 
-/** 删除会话 JSON 与 Pi jsonl */
+const AUTO_TITLE_MAX = 40;
+
+/** LLM 或系统生成的标题（默认加锁，避免 save 时被首条消息覆盖） */
+export async function setConversationTitle(
+  workspaceRoot: string,
+  sessionId: string,
+  title: string,
+  options?: { lock?: boolean },
+): Promise<ConversationRecord | null> {
+  const existing = await getConversation(workspaceRoot, sessionId);
+  if (!existing) return null;
+  let next = title.trim().replace(/\s+/g, " ");
+  if (!next) return null;
+  if (next.length > AUTO_TITLE_MAX) {
+    next = `${next.slice(0, AUTO_TITLE_MAX - 1)}…`;
+  }
+  const now = new Date().toISOString();
+  const record: ConversationRecord = {
+    ...existing,
+    title: next,
+    titleLocked: options?.lock !== false,
+    updatedAt: now,
+  };
+  await writeFile(
+    conversationPath(workspaceRoot, sessionId),
+    JSON.stringify(record, null, 2),
+    "utf8",
+  );
+  return record;
+}
+
+export async function updateDevAppendixExport(
+  workspaceRoot: string,
+  sessionId: string,
+  patch: Partial<DevAppendixExportJob>,
+): Promise<ConversationRecord | null> {
+  const existing = await getConversation(workspaceRoot, sessionId);
+  if (!existing) return null;
+  const now = new Date().toISOString();
+  const prev = existing.devAppendixExport ?? { status: "idle" as const };
+  const record: ConversationRecord = {
+    ...existing,
+    devAppendixExport: { ...prev, ...patch },
+    updatedAt: now,
+  };
+  await writeFile(
+    conversationPath(workspaceRoot, sessionId),
+    JSON.stringify(record, null, 2),
+    "utf8",
+  );
+  return record;
+}
+
+/** 附录完成后写入 transcript 气泡（替换同类型旧条目） */
+export async function appendExportReadyTranscriptItem(
+  workspaceRoot: string,
+  sessionId: string,
+  item: Extract<TranscriptItem, { kind: "export_ready" }>,
+): Promise<ConversationRecord | null> {
+  const existing = await getConversation(workspaceRoot, sessionId);
+  if (!existing) return null;
+  const items = [
+    ...existing.items.filter(
+      (i) => !(i.kind === "export_ready" && i.exportKind === item.exportKind),
+    ),
+    item,
+  ];
+  return saveConversation(workspaceRoot, {
+    sessionId,
+    items,
+    anchor: existing.anchor,
+    title: existing.title,
+    chatMode: existing.chatMode,
+    requirementDraft: existing.requirementDraft,
+  });
+}
+
+/** 删除会话 JSON、Pi jsonl（按 record.piSessionFile 解析路径） */
 export async function deleteConversation(
   workspaceRoot: string,
   sessionId: string,
 ): Promise<boolean> {
-  let deleted = false;
+  const existing = await getConversation(workspaceRoot, sessionId);
+  if (!existing) {
+    return false;
+  }
+
   try {
     await unlink(conversationPath(workspaceRoot, sessionId));
-    deleted = true;
   } catch {
-    // json may already be gone
+    return false;
   }
+
+  const piAbs = resolvePiSessionFile(
+    workspaceRoot,
+    sessionId,
+    existing.piSessionFile,
+  );
   try {
-    await unlink(piSessionFilePath(workspaceRoot, sessionId));
+    await unlink(piAbs);
   } catch {
-    // pi file optional
+    // pi jsonl 可能本就不存在
   }
-  return deleted;
+  return true;
 }

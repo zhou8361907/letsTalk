@@ -52,9 +52,7 @@ export function createMemoryTools(workspaceRoot: string): ToolDefinition[] {
     name: "memory",
     label: "Memory (USER/CORE)",
     description:
-      "跨会话持久记忆（USER 画像 / CORE 助手笔记）。主动保存用户纠正、偏好、惯例、踩坑。" +
-      "WHEN TO SAVE：用户纠正、说记住、透露偏好/称呼、发现稳定惯例。" +
-      "勿存任务进度/PR/本单需求；jargon 消歧用 save_memory。",
+      "跨会话 USER/CORE。细则见 system「跨会话记忆」。用户纠正、记住、偏好、惯例、踩坑时可 add/replace/remove。",
     promptSnippet: "memory(action, target, content?, old_text?)",
     promptGuidelines: [
       "target=user：称呼、偏好；target=core：惯例、踩坑。",

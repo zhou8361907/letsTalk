@@ -14,6 +14,7 @@ import {
   pmPageHint,
   pmVisibleFields,
   pmFieldLabel,
+  pmCanExportDraft,
 } from "../lib/format-requirement-draft";
 
 function RequirementCard(props: {
@@ -47,7 +48,7 @@ function RequirementCard(props: {
           {fields.map((f) => (
             <div
               key={`${item.id}-${f.key}`}
-              className={`req-field field-${f.status}`}
+              className={`req-field field-${f.status}${f.key === "toBe" || f.key === "acceptance" ? " field-multiline" : ""}`}
             >
               <dt>{f.label || pmFieldLabel(String(f.key))}</dt>
               <dd>{pmFormatFieldValue(f)}</dd>
@@ -72,10 +73,21 @@ export function RequirementCanvas(props: {
   onExport?: () => void;
   /** 导出 PM 定稿 + lazy 生成研发附录（实验） */
   onExportWithAppendix?: () => void;
+  /** 附录已就绪时直接下载合并稿 */
+  onDownloadMergedAppendix?: () => void;
   exportAppendixBusy?: boolean;
+  appendixJobStatus?: "idle" | "running" | "done" | "failed";
 }) {
-  const { draft, actions, onFinalize, onExport, onExportWithAppendix, exportAppendixBusy } =
-    props;
+  const {
+    draft,
+    actions,
+    onFinalize,
+    onExport,
+    onExportWithAppendix,
+    onDownloadMergedAppendix,
+    exportAppendixBusy,
+    appendixJobStatus = "idle",
+  } = props;
   const displayItems = draft ? pmDisplayItems(draft) : [];
 
   if (!draft) {
@@ -83,7 +95,8 @@ export function RequirementCanvas(props: {
       <aside className="req-canvas empty">
         <h2>需求清单</h2>
         <p className="muted">
-          切换到「需求整理」后，你只管在左侧用口语描述；右侧会帮你整理成研发能看懂的条目。
+          切换到「需求整理」后，在左侧用口语说即可；右侧会收成你和研发都能开工的
+          <strong>最小公约</strong>（可渐进补全，不必一次写满）。
         </p>
         <style jsx>{canvasStyles}</style>
       </aside>
@@ -102,6 +115,9 @@ export function RequirementCanvas(props: {
       {draft.blockingQuestion && (
         <div className="req-confirm">
           <div className="req-confirm-label">需要你确认一件事</div>
+          <p className="req-confirm-hint muted small">
+            这件事不说清，研发按当前描述做容易返工
+          </p>
           <p>{draft.blockingQuestion}</p>
         </div>
       )}
@@ -119,6 +135,7 @@ export function RequirementCanvas(props: {
         {draft.openQuestions.length > 0 && (
           <section className="req-open">
             <h3>还不清楚的事</h3>
+            <p className="muted small">后补也行；在左侧对话补充即可</p>
             <ul>
               {draft.openQuestions.map((q, i) => (
                 <li key={i}>{q}</li>
@@ -129,8 +146,8 @@ export function RequirementCanvas(props: {
       </div>
 
       <footer className="req-footer">
-        {draft.readyToFinalize && (
-          <p className="ready-hint">主要信息齐了，可以生成一版给研发的说明。</p>
+        {pmCanExportDraft(draft) && (
+          <p className="ready-hint">公约信息较齐，可以导出给研发。</p>
         )}
         <div className="req-actions">
           {actions.map((a) => (
@@ -153,13 +170,38 @@ export function RequirementCanvas(props: {
               type="button"
               className="export-mini appendix-export"
               disabled={exportAppendixBusy}
-              title="另调模型读代码，整理前后端线索（非定稿，仅供参考）"
+              title="先下载 PM 定稿；研发附录在后台生成，完成后出现在对话区"
               onClick={onExportWithAppendix}
             >
-              {exportAppendixBusy ? "生成附录中…" : "导出含研发附录"}
+              {exportAppendixBusy || appendixJobStatus === "running"
+                ? "附录后台生成中…"
+                : appendixJobStatus === "done"
+                  ? "重新生成研发附录"
+                  : "导出含研发附录"}
             </button>
           )}
         </div>
+        {appendixJobStatus === "running" && (
+          <p className="appendix-hint muted small">
+            已下载 PM 定稿；研发附录后台生成中，完成后可在左侧对话区下载完整版。
+          </p>
+        )}
+        {appendixJobStatus === "done" && (
+          <div className="appendix-done">
+            <p className="appendix-hint muted small">
+              完整含附录文档已就绪；可在左侧对话区「导出」气泡下载，或点下方按钮。
+            </p>
+            {onDownloadMergedAppendix && (
+              <button
+                type="button"
+                className="export-mini appendix-download"
+                onClick={onDownloadMergedAppendix}
+              >
+                下载完整含研发附录
+              </button>
+            )}
+          </div>
+        )}
       </footer>
 
       <style jsx>{canvasStyles}</style>
@@ -295,6 +337,9 @@ const canvasStyles = `
     line-height: 1.4;
     word-break: break-word;
   }
+  .field-multiline dd {
+    white-space: pre-wrap;
+  }
   .field-missing dd,
   .field-conflict dd {
     color: #f85149;
@@ -319,6 +364,19 @@ const canvasStyles = `
     font-size: 11px;
     color: var(--muted);
     line-height: 1.45;
+  }
+  .appendix-hint {
+    margin: 0.45rem 0 0;
+    line-height: 1.35;
+  }
+  .appendix-done {
+    margin-top: 0.45rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .appendix-download {
+    border-color: var(--accent);
   }
   .req-footer {
     flex-shrink: 0;

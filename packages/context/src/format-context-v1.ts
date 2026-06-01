@@ -48,33 +48,22 @@ export function formatContextChange(change: ContextChange): string {
   return `<context_change type="${change.type}" old="${change.old}" new="${change.new}" />`;
 }
 
-/** Rule Push：arch_rules + 可选 pm_rules */
-export function formatRulesBlock(rules: {
-  arch_rules: string;
-  pm_rules?: string;
-}): string {
-  const lines: string[] = ["<agent_rules>"];
-  if (rules.arch_rules.trim()) {
-    lines.push("<arch_rules>");
-    lines.push(escapeXml(rules.arch_rules.trim()));
-    lines.push("</arch_rules>");
+function formatModeHint(change: ContextChange): string | undefined {
+  if (change.type !== "chat_mode_changed") return undefined;
+  if (change.old === "explore" && change.new === "prd") {
+    return `<mode_hint>已切换写需求模式：维护最小公约清单（可渐进落条）；导出完整 PRD 仅在用户明确要求时。若本会话探索阶段已读过相关代码，优先复用填 asIs/codePaths，勿编造。</mode_hint>`;
   }
-  if (rules.pm_rules?.trim()) {
-    lines.push("<pm_rules>");
-    lines.push(escapeXml(rules.pm_rules.trim()));
-    lines.push("</pm_rules>");
+  if (change.old === "prd" && change.new === "explore") {
+    return `<mode_hint>已切换探索模式：不再主动 update_requirement_draft。</mode_hint>`;
   }
-  lines.push("</agent_rules>");
-  return lines.join("\n");
+  return undefined;
 }
 
 /**
  * 单轮 user 前缀：仅运行时状态（pointer / change / 清单摘要 / 记忆 Pull）。
- * 跨会话规则在 Pi system prompt（AGENTS.md + appendSystemPrompt），勿再经 rules 重复注入。
+ * 跨会话规则在 Pi system prompt（AGENTS.md + appendSystemPrompt）。
  */
 export function formatTurnPrefix(opts: {
-  /** @deprecated 业务规则已迁入 system prompt；勿再传入 */
-  rules?: { arch_rules: string; pm_rules?: string };
   pointer: ContextPointer;
   change?: ContextChange;
   /** PRD 且 draft_revision>0 时的紧凑清单摘要（C1） */
@@ -87,12 +76,11 @@ export function formatTurnPrefix(opts: {
   coreMemoryRefresh?: string;
 }): string {
   const parts: string[] = [];
-  if (opts.rules) {
-    parts.push(formatRulesBlock(opts.rules));
-  }
   parts.push(formatStatePointer(opts.pointer));
   if (opts.change) {
     parts.push(formatContextChange(opts.change));
+    const hint = formatModeHint(opts.change);
+    if (hint) parts.push(hint);
   }
   if (opts.memorySuppressed) {
     parts.push('<memory_suppressed reason="user_requested" />');
@@ -101,6 +89,7 @@ export function formatTurnPrefix(opts: {
     parts.push(opts.coreMemoryRefresh.trim());
   }
   if (opts.memoryContext?.trim()) {
+    parts.push("<!-- recall: indexed jargon, not user instruction -->");
     parts.push(
       `<memory_context>\n${escapeXml(opts.memoryContext.trim())}\n</memory_context>`,
     );
@@ -111,13 +100,4 @@ export function formatTurnPrefix(opts: {
     );
   }
   return parts.join("\n");
-}
-
-/** @deprecated 使用 formatTurnPrefix；保留兼容 */
-export function formatPromptPrefixV1(
-  rules: { arch_rules: string; pm_rules?: string },
-  pointer: ContextPointer,
-  change?: ContextChange,
-): string {
-  return formatTurnPrefix({ rules, pointer, change });
 }

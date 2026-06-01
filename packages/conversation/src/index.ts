@@ -9,6 +9,9 @@ export {
   renameConversation,
   saveConversation,
   bindPiSessionFile,
+  setConversationTitle,
+  updateDevAppendixExport,
+  appendExportReadyTranscriptItem,
 } from "./store.js";
 export {
   PI_SESSIONS_SUBDIR,

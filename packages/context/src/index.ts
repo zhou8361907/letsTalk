@@ -57,6 +57,8 @@ export {
   readPromptEditorFile,
   resolveMemoryGuidance,
   resolveMemoryReviewPrompt,
+  resolveSelfImprovementReviewPrompt,
+  resolveSkillsGuidance,
   resolvePmPrdRules,
   writePromptEditorFile,
   type PromptEditorFileEntry,

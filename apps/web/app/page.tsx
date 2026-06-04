@@ -128,6 +128,7 @@ export default function HomePage() {
   const [items, setItems] = useState<TranscriptItem[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [voiceListening, setVoiceListening] = useState(false);
   const [status, setStatus] = useState<"idle" | "connected" | "error">("idle");
   const [contextUsage, setContextUsage] = useState<ContextUsageSnapshot | null>(
     null,
@@ -157,6 +158,8 @@ export default function HomePage() {
   const debugBySessionRef = useRef<Map<string, SessionDebugState>>(new Map());
 
   const assistantBuf = useRef("");
+  /** 当前 assistant 段在 assistantBuf 中的起始下标；tool_start 后递增，避免重复展示前文 */
+  const assistantSegmentStart = useRef(0);
   const lastToolName = useRef<string>("tool");
   const itemsRef = useRef<TranscriptItem[]>([]);
   const sessionIdRef = useRef("");
@@ -167,7 +170,6 @@ export default function HomePage() {
   const transcriptScrollRef = useRef<HTMLDivElement | null>(null);
   const convScrollRef = useRef<HTMLDivElement | null>(null);
   const prevSessionIdForScrollRef = useRef("");
-
   itemsRef.current = items;
   sessionIdRef.current = sessionId;
   anchorRef.current = anchor;
@@ -756,16 +758,64 @@ export default function HomePage() {
 
   const appendAssistantDelta = useCallback((delta: string, snapshot: TranscriptItem[]) => {
     assistantBuf.current += delta;
+    const segmentText = assistantBuf.current.slice(assistantSegmentStart.current);
     const last = snapshot[snapshot.length - 1];
     if (last?.kind === "assistant") {
       snapshot[snapshot.length - 1] = {
         kind: "assistant",
-        text: assistantBuf.current,
+        text: segmentText,
       };
     } else {
-      snapshot.push({ kind: "assistant", text: assistantBuf.current });
+      snapshot.push({ kind: "assistant", text: segmentText });
     }
     setItems([...snapshot]);
+  }, []);
+
+  /** 按住说话：按下开始识别，松开停止 */
+  const voiceRecognitionRef = useRef<any>(null);
+
+  const onMicMouseDown = useCallback(() => {
+    const SpeechRecognition =
+      (window as any).SpeechRecognition ??
+      (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    // 避免重复启动
+    if (voiceRecognitionRef.current) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "zh-CN";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript as string;
+      setInput((prev) => prev + transcript);
+    };
+
+    recognition.onerror = () => {
+      setVoiceListening(false);
+      voiceRecognitionRef.current = null;
+    };
+
+    recognition.onend = () => {
+      setVoiceListening(false);
+      voiceRecognitionRef.current = null;
+    };
+
+    voiceRecognitionRef.current = recognition;
+    recognition.start();
+    setVoiceListening(true);
+  }, []);
+
+  const onMicMouseUp = useCallback(() => {
+    const r = voiceRecognitionRef.current;
+    if (r) {
+      r.stop();
+      // onend 会清理 state
+    } else {
+      setVoiceListening(false);
+    }
   }, []);
 
   const send = useCallback(async () => {
@@ -777,6 +827,7 @@ export default function HomePage() {
     setBusy(true);
     setStatus("connected");
     assistantBuf.current = "";
+    assistantSegmentStart.current = 0;
 
     const snapshot: TranscriptItem[] = [...itemsRef.current, { kind: "user", text }];
     setItems(snapshot);
@@ -874,6 +925,7 @@ export default function HomePage() {
             });
             setItems([...snapshot]);
           } else if (event.type === "tool_start") {
+            assistantSegmentStart.current = assistantBuf.current.length;
             lastToolName.current = event.tool;
             snapshot.push({ kind: "tool", tool: event.tool, preview: "…", ok: true });
             setItems([...snapshot]);
@@ -1362,6 +1414,21 @@ export default function HomePage() {
               rows={2}
               disabled={busy || !sessionId}
             />
+            <button
+              type="button"
+              className={`mic-btn${voiceListening ? " listening" : ""}`}
+              onMouseDown={onMicMouseDown}
+              onMouseUp={onMicMouseUp}
+              onMouseLeave={onMicMouseUp}
+              disabled={busy || !sessionId}
+              title={voiceListening ? "松开停止" : "按住说话"}
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="22" />
+              </svg>
+            </button>
             <button type="button" onClick={() => void send()} disabled={busy || !sessionId}>
               发送
             </button>
@@ -1941,6 +2008,36 @@ export default function HomePage() {
           border-radius: 6px;
           padding: 0 1rem;
           font-weight: 600;
+        }
+        .mic-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 2.25rem;
+          height: 2.25rem;
+          padding: 0 !important;
+          border-radius: 50% !important;
+          background: transparent !important;
+          color: var(--muted) !important;
+          border: 1px solid var(--border) !important;
+          cursor: pointer;
+          flex-shrink: 0;
+          transition: all 0.2s;
+        }
+        .mic-btn:hover:not(:disabled) {
+          color: var(--text) !important;
+          border-color: var(--text) !important;
+          background: rgba(128,128,128,0.06) !important;
+        }
+        .mic-btn.listening {
+          color: #f44 !important;
+          border-color: #f44 !important;
+          background: rgba(255,68,68,0.1) !important;
+          animation: mic-pulse 1.2s ease-in-out infinite;
+        }
+        @keyframes mic-pulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(255,68,68,0.3); }
+          50% { box-shadow: 0 0 0 6px rgba(255,68,68,0); }
         }
         button:disabled {
           opacity: 0.5;

@@ -1,7 +1,15 @@
 import type { ChatMode } from "@lets-talk/shared-types";
 import {
+  buildSkillsSystemBlock,
+  ensureSkillsReady,
+  getSkillIndex,
+  isSkillsEnabled,
+  SKILLS_INDEX_HEADER,
+} from "@lets-talk/skills";
+import {
   resolveMemoryGuidance,
   resolvePmPrdRules,
+  resolveSkillsGuidance,
 } from "./prompt/prompt-editor.js";
 import {
   formatHintsDirectoryHint,
@@ -43,6 +51,17 @@ export async function buildLetsTalkAppendSystemPrompt(
         "## 业务 hints（仅供参考，用时 read）",
         formatHintsDirectoryHint(hintFiles),
       );
+    }
+  }
+
+  if (isSkillsEnabled()) {
+    await ensureSkillsReady(root);
+    const skillsGuidance = await resolveSkillsGuidance(root);
+    const skills = await getSkillIndex(root);
+    const indexBlock = buildSkillsSystemBlock(skills);
+    parts.push(skillsGuidance);
+    if (indexBlock.trim()) {
+      parts.push(SKILLS_INDEX_HEADER, indexBlock);
     }
   }
 

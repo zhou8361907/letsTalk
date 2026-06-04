@@ -2,6 +2,11 @@ import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { MEMORY_GUIDANCE, MEMORY_REVIEW_PROMPT } from "./memory-guidance.js";
 import { PM_PRD_RULES } from "./pm-prd.js";
+import {
+  SKILLS_GUIDANCE,
+  SKILLS_REVIEW_PROMPT,
+  SELF_IMPROVEMENT_REVIEW_PROMPT,
+} from "./skills-guidance.js";
 
 export const PROMPT_DIR_REL = ".agent/prompt";
 
@@ -42,6 +47,24 @@ const EDITABLE_PROMPTS: Array<{
     label: "回顾 · MEMORY_REVIEW",
     description: "后台记忆回顾子 Agent 专用 prompt",
     defaultText: MEMORY_REVIEW_PROMPT,
+  },
+  {
+    name: "skills-guidance.md",
+    label: "Skills · SKILLS_GUIDANCE",
+    description: "Skills 细则（system append，skills 开启时）",
+    defaultText: SKILLS_GUIDANCE,
+  },
+  {
+    name: "skills-review.md",
+    label: "回顾 · SKILLS_REVIEW",
+    description: "后台 self-improvement review 中 Skills 段落",
+    defaultText: SKILLS_REVIEW_PROMPT,
+  },
+  {
+    name: "self-improvement-review.md",
+    label: "回顾 · SELF_IMPROVEMENT",
+    description: "后台 memory + skills 合并 review prompt",
+    defaultText: SELF_IMPROVEMENT_REVIEW_PROMPT,
   },
 ];
 
@@ -119,6 +142,30 @@ export async function resolveMemoryReviewPrompt(
     "memory-review.md",
   );
   return text;
+}
+
+export async function resolveSkillsGuidance(
+  workspaceRoot: string,
+): Promise<string> {
+  const { text } = await readPromptFileOrDefault(
+    workspaceRoot,
+    "skills-guidance.md",
+  );
+  return text;
+}
+
+export async function resolveSelfImprovementReviewPrompt(
+  workspaceRoot: string,
+  skillsEnabled: boolean,
+): Promise<string> {
+  if (skillsEnabled) {
+    const { text } = await readPromptFileOrDefault(
+      workspaceRoot,
+      "self-improvement-review.md",
+    );
+    return text;
+  }
+  return resolveMemoryReviewPrompt(workspaceRoot);
 }
 
 export interface ReadPromptEditorFileResult {

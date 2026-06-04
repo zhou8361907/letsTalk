@@ -15,6 +15,10 @@
  *   - UI Transcript：.agent/conversations/{sessionId}.json（由前端 PUT，本文件只写 requirementDraft）
  */
 
+import {
+  invalidateSkillsIndexCache,
+  isSkillsEnabled,
+} from "@lets-talk/skills";
 import { resolveWorkspaceLayout } from "@lets-talk/context";
 import {
   bindPiSessionFile,
@@ -54,10 +58,10 @@ import {
 } from "./requirement-draft-store.js";
 import { setDraftListener } from "./requirement-draft-runtime.js";
 import {
-  clearMemoryReviewState,
-  markMemoryWrittenThisTurn,
-  maybeSpawnBackgroundMemoryReview,
-  noteUserTurnForMemoryReview,
+  clearSelfImprovementReviewState,
+  markSelfImprovementWrittenThisTurn,
+  maybeSpawnSelfImprovementReview,
+  noteUserTurnForSelfImprovementReview,
 } from "./background-memory-review.js";
 import {
   clearSessionContext,
@@ -168,7 +172,7 @@ export function disposePiSession(sessionId: string): void {
   liveAnchorRefs.delete(sessionId);
   liveAnchors.delete(sessionId);
   clearSessionContext(sessionId);
-  clearMemoryReviewState(sessionId);
+  clearSelfImprovementReviewState(sessionId);
   clearDraftRevision(sessionId);
   setDraftListener(sessionId, null);
 }
@@ -340,9 +344,13 @@ export async function runChat(options: RunChatOptions): Promise<void> {
           "update_user_profile",
           "update_core_memory",
           "save_memory",
+          "skill_manage",
         ].includes(toolName)
       ) {
-        markMemoryWrittenThisTurn(options.sessionId);
+        markSelfImprovementWrittenThisTurn(options.sessionId);
+      }
+      if (e.isError !== true && toolName === "skill_manage" && isSkillsEnabled()) {
+        invalidateSkillsIndexCache(cwd);
       }
       let preview = "";
       const result = e.result as { content?: Array<{ text?: string }> } | undefined;
@@ -369,7 +377,7 @@ export async function runChat(options: RunChatOptions): Promise<void> {
 
   try {
     // ── 阶段 4a：V1 上下文 — 每轮仅 pointer / memory Pull / 清单摘要（规则在 system）──
-    noteUserTurnForMemoryReview(options.sessionId);
+    noteUserTurnForSelfImprovementReview(options.sessionId);
     const turnCtx = await buildTurnPromptPrefix({
       sessionId: options.sessionId,
       layout,
@@ -449,7 +457,7 @@ export async function runChat(options: RunChatOptions): Promise<void> {
 
     options.onEvent({ type: "turn_end" });
 
-    maybeSpawnBackgroundMemoryReview({
+    maybeSpawnSelfImprovementReview({
       sessionId: options.sessionId,
       workspaceRoot: cwd,
       chatMode,

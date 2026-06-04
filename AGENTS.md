@@ -24,6 +24,11 @@
 - 工具：`memory`（USER/CORE）、`save_memory` / `read_memory`（topics + INDEX）
 - 细则与路由见 system「跨会话记忆」；用户要求忽略时 prefix 含 `<memory_suppressed />`
 
+## Skills（概要）
+
+- 程序性记忆：`.agent/skills/`；工具 `skills_list` / `skill_view` / `skill_manage`
+- 细则见 system「Skills」；bundled skill 只读；与 memory 分工见 [docs/SKILLS_V1.md](docs/SKILLS_V1.md)
+
 ## 前端
 
 - 页面级问题可结合锚点；跨文件用 `grep` / `find` / `read`；锚点预览用 `get_anchor_preview`

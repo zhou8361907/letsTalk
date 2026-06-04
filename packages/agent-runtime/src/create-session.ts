@@ -21,7 +21,7 @@ import {
 import {
   createExportAppendixResourceLoader,
   createLetsTalkResourceLoader,
-  createMemoryReviewResourceLoader,
+  createSelfImprovementReviewResourceLoader,
   createTitleSummaryResourceLoader,
 } from "./pi-resource-loader.js";
 import { captureSystemPromptFromLoader } from "./system-prompt-snapshot.js";
@@ -40,6 +40,11 @@ import { createContextPullTools } from "./context-pull-tools.js";
 import { createJavaAstTools } from "./java-ast-tools.js";
 import { createMemoryTools, createMemoryOnlyTool } from "./memory-tools.js";
 import { createRequirementDraftTools } from "./requirement-draft-tools.js";
+import {
+  createSkillManageOnlyTool,
+  createSkillTools,
+} from "./skill-tools.js";
+import { isSkillsEnabled } from "@lets-talk/skills";
 import { wrapToolsWithOutputLimit } from "./tool-output-truncate.js";
 import {
   getDraft,
@@ -92,6 +97,7 @@ const PRD_PULL_TOOLS = ["get_requirement_draft"] as const;
 export type PiSessionKind =
   | "default"
   | "memory-review"
+  | "self-improvement-review"
   | "export-appendix"
   | "title-summary";
 
@@ -122,10 +128,14 @@ export async function createPiSession(
   const workspace = resolve(cwd);
   const chatMode = options?.chatMode ?? "explore";
   const sessionKind = options?.sessionKind ?? "default";
-  const isMemoryReview = sessionKind === "memory-review";
+  const isSelfImprovementReview =
+    sessionKind === "self-improvement-review" ||
+    sessionKind === "memory-review";
   const isExportAppendix = sessionKind === "export-appendix";
   const isTitleSummary = sessionKind === "title-summary";
-  const isMinimalTask = isMemoryReview || isExportAppendix || isTitleSummary;
+  const isMinimalTask =
+    isSelfImprovementReview || isExportAppendix || isTitleSummary;
+  const skillsEnabled = isSkillsEnabled();
 
   // 有 piSessionFile → 恢复历史；否则新建（仅内存，落盘在首轮 prompt 后）
   const sessionManager = options?.piSessionFile
@@ -145,9 +155,14 @@ export async function createPiSession(
   const modelRegistry = ModelRegistry.create(authStorage);
 
   const memoryTools = isMemoryToolsEnabled() ? createMemoryTools(workspace) : [];
+  const skillTools = skillsEnabled && !isMinimalTask ? createSkillTools(workspace) : [];
   const memoryOnlyTool =
-    isMemoryToolsEnabled() && isMemoryReview
+    isMemoryToolsEnabled() && isSelfImprovementReview
       ? createMemoryOnlyTool(workspace)
+      : null;
+  const skillManageOnlyTool =
+    skillsEnabled && isSelfImprovementReview
+      ? createSkillManageOnlyTool(workspace)
       : null;
   const scopedWriteTools =
     isScopedWriteEnabled() && !isMinimalTask
@@ -189,10 +204,11 @@ export async function createPiSession(
 
   const toolNames: string[] = isTitleSummary
     ? []
-    : isMemoryReview
-      ? isMemoryToolsEnabled()
-        ? (["memory"] as const)
-        : []
+    : isSelfImprovementReview
+      ? [
+          ...(isMemoryToolsEnabled() ? (["memory"] as const) : []),
+          ...(skillsEnabled ? (["skill_manage"] as const) : []),
+        ]
       : isExportAppendix
         ? [...exportAppendixToolNames]
         : [
@@ -209,6 +225,9 @@ export async function createPiSession(
                   "read_core_memory",
                 ] as const)
               : []),
+            ...(skillsEnabled
+              ? (["skills_list", "skill_view", "skill_manage"] as const)
+              : []),
             ...(isScopedWriteEnabled() ? (["write", "edit"] as const) : []),
             ...pullToolNames.filter(
               (n) => n !== "resolve_memory_terms" || isMemoryToolsEnabled(),
@@ -218,18 +237,19 @@ export async function createPiSession(
 
   const registeredPullTools = pullTools;
 
-  const resourceLoader = isMemoryReview
-    ? await createMemoryReviewResourceLoader(workspace)
+  const resourceLoader = isSelfImprovementReview
+    ? await createSelfImprovementReviewResourceLoader(workspace)
     : isExportAppendix
       ? await createExportAppendixResourceLoader(workspace)
       : isTitleSummary
         ? await createTitleSummaryResourceLoader(workspace)
         : await createLetsTalkResourceLoader(workspace, chatMode);
 
-  const rawCustomTools = isMemoryReview
-    ? memoryOnlyTool
-      ? [memoryOnlyTool]
-      : []
+  const rawCustomTools = isSelfImprovementReview
+    ? [
+        ...(memoryOnlyTool ? [memoryOnlyTool] : []),
+        ...(skillManageOnlyTool ? [skillManageOnlyTool] : []),
+      ]
     : isExportAppendix
       ? [...createJavaAstTools(workspace)]
       : isTitleSummary
@@ -237,6 +257,7 @@ export async function createPiSession(
         : [
             ...createJavaAstTools(workspace),
             ...memoryTools,
+            ...skillTools,
             ...scopedWriteTools,
             ...registeredPullTools,
             ...draftTools,

@@ -1,5 +1,5 @@
 {
-  "name": "@lets-talk/context",
+  "name": "@lets-talk/skills",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -7,22 +7,16 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./prompt-editor": {
-      "types": "./dist/prompt/prompt-editor.d.ts",
-      "import": "./dist/prompt/prompt-editor.js"
     }
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "lint": "tsc --noEmit"
-  },
-  "dependencies": {
-    "@lets-talk/shared-types": "workspace:*",
-    "@lets-talk/skills": "workspace:*"
+    "lint": "tsc --noEmit",
+    "test": "tsx scripts/test-skills.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
     "typescript": "^5.7.0"
   }
 }

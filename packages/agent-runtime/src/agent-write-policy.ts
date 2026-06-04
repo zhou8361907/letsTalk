@@ -10,6 +10,7 @@ const BLOCKED_UNDER_AGENT = [
   ".agent/conversations",
   ".agent/debug",
   ".agent/menu-map",
+  ".agent/skills",
 ] as const;
 
 /** 记忆工具默认开启；设 LETS_TALK_MEMORY_TOOLS=0 关闭 */
@@ -27,7 +28,7 @@ export function isScopedWriteEnabled(): boolean {
 }
 
 export function formatWritablePathsHint(): string {
-  return ".agent/（除 conversations、debug、menu-map）";
+  return ".agent/（除 conversations、debug、menu-map、skills；skills 用 skill_manage）";
 }
 
 export function assertWritableAgentPath(

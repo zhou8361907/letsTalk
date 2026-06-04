@@ -33,7 +33,7 @@ export function createScopedWriteTools(workspaceRoot: string): ToolDefinition[] 
 
   writeDef.description = [
     writeDef.description,
-    `仅可写入 ${formatWritablePathsHint()}。workFront/workBack 禁止修改。`,
+    `仅可写入 ${formatWritablePathsHint()}。workFront/workBack 禁止修改；.agent/skills 用 skill_manage。`,
   ].join(" ");
 
   const editDef = createEditToolDefinition(cwd, {
@@ -55,7 +55,7 @@ export function createScopedWriteTools(workspaceRoot: string): ToolDefinition[] 
 
   editDef.description = [
     editDef.description,
-    `仅可编辑 ${formatWritablePathsHint()}。`,
+    `仅可编辑 ${formatWritablePathsHint()}；.agent/skills 用 skill_manage。`,
   ].join(" ");
 
   return [writeDef, editDef] as ToolDefinition[];

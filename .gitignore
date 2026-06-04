@@ -18,6 +18,10 @@ dist/
 !.agent/menu-map/.gitkeep
 .agent/debug/**
 !.agent/debug/.gitkeep
+.agent/state.db
+.agent/state.db-wal
+.agent/state.db-shm
+.agent/skills/.skills-index.json
 
 # 公司内部待分析代码（本地放置或符号链接，勿提交）
 workFront/

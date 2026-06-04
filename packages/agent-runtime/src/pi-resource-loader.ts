@@ -11,8 +11,9 @@ import {
 import type { ResourceLoader } from "@earendil-works/pi-coding-agent";
 import {
   buildLetsTalkAppendSystemPrompt,
-  resolveMemoryReviewPrompt,
+  resolveSelfImprovementReviewPrompt,
 } from "@lets-talk/context";
+import { isSkillsEnabled } from "@lets-talk/skills";
 import {
   formatCoreMemorySystemBlock,
   loadCoreMemorySnapshot,
@@ -106,14 +107,18 @@ export async function createTitleSummaryResourceLoader(
   return loader;
 }
 
-/** 后台 memory review：无 AGENTS/Tier1，仅极简 append + memory 工具 */
-export async function createMemoryReviewResourceLoader(
+/** 后台 self-improvement review：memory +（可选）skill_manage */
+export async function createSelfImprovementReviewResourceLoader(
   workspaceRoot: string,
 ): Promise<ResourceLoader> {
   const workspace = resolve(workspaceRoot);
   const agentDir = getAgentDir();
   const settingsManager = SettingsManager.create(workspace, agentDir);
-  const reviewPrompt = await resolveMemoryReviewPrompt(workspace);
+  const skillsOn = isSkillsEnabled();
+  const reviewPrompt = await resolveSelfImprovementReviewPrompt(
+    workspace,
+    skillsOn,
+  );
   const loader = new DefaultResourceLoader({
     cwd: workspace,
     agentDir,
@@ -128,3 +133,7 @@ export async function createMemoryReviewResourceLoader(
   await loader.reload();
   return loader;
 }
+
+/** @deprecated 使用 createSelfImprovementReviewResourceLoader */
+export const createMemoryReviewResourceLoader =
+  createSelfImprovementReviewResourceLoader;

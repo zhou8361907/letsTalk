@@ -38,6 +38,12 @@ interface MenuTreePayload {
   panels: Record<string, MenuMegaPanel>;
 }
 
+interface SearchResult {
+  leaf: MenuLeafItem;
+  root: MenuNavRoot;
+  section: MenuSection;
+}
+
 interface Props {
   anchor: AgentAnchor | null;
   disabled?: boolean;
@@ -97,6 +103,30 @@ export function MenuAnchorPicker({ anchor, disabled, onSelect }: Props) {
     activeRootId && tree?.panels[activeRootId]
       ? tree.panels[activeRootId]
       : undefined;
+
+  /** 全量模糊匹配：搜索时遍历所有面板下所有菜单项 */
+  const searchResults = useMemo(() => {
+    if (!tree) return [];
+    const q = search.trim().toLowerCase();
+    if (!q) return [];
+    const results: SearchResult[] = [];
+    for (const [rootId, panel] of Object.entries(tree.panels)) {
+      const root = tree.roots.find((r) => r.menuId === rootId);
+      if (!root) continue;
+      for (const sec of panel.sections) {
+        for (const leaf of sec.items) {
+          if (
+            leaf.menuName.toLowerCase().includes(q) ||
+            leaf.menuUrl.toLowerCase().includes(q) ||
+            leaf.routePath.toLowerCase().includes(q)
+          ) {
+            results.push({ leaf, root, section: sec });
+          }
+        }
+      }
+    }
+    return results;
+  }, [tree, search]);
 
   const filteredRoots = useMemo(() => {
     if (!tree) return [];
@@ -169,7 +199,7 @@ export function MenuAnchorPicker({ anchor, disabled, onSelect }: Props) {
       <input
         type="search"
         className="menu-search"
-        placeholder="搜一级或当前分组…"
+        placeholder="模糊匹配所有菜单…"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         disabled={disabled || !tree}
@@ -178,7 +208,62 @@ export function MenuAnchorPicker({ anchor, disabled, onSelect }: Props) {
       {loading && <p className="muted small">加载菜单…</p>}
       {error && <p className="menu-error small">{error}</p>}
 
-      {!loading && tree && filteredRoots.length > 0 && (
+      {!loading && tree && search.trim() && (
+        <div className="menu-mega">
+          <div className="menu-panel" style={{ flex: 1 }}>
+            {searchResults.length > 0 && (
+              <div className="menu-search-results">
+                <p className="menu-search-results-count">
+                  找到 {searchResults.length} 个匹配菜单
+                </p>
+                {searchResults.map((sr, i) => {
+                  const active = isLeafSelected(sr.leaf.menuId);
+                  const path = [
+                    sr.root.menuName,
+                    sr.section.title,
+                    sr.leaf.menuName,
+                  ]
+                    .filter(Boolean)
+                    .join(" › ");
+                  return (
+                    <button
+                      key={`${sr.leaf.menuId}-${i}`}
+                      type="button"
+                      className={
+                        active
+                          ? "menu-search-result active"
+                          : "menu-search-result"
+                      }
+                      disabled={disabled}
+                      title={`${sr.leaf.menuUrl}${sr.leaf.routePath !== sr.leaf.menuUrl ? `\n路由: ${sr.leaf.routePath}` : ""}${active ? "\n双击取消锚点" : ""}`}
+                      onClick={() => {
+                        if (active) return;
+                        pickLeaf(sr.root, sr.section.title, sr.leaf);
+                      }}
+                      onDoubleClick={(e) => {
+                        e.preventDefault();
+                        handleLeafDoubleClick(sr.leaf);
+                      }}
+                    >
+                      <span className="menu-search-result-name">
+                        {sr.leaf.menuName}
+                      </span>
+                      <span className="menu-search-result-path">{path}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {searchResults.length === 0 && (
+              <p className="muted small" style={{ padding: "1rem" }}>
+                无匹配菜单
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {!loading && tree && !search.trim() && filteredRoots.length > 0 && (
         <div className="menu-mega">
           <nav className="menu-l1" aria-label="一级菜单">
             {filteredRoots.map((r) => {
@@ -256,7 +341,7 @@ export function MenuAnchorPicker({ anchor, disabled, onSelect }: Props) {
       {!loading && tree && tree.roots.length === 0 && !error && (
         <p className="muted small">暂无一级菜单</p>
       )}
-      {!loading && tree && tree.roots.length > 0 && filteredRoots.length === 0 && (
+      {!loading && tree && !search.trim() && tree.roots.length > 0 && filteredRoots.length === 0 && (
         <p className="muted small">无匹配一级菜单</p>
       )}
 
@@ -390,6 +475,56 @@ export function MenuAnchorPicker({ anchor, disabled, onSelect }: Props) {
         .menu-leaf.active {
           color: var(--accent);
           font-weight: 600;
+        }
+        .menu-search-results {
+          display: flex;
+          flex-direction: column;
+          gap: 0.15rem;
+          padding: 0.5rem 0.75rem;
+        }
+        .menu-search-results-count {
+          margin: 0 0 0.35rem;
+          font-size: 10px;
+          color: var(--muted);
+        }
+        .menu-search-result {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          width: 100%;
+          text-align: left;
+          padding: 0.3rem 0.4rem;
+          border: none;
+          border-radius: 4px;
+          background: transparent;
+          color: var(--text);
+          font-size: 11px;
+          line-height: 1.35;
+          cursor: pointer;
+          gap: 0.1rem;
+        }
+        .menu-search-result:hover:not(:disabled) {
+          background: rgba(88, 166, 255, 0.08);
+        }
+        .menu-search-result.active {
+          color: var(--accent);
+          font-weight: 600;
+          background: rgba(88, 166, 255, 0.12);
+        }
+        .menu-search-result-name {
+          font-size: 11px;
+        }
+        .menu-search-result-path {
+          font-size: 9px;
+          color: var(--muted);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          max-width: 100%;
+        }
+        .menu-search-result.active .menu-search-result-path {
+          color: var(--accent);
+          opacity: 0.7;
         }
       `}</style>
     </div>

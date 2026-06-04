@@ -1,10 +1,14 @@
 /**
- * 后台 M0 记忆回顾（对齐 Hermes background_review · 每 N user turn）
+ * 后台 self-improvement review（对齐 Hermes background_review · memory + skill_manage）
  */
 
 import { resolve } from "node:path";
 import { getConversation } from "@lets-talk/conversation";
-import { resolveMemoryReviewPrompt } from "@lets-talk/context";
+import { resolveSelfImprovementReviewPrompt } from "@lets-talk/context";
+import {
+  isSkillsEnabled,
+  selfImprovementReviewInterval,
+} from "@lets-talk/skills";
 import { isMemoryToolsEnabled } from "./agent-write-policy.js";
 import { createPiSession } from "./create-session.js";
 
@@ -25,28 +29,44 @@ function stateFor(sessionId: string): SessionReviewState {
   return s;
 }
 
-/** LETS_TALK_MEMORY_NUDGE_INTERVAL：默认 10；0 / false / no 关闭 */
+export function selfImprovementReviewIntervalConfig(): number {
+  return selfImprovementReviewInterval();
+}
+
+/** @deprecated 使用 selfImprovementReviewIntervalConfig */
 export function memoryReviewInterval(): number {
-  const raw = process.env.LETS_TALK_MEMORY_NUDGE_INTERVAL?.trim();
-  if (raw === "0" || raw === "false" || raw === "no") return 0;
-  if (raw) {
-    const n = Number(raw);
-    if (Number.isFinite(n) && n > 0) return Math.floor(n);
-  }
-  return 10;
+  return selfImprovementReviewIntervalConfig();
+}
+
+function reviewEnabled(): boolean {
+  const interval = selfImprovementReviewIntervalConfig();
+  if (interval <= 0) return false;
+  return isMemoryToolsEnabled() || isSkillsEnabled();
 }
 
 export function noteUserTurnForMemoryReview(sessionId: string): void {
+  noteUserTurnForSelfImprovementReview(sessionId);
+}
+
+export function noteUserTurnForSelfImprovementReview(sessionId: string): void {
   const s = stateFor(sessionId);
   s.userTurns += 1;
   s.wroteThisTurn = false;
 }
 
 export function markMemoryWrittenThisTurn(sessionId: string): void {
+  markSelfImprovementWrittenThisTurn(sessionId);
+}
+
+export function markSelfImprovementWrittenThisTurn(sessionId: string): void {
   stateFor(sessionId).wroteThisTurn = true;
 }
 
 export function clearMemoryReviewState(sessionId: string): void {
+  clearSelfImprovementReviewState(sessionId);
+}
+
+export function clearSelfImprovementReviewState(sessionId: string): void {
   reviewState.delete(sessionId);
 }
 
@@ -96,14 +116,15 @@ async function runReviewInBackground(input: {
   if (!transcript.trim()) return;
 
   const cwd = resolve(input.workspaceRoot);
+  const skillsOn = isSkillsEnabled();
 
   const handle = await createPiSession(cwd, true, {
-    sessionKind: "memory-review",
+    sessionKind: "self-improvement-review",
     chatMode: input.chatMode,
   });
 
   try {
-    const reviewPrompt = await resolveMemoryReviewPrompt(input.workspaceRoot);
+    const reviewPrompt = await resolveSelfImprovementReviewPrompt(cwd, skillsOn);
     const prompt = `${reviewPrompt}\n\n---\n\n${transcript}`;
     await handle.session.prompt(prompt);
   } finally {
@@ -119,8 +140,18 @@ export function maybeSpawnBackgroundMemoryReview(input: {
   userMessage: string;
   assistantText: string;
 }): void {
-  const interval = memoryReviewInterval();
-  if (interval <= 0 || !isMemoryToolsEnabled()) return;
+  maybeSpawnSelfImprovementReview(input);
+}
+
+export function maybeSpawnSelfImprovementReview(input: {
+  sessionId: string;
+  workspaceRoot: string;
+  chatMode: "explore" | "prd";
+  userMessage: string;
+  assistantText: string;
+}): void {
+  const interval = selfImprovementReviewIntervalConfig();
+  if (!reviewEnabled()) return;
 
   const s = stateFor(input.sessionId);
   if (s.wroteThisTurn || s.reviewInFlight) return;
@@ -130,7 +161,7 @@ export function maybeSpawnBackgroundMemoryReview(input: {
   void runReviewInBackground(input)
     .catch((err) => {
       console.warn(
-        `[letsTalk:memory-review] ${input.sessionId} failed:`,
+        `[letsTalk:self-improve-review] ${input.sessionId} failed:`,
         err instanceof Error ? err.message : err,
       );
     })

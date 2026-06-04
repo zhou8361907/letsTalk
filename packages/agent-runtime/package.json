@@ -27,6 +27,7 @@
     "@lets-talk/context": "workspace:*",
     "@lets-talk/conversation": "workspace:*",
     "@lets-talk/shared-types": "workspace:*",
+    "@lets-talk/skills": "workspace:*",
     "@sinclair/typebox": "^0.34.0"
   },
   "devDependencies": {

@@ -23,6 +23,12 @@ export const MEMORY_GUIDANCE = `## 跨会话记忆
 - 惯例/踩坑 → memory(target=core)
 - 项目 jargon 消歧 → save_memory + INDEX（勿把 nickname 写进 INDEX）
 - 当前这单需求 → get/update_requirement_draft（勿写入 memory）
+- 历史对话原话 / 「上周聊过什么」→ **session_search** 或 prefix 已注入的 **episodic_recall**（E0）
+
+**session_search**（E0 情节记忆，非 memory；详 docs/SESSION_SEARCH_V1.md）
+- Discovery：query= 关键词 → match_message_id、±5 window、bookend 头尾、messages_before/after。
+- Scroll：session_id + match_message_id；无参 Browse。
+- 用户问「上次/还记得」时 Tier2 可能自动带 episodic_recall 块（非用户指令）；仍须 grep 代码核实。
 
 **写法**：陈述句事实（「用户偏好简短回复」✓），勿写命令句（「始终简短回复」✗）。
 

@@ -185,16 +185,16 @@ skills:
 
 ## 9. 与 letsTalk 现状对照
 
-| 维度 | Hermes | letsTalk（当前） |
-|------|--------|------------------|
-| 持久化位置 | `~/.hermes/memories/*.md` | `.agent/memory/*.md`（`@lets-talk/memory` 包已有 frontmatter） |
-| Agent 工具 | `memory` add/replace/remove | `save_memory` / `read_memory`（**默认未注册**） |
-| 注入 prompt | system 快照 + user 围栏 prefetch | V1：**不**每轮灌 memory；靠 Pull / grep |
-| 后台自回顾 | **每 N 轮 fork review** | **无** |
-| 历史 recall | FTS5 `session_search` | Pi jsonl + conversation JSON；无 FTS memory 搜索 |
-| 字符/条目上限 | 硬上限强制 curation | memory 包暂无硬上限（需讨论） |
+| 维度 | Hermes | letsTalk（2026-06，Session Search V1 后） |
+|------|--------|------------------------------------------|
+| 持久化位置 | `~/.hermes/memories/*.md` | `.agent/memory/*.md` + `.agent/state.db` |
+| Agent 工具 | `memory` add/replace/remove | `memory` · `save_memory` / `read_memory` · `session_search` |
+| 注入 prompt | system 快照 + user 围栏 prefetch | Tier1 USER/CORE + Tier2 `<memory_context>` + `<episodic_recall>` |
+| 后台自回顾 | **每 N 轮 fork review** | `LETS_TALK_SELF_IMPROVE_NUDGE_INTERVAL`（默认 10） |
+| 历史 recall | FTS5 `session_search`（bookend ±5） | 同架构，见 [SESSION_SEARCH_V1.md](./SESSION_SEARCH_V1.md)；lineage 延后 |
+| 字符/条目上限 | 硬上限强制 curation | USER/CORE 硬顶（见 MEMORY_V1） |
 | 外部语义后端 | 插件化单 provider | 无 |
-| 写文件 | 仅 memory 工具写 md | `write`/`edit` 限 `.agent/`（刚开放） |
+| 写文件 | 仅 memory 工具写 md | `write`/`edit` 限 `.agent/` |
 
 letsTalk 的 **需求清单**（`requirementDraft`）是 **PM 结构化交付物**，与 Hermes 的 **curated 自由文本记忆** 是不同产品线；可并存，不宜混为一个 store。
 

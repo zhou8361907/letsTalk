@@ -45,6 +45,10 @@ import {
   createSkillTools,
 } from "./skill-tools.js";
 import { isSkillsEnabled } from "@lets-talk/skills";
+import {
+  createSessionSearchTools,
+  isSessionSearchAvailable,
+} from "./session-search-tools.js";
 import { wrapToolsWithOutputLimit } from "./tool-output-truncate.js";
 import {
   getDraft,
@@ -193,6 +197,13 @@ export async function createPiSession(
         })
       : [];
 
+  const sessionSearchTools =
+    useTools && !isMinimalTask && isSessionSearchAvailable(workspace)
+      ? createSessionSearchTools(workspace, {
+          currentSessionId: options?.sessionId,
+        })
+      : [];
+
   const pullToolNames: string[] = [...CONTEXT_PULL_TOOLS];
   if (chatMode === "prd") {
     pullToolNames.push(...PRD_PULL_TOOLS);
@@ -233,9 +244,8 @@ export async function createPiSession(
               (n) => n !== "resolve_memory_terms" || isMemoryToolsEnabled(),
             ),
             ...(draftTools.length ? (["update_requirement_draft"] as const) : []),
+            ...(sessionSearchTools.length ? (["session_search"] as const) : []),
           ];
-
-  const registeredPullTools = pullTools;
 
   const resourceLoader = isSelfImprovementReview
     ? await createSelfImprovementReviewResourceLoader(workspace)
@@ -259,8 +269,9 @@ export async function createPiSession(
             ...memoryTools,
             ...skillTools,
             ...scopedWriteTools,
-            ...registeredPullTools,
+            ...pullTools,
             ...draftTools,
+            ...sessionSearchTools,
           ];
 
   const customTools = wrapToolsWithOutputLimit(rawCustomTools);

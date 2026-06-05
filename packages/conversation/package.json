@@ -11,13 +11,21 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "lint": "tsc --noEmit"
+    "lint": "tsc -p tsconfig.build.json --noEmit",
+    "import-sessions": "tsx scripts/import-sessions.ts",
+    "test:session-db": "tsx scripts/test-session-db.ts",
+    "test:session-db:real": "tsx scripts/test-session-db-real.ts",
+    "test:episodic-prefetch": "tsx scripts/test-episodic-prefetch.ts"
   },
   "dependencies": {
-    "@lets-talk/shared-types": "workspace:*"
+    "@lets-talk/shared-types": "workspace:*",
+    "better-sqlite3": "^11.8.1",
+    "dotenv": "^16.4.0"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
     "typescript": "^5.7.0"
   }
 }

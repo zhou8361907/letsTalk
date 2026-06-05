@@ -8,7 +8,8 @@
     "smoke": "pnpm --filter @lets-talk/agent-runtime smoke",
     "minimal": "pnpm --filter @lets-talk/agent-runtime minimal",
     "lint": "pnpm -r lint",
-    "sync-menu": "node scripts/sync-menu-map.mjs all"
+    "sync-menu": "node scripts/sync-menu-map.mjs all",
+    "sessions:import": "pnpm --filter @lets-talk/conversation import-sessions"
   },
   "devDependencies": {
     "dotenv": "^16.4.0",
@@ -16,5 +17,8 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["better-sqlite3"]
   }
 }

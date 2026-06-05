@@ -20,6 +20,7 @@ import {
   resolveMemoryContext,
   shouldRefreshM0InPrefix,
 } from "@lets-talk/memory";
+import { buildEpisodicRecallBlock } from "@lets-talk/conversation";
 import { isMemoryToolsEnabled } from "./agent-write-policy.js";
 import { getDraft } from "./requirement-draft-store.js";
 
@@ -69,12 +70,23 @@ export async function buildTurnPromptPrefix(
   }
 
   let memoryContext: string | undefined;
+  let episodicRecall: string | undefined;
   let coreMemoryRefresh: string | undefined;
   let memorySuppressed = false;
   const userText = input.userMessage?.trim() ?? "";
   if (userText && isMemoryIgnoredMessage(userText)) {
     memorySuppressed = true;
-  } else if (isMemoryToolsEnabled()) {
+  } else {
+    if (userText) {
+      const episodic = await buildEpisodicRecallBlock(
+        input.layout.workspaceRoot,
+        userText,
+        { currentSessionId: input.sessionId },
+      );
+      if (episodic) episodicRecall = episodic;
+    }
+  }
+  if (!memorySuppressed && isMemoryToolsEnabled()) {
     const mtimes = await getM0FileMtimes(input.layout.workspaceRoot);
     if (shouldRefreshM0InPrefix(mtimes, input.sessionCreatedAtMs)) {
       const snap = await loadCoreMemorySnapshot(input.layout.workspaceRoot);
@@ -97,6 +109,7 @@ export async function buildTurnPromptPrefix(
       change: contextChange,
       draftSummary,
       memoryContext,
+      episodicRecall,
       memorySuppressed,
       coreMemoryRefresh,
     }),

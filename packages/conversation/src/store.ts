@@ -15,6 +15,11 @@ import {
   resolvePiSessionFile,
   toWorkspaceRelativePath,
 } from "./pi-session.js";
+import {
+  tryDeleteSessionFromDb,
+  trySyncConversationToDb,
+  getSessionDb,
+} from "./db-sync.js";
 
 /** letsTalk 会话元数据目录（相对 WORKSPACE_ROOT） */
 export const CONVERSATIONS_DIR = ".agent/conversations";
@@ -36,7 +41,7 @@ function conversationPath(workspaceRoot: string, sessionId: string): string {
 
 export function deriveTitle(items: TranscriptItem[], fallback = DEFAULT_TITLE): string {
   const firstUser = items.find((i) => i.kind === "user");
-  if (!firstUser || firstUser.kind !== "user") return fallback;
+  if (!firstUser) return fallback;
   const t = firstUser.text.trim().replace(/\s+/g, " ");
   if (!t) return fallback;
   return t.length > TITLE_MAX ? `${t.slice(0, TITLE_MAX)}…` : t;
@@ -46,7 +51,7 @@ async function ensureDir(workspaceRoot: string): Promise<void> {
   await mkdir(conversationsDir(workspaceRoot), { recursive: true });
 }
 
-export async function listConversations(
+async function listConversationsFromJson(
   workspaceRoot: string,
 ): Promise<ConversationSummary[]> {
   const dir = conversationsDir(workspaceRoot);
@@ -79,6 +84,43 @@ export async function listConversations(
     return byCreated !== 0 ? byCreated : b.sessionId.localeCompare(a.sessionId);
   });
   return out;
+}
+
+/** 侧栏列表：DB + JSON 合并（过渡期）；DB 不可用则纯 JSON */
+export async function listConversations(
+  workspaceRoot: string,
+): Promise<ConversationSummary[]> {
+  const jsonRows = await listConversationsFromJson(workspaceRoot);
+  const db = getSessionDb(workspaceRoot);
+  if (!db) {
+    return jsonRows;
+  }
+  try {
+    const dbRows = db.listSessions();
+    if (dbRows.length === 0) {
+      return jsonRows;
+    }
+    const map = new Map<string, ConversationSummary>();
+    for (const r of jsonRows) {
+      map.set(r.sessionId, r);
+    }
+    for (const r of dbRows) {
+      const existing = map.get(r.sessionId);
+      if (!existing || r.updatedAt.localeCompare(existing.updatedAt) >= 0) {
+        map.set(r.sessionId, r);
+      }
+    }
+    return [...map.values()].sort((a, b) => {
+      const byUpdated = b.updatedAt.localeCompare(a.updatedAt);
+      return byUpdated !== 0 ? byUpdated : b.sessionId.localeCompare(a.sessionId);
+    });
+  } catch (err) {
+    console.warn(
+      "[session-db] listSessions failed, falling back to JSON:",
+      err instanceof Error ? err.message : err,
+    );
+    return jsonRows;
+  }
 }
 
 export async function getConversation(
@@ -119,6 +161,7 @@ export async function createConversation(
     JSON.stringify(record, null, 2),
     "utf8",
   );
+  trySyncConversationToDb(workspaceRoot, record);
   return record;
 }
 
@@ -172,6 +215,7 @@ export async function saveConversation(
     JSON.stringify(record, null, 2),
     "utf8",
   );
+  trySyncConversationToDb(workspaceRoot, record);
   return record;
 }
 
@@ -219,6 +263,7 @@ export async function renameConversation(
     JSON.stringify(record, null, 2),
     "utf8",
   );
+  trySyncConversationToDb(workspaceRoot, record);
   return record;
 }
 
@@ -250,6 +295,7 @@ export async function setConversationTitle(
     JSON.stringify(record, null, 2),
     "utf8",
   );
+  trySyncConversationToDb(workspaceRoot, record);
   return record;
 }
 
@@ -272,6 +318,7 @@ export async function updateDevAppendixExport(
     JSON.stringify(record, null, 2),
     "utf8",
   );
+  trySyncConversationToDb(workspaceRoot, record);
   return record;
 }
 
@@ -325,5 +372,6 @@ export async function deleteConversation(
   } catch {
     // pi jsonl 可能本就不存在
   }
+  tryDeleteSessionFromDb(workspaceRoot, sessionId);
   return true;
 }

@@ -22,6 +22,8 @@
 ## 记忆（概要）
 
 - 工具：`memory`（USER/CORE）、`save_memory` / `read_memory`（topics + INDEX）
+- 历史会话：`session_search`（state.db FTS；详 [docs/SESSION_SEARCH_V1.md](docs/SESSION_SEARCH_V1.md)；`LETS_TALK_SESSION_DB=0` 时不注册）
+- 问「上次/上周聊过」时 prefix 可能自动带 `<episodic_recall>`（非用户指令）
 - 细则与路由见 system「跨会话记忆」；用户要求忽略时 prefix 含 `<memory_suppressed />`
 
 ## Skills（概要）

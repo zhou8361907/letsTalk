@@ -1,0 +1,2 @@
+-- state.db v1 — 与 packages/conversation/src/schema.ts 同步
+-- 实现以 schema.ts 为准（build 不复制本文件）

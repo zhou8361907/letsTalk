@@ -51,7 +51,12 @@ export function formatContextChange(change: ContextChange): string {
 function formatModeHint(change: ContextChange): string | undefined {
   if (change.type !== "chat_mode_changed") return undefined;
   if (change.old === "explore" && change.new === "prd") {
-    return `<mode_hint>已切换写需求模式：维护最小公约清单（可渐进落条）；导出完整 PRD 仅在用户明确要求时。若本会话探索阶段已读过相关代码，优先复用填 asIs/codePaths，勿编造。</mode_hint>`;
+    return `<mode_hint>已切换写需求模式：
+1. 维护最小公约清单：读码填 asIs/codePaths，渐进 update（可待确认），出口 readyToFinalize 严格。
+2. 深度探询：发现模糊词（自动/优化/兼容/支持）→ 追问；发现隐式假设（批量/权限/安全）→ 分类进 openQuestions。
+3. blockingQuestion 仅 1 个最高代价缺口；其余 openQuestions 标注类别。
+4. 若本会话探索阶段已读过相关代码，优先复用填 asIs/codePaths，勿编造。
+5. 导出完整 PRD 仅在用户明确要求时。</mode_hint>`;
   }
   if (change.old === "prd" && change.new === "explore") {
     return `<mode_hint>已切换探索模式：不再主动 update_requirement_draft。</mode_hint>`;

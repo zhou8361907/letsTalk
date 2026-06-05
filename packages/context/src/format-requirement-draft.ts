@@ -70,5 +70,14 @@ export function formatRequirementDraftBriefSummary(
   }
   const gaps = formatDraftConventionGapsLine(draft);
   if (gaps) lines.push(gaps);
+
+  const pendingCount = draft.items.filter(it => {
+    const toBe = it.fields.find(f => f.key === "toBe");
+    return toBe?.status === "pending" || /待确认|待定|TBD/i.test(toBe?.value ?? "");
+  }).length;
+  if (pendingCount > 0) {
+    lines.push(`⚠️ ${pendingCount} 条 toBe 含待确认项（详见 get_requirement_draft）`);
+  }
+
   return lines.join("\n");
 }

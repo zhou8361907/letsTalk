@@ -51,7 +51,13 @@ const CHAT_MODE_STORAGE_KEY = "letsTalk.chatMode";
 function findDevAppendixExportReady(items: TranscriptItem[]) {
   return items.find(
     (i) => i.kind === "export_ready" && i.exportKind === "dev_appendix",
-  );
+  ) as
+    | { kind: "export_ready"; exportKind: "dev_appendix"; label: string; filename: string; markdown: string; completedAt: string }
+    | undefined;
+}
+
+function toSafeExportBasename(title: string): string {
+  return title.replace(/[/\\?%*:|"<>]/g, "-").slice(0, 60);
 }
 
 /** 客户端保存时保留服务端已写入的「含附录」导出气泡，避免 PUT 冲掉后台结果 */
@@ -118,6 +124,8 @@ export default function HomePage() {
 
   const [anchor, setAnchor] = useState<AgentAnchor | null>(null);
   const [anchorList, setAnchorList] = useState<AgentAnchor[]>([]);
+  const [anchorCollapsed, setAnchorCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [exportAppendixBusy, setExportAppendixBusy] = useState(false);
   const [appendixJobStatus, setAppendixJobStatus] = useState<
     "idle" | "running" | "done" | "failed"
@@ -410,19 +418,24 @@ export default function HomePage() {
   );
 
   const requestSummarizeTitle = useCallback(
-    async (sid?: string) => {
+    async (sid?: string): Promise<string | null> => {
       const id = sid ?? sessionIdRef.current;
-      if (!id || chatModeRef.current !== "prd") return;
+      if (!id || chatModeRef.current !== "prd") return null;
       try {
         const res = await fetch(`/api/conversations/${id}/summarize-title`, {
           method: "POST",
         });
         if (res.ok) {
-          await refreshConversationList();
+          const data = (await res.json()) as { title?: string };
+          if (data.title?.trim()) {
+            await refreshConversationList();
+            return data.title.trim();
+          }
         }
       } catch {
         // 标题摘要失败不影响导出
       }
+      return null;
     },
     [refreshConversationList],
   );
@@ -536,12 +549,17 @@ export default function HomePage() {
     void persistCurrent();
   }, [persistCurrent]);
 
-  const exportPrimaryMarkdown = useCallback(() => {
-    const title =
-      conversations.find((c) => c.sessionId === sessionId)?.title ?? "letsTalk-需求";
-    const safeName = title.replace(/[/\\?%*:|"<>]/g, "-").slice(0, 60);
+  const exportPrimaryMarkdown = useCallback(async () => {
+    const sid = sessionIdRef.current;
+    const fallback =
+      conversations.find((c) => c.sessionId === sid)?.title ?? "letsTalk-需求";
     const mode = chatModeRef.current;
     const draft = requirementDraftRef.current;
+    let title = fallback;
+    if (mode === "prd" && draft?.items.length && sid) {
+      title = (await requestSummarizeTitle(sid)) ?? fallback;
+    }
+    const safeName = toSafeExportBasename(title);
     const md =
       mode === "prd" && draft && draft.items.length > 0
         ? buildRequirementPrimaryMarkdown(draft, {
@@ -555,30 +573,28 @@ export default function HomePage() {
           });
     const suffix = mode === "prd" && draft?.items.length ? "PM定稿" : "对话";
     downloadMarkdown(`${safeName}-${suffix}.md`, md);
-    if (mode === "prd" && draft?.items.length && sessionId) {
-      void requestSummarizeTitle(sessionId);
-    }
-  }, [conversations, requestSummarizeTitle, sessionId]);
+  }, [conversations, requestSummarizeTitle]);
 
   const exportWithDevAppendix = useCallback(async () => {
     const sid = sessionIdRef.current;
     const draft = requirementDraftRef.current;
     if (!sid || !draft?.items.length || chatModeRef.current !== "prd") {
-      exportPrimaryMarkdown();
+      await exportPrimaryMarkdown();
       return;
     }
-    const title =
+    const fallback =
       conversations.find((c) => c.sessionId === sid)?.title ?? "letsTalk-需求";
-    const safeName = title.replace(/[/\\?%*:|"<>]/g, "-").slice(0, 60);
+
+    setExportAppendixBusy(true);
+    const title = (await requestSummarizeTitle(sid)) ?? fallback;
+    const safeName = toSafeExportBasename(title);
     const primary = buildRequirementPrimaryMarkdown(draft, {
       title,
       anchor: anchorRef.current,
     });
 
     downloadMarkdown(`${safeName}-PM定稿.md`, primary);
-    void requestSummarizeTitle(sid);
 
-    setExportAppendixBusy(true);
     setAppendixJobStatus("running");
     try {
       const res = await fetch("/api/export/dev-appendix", {
@@ -652,8 +668,12 @@ export default function HomePage() {
         ]);
 
         const restoreRecord = (record: {
+          sessionId: string;
           devAppendixExport?: DevAppendixExportJob | null;
           items?: TranscriptItem[];
+          anchor?: AgentAnchor | null;
+          chatMode?: ChatMode;
+          requirementDraft?: RequirementDraftState | null;
         }) => {
           applyConversation(record);
           setAppendixJobStatus(
@@ -1027,16 +1047,28 @@ export default function HomePage() {
 
   return (
     <main className="layout">
-      <aside className="conv-sidebar">
-        <button
-          type="button"
-          className="new-chat-btn"
-          onClick={() => void startNewConversation()}
-          disabled={busy}
-        >
-          + 开启新对话
-        </button>
-        <div className="conv-scroll" ref={convScrollRef}>
+      <aside className={`conv-sidebar${sidebarCollapsed ? " collapsed" : ""}`}>
+        <div className="sidebar-header">
+          <button
+            type="button"
+            className="sidebar-toggle"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            title={sidebarCollapsed ? "展开会话" : "折叠会话"}
+          >
+            {sidebarCollapsed ? "☰" : "◀"}
+          </button>
+          {!sidebarCollapsed && (
+            <button
+              type="button"
+              className="new-chat-btn"
+              onClick={() => void startNewConversation()}
+              disabled={busy}
+            >
+              + 开启新对话
+            </button>
+          )}
+        </div>
+        {!sidebarCollapsed && <div className="conv-scroll" ref={convScrollRef}>
           {groups.map((g) => (
             <div key={g.label} className="conv-group">
               <div className="conv-group-label">{g.label}</div>
@@ -1113,34 +1145,22 @@ export default function HomePage() {
           {conversations.length === 0 && (
             <p className="muted small">暂无历史，发送消息后会出现在这里</p>
           )}
-        </div>
+        </div>}
       </aside>
 
-      <aside className={anchorTab === "menu" ? "anchors anchors--menu" : "anchors"}>
-        <h2>锚点</h2>
-        <div className="anchor-tabs" role="tablist">
+      <aside className={`anchors${anchorCollapsed ? " collapsed" : ""}${anchorTab === "menu" ? " anchors--menu" : ""}`}>
+        <div className="anchor-header">
+          <h2>锚点</h2>
           <button
             type="button"
-            role="tab"
-            aria-selected={anchorTab === "menu"}
-            className={anchorTab === "menu" ? "anchor-tab active" : "anchor-tab"}
-            onClick={() => setAnchorTab("menu")}
-            disabled={busy}
+            className="anchor-collapse-btn"
+            onClick={() => setAnchorCollapsed(!anchorCollapsed)}
+            title={anchorCollapsed ? "展开锚点" : "折叠锚点"}
           >
-            系统菜单
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={anchorTab === "file"}
-            className={anchorTab === "file" ? "anchor-tab active" : "anchor-tab"}
-            onClick={() => setAnchorTab("file")}
-            disabled={busy}
-          >
-            代码文件
+            {anchorCollapsed ? "▶" : "◀"}
           </button>
         </div>
-        <button
+        {!anchorCollapsed && <><button
           type="button"
           className={!anchor ? "anchor-btn active" : "anchor-btn"}
           onClick={() => persistAnchor(null)}
@@ -1154,39 +1174,7 @@ export default function HomePage() {
             disabled={busy}
             onSelect={persistAnchor}
           />
-        ) : (
-          <>
-            <ul className="anchor-list">
-              {anchorList.map((a) => (
-                <li key={a.ref}>
-                  <button
-                    type="button"
-                    className={
-                      anchor?.ref === a.ref ? "anchor-btn active" : "anchor-btn"
-                    }
-                    onClick={() => persistAnchor(a)}
-                    disabled={busy}
-                    title={a.ref}
-                  >
-                    {a.label ?? a.ref}
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <div className="manual-anchor">
-              <input
-                type="text"
-                value={manualPath}
-                onChange={(e) => setManualPath(e.target.value)}
-                placeholder="如 src/views/Login.vue"
-                disabled={busy}
-              />
-              <button type="button" onClick={applyManualAnchor} disabled={busy}>
-                设为锚点
-              </button>
-            </div>
-          </>
-        )}
+        ) : null}
         {anchor?.kind === "menu" && (
           <p
             className="anchor-current muted small"
@@ -1200,6 +1188,7 @@ export default function HomePage() {
             <span className="anchor-clear-hint">（双击取消）</span>
           </p>
         )}
+        </>}
       </aside>
 
       <div className="main-col">
@@ -1492,6 +1481,37 @@ export default function HomePage() {
           border-right: 1px solid var(--border);
           padding: 0.75rem 0.5rem 0.75rem 0.75rem;
           min-height: 0;
+          transition: width 0.15s ease;
+          overflow: hidden;
+        }
+        .conv-sidebar.collapsed {
+          width: 36px;
+          padding: 0.75rem 0.25rem;
+        }
+        .sidebar-header {
+          display: flex;
+          align-items: center;
+          gap: 0.35rem;
+          margin-bottom: 0.5rem;
+        }
+        .sidebar-toggle {
+          flex-shrink: 0;
+          width: 26px;
+          height: 26px;
+          padding: 0;
+          border: 1px solid var(--border);
+          border-radius: 6px;
+          background: transparent;
+          color: var(--muted);
+          font-size: 12px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .sidebar-toggle:hover {
+          color: var(--text);
+          border-color: var(--accent);
         }
         .new-chat-btn {
           width: 100%;
@@ -1601,9 +1621,41 @@ export default function HomePage() {
           overflow-y: auto;
           display: flex;
           flex-direction: column;
+          transition: width 0.15s ease;
+        }
+        .anchors.collapsed {
+          width: 32px;
+          padding: 0.75rem 0.15rem;
+          overflow: hidden;
         }
         .anchors--menu {
           width: min(460px, 42vw);
+        }
+        .anchor-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding-right: 0.25rem;
+          margin-bottom: 0.5rem;
+        }
+        .anchor-collapse-btn {
+          flex-shrink: 0;
+          width: 22px;
+          height: 22px;
+          padding: 0;
+          border: 1px solid var(--border);
+          border-radius: 4px;
+          background: transparent;
+          color: var(--muted);
+          font-size: 10px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .anchor-collapse-btn:hover {
+          color: var(--text);
+          border-color: var(--accent);
         }
         .anchor-tabs {
           display: flex;

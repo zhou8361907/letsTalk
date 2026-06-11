@@ -19,6 +19,11 @@ export const MODEL_PRICING: Record<string, ModelPrice> = {
     outputPer1M: 0.28,
     asOf: "2026-06-01",
   },
+  "deepseek/deepseek-v4-flash": {
+    inputPer1M: 0.14,
+    outputPer1M: 0.28,
+    asOf: "2026-06-01",
+  },
   "anthropic/claude-sonnet-4-20250514": {
     inputPer1M: 3.0,
     outputPer1M: 15.0,

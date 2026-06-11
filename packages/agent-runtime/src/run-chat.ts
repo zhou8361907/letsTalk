@@ -78,8 +78,13 @@ import {
   logAgentStep,
 } from "./agent-logger.js";
 import { hashText, truncateForProdLog } from "./log-redact.js";
-import type { AgentStepLogFields } from "./log-steps.js";
-import { estimateCostUsd, usageFromContextTokens } from "./model-pricing.js";
+import type { AgentStepLogFields, RequestLogContext } from "./log-steps.js";
+import { estimateCostUsd } from "./model-pricing.js";
+import {
+  diffSessionCostUsd,
+  diffSessionTokens,
+  snapshotSessionTokens,
+} from "./session-token-stats.js";
 
 // ─── 进程内状态（Next dev HMR 后 Map 会清空，靠 jsonl + conversation JSON 恢复）───
 
@@ -280,8 +285,12 @@ export async function runChat(options: RunChatOptions): Promise<void> {
     traceId,
     sessionId: options.sessionId,
   });
+  const logCtx: RequestLogContext = {
+    traceId,
+    sessionId: options.sessionId,
+  };
   const logStep = (fields: AgentStepLogFields) => {
-    logAgentStep(stepLogger, fields);
+    logAgentStep(stepLogger, logCtx, fields);
   };
 
   // ── 阶段 1a：PRD 草稿旁路 ──────────────────────────────────────────────
@@ -366,6 +375,7 @@ export async function runChat(options: RunChatOptions): Promise<void> {
     sessionId: options.sessionId,
     turnId,
   });
+  logCtx.turnId = turnId;
   const debugTools: DebugToolRecord[] = [];
   let debugAssistant = "";
   const toolStepStarts = new Map<string, number>();
@@ -499,9 +509,13 @@ export async function runChat(options: RunChatOptions): Promise<void> {
     // 内部：调 LLM → 可能多轮 tool_execution（grep/read/…）→ subscribe 推事件
     // 本仓库在此行之后无代码，直到 prompt Promise resolve
     const llmT0 = Date.now();
+    const tokenStatsBefore = snapshotSessionTokens(session);
     await session.prompt(userText);
-    const postPromptUsage = snapshotContextUsage(session);
-    const tokenUsage = usageFromContextTokens(postPromptUsage?.tokens);
+    const tokenStatsAfter = snapshotSessionTokens(session);
+    const turnUsage = diffSessionTokens(tokenStatsAfter, tokenStatsBefore);
+    const turnCostPi = diffSessionCostUsd(tokenStatsAfter, tokenStatsBefore);
+    const costUsd =
+      turnCostPi > 0 ? turnCostPi : estimateCostUsd(modelLabel, turnUsage);
     logStep({
       step: "llm.call",
       stepId: "llm-1",
@@ -509,14 +523,22 @@ export async function runChat(options: RunChatOptions): Promise<void> {
       success: true,
       model: modelLabel,
       chatMode,
-      tokenUsage,
-      costUsd: tokenUsage ? estimateCostUsd(modelLabel, tokenUsage) : null,
+      tokenUsage: turnUsage,
+      costUsd: costUsd ?? null,
+      sessionTokenTotal: tokenStatsAfter.total,
+      sessionCostUsd:
+        tokenStatsAfter.costUsd > 0
+          ? tokenStatsAfter.costUsd
+          : (estimateCostUsd(modelLabel, {
+              input: tokenStatsAfter.input,
+              output: tokenStatsAfter.output,
+            }) ?? undefined),
       ...userMsgMeta,
     });
 
     pushContextUsageEvents(session, options.onEvent);
 
-    const usageSnap = postPromptUsage;
+    const usageSnap = snapshotContextUsage(session);
     const piFileAbs = session.sessionFile ?? handle.piSessionFile ?? null;
     let piRel: string | null = null;
     if (piFileAbs) {

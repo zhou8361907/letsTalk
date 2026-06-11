@@ -16,6 +16,12 @@ export const LOG_STEPS = [
 
 export type LogStep = (typeof LOG_STEPS)[number];
 
+export interface RequestLogContext {
+  traceId: string;
+  sessionId: string;
+  turnId?: string;
+}
+
 export interface TokenUsageFields {
   input?: number;
   output?: number;
@@ -40,4 +46,8 @@ export interface AgentStepLogFields {
   /** tool 输出摘要（已截断） */
   preview?: string;
   truncated?: boolean;
+  /** 会话累计 token（sse.flush / llm.call 可选） */
+  sessionTokenTotal?: number;
+  /** 会话累计成本 USD（Pi stats 或自估） */
+  sessionCostUsd?: number;
 }

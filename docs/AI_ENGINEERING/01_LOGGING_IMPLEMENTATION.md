@@ -26,7 +26,7 @@
 |-------|------|------|------|
 | **0** | pino + `agent-logger` + `log-steps` + `log-redact` + `model-pricing` | ✅ 完成 | `packages/agent-runtime/src/agent-logger.ts` 等 |
 | **1** | `traceId` + 主链路 step log（route / session / context / llm / tool / sse） | ✅ 完成 | `route.ts` · `run-chat.ts` · `shared-types` |
-| **2** | 单次 API token + cost 账本 + session 累计 | ⬜ 待做 | 依赖 Pi SDK 能力确认 |
+| **2** | 单次 API token + cost 账本 + session 累计 | 🟡 部分完成 | `getSessionStats` diff · `deepseek-v4-flash` 定价 |
 | **验收** | 一条 POST grep ≥5 条结构化 log | 🟡 待本地验证 | 见下方验收命令 |
 
 > 每周更新「状态」列；档位变更须附 PR 或本地验证命令。
@@ -54,8 +54,14 @@ pnpm --filter @lets-talk/agent-runtime add pino
 
 | 变量 | 默认 | 说明 |
 |------|------|------|
-| `LOG_LEVEL` | `info` | pino level |
+| `LOG_LEVEL` | `info` | pino level（`LOG_JSON=1` 时生效） |
+| `LOG_JSON` | off | `1` 强制 JSON（生产默认 JSON） |
+| `LOG_COLOR` | on | `0` 关闭终端颜色 |
+| `NO_COLOR` | — | 标准约定，关闭颜色 |
 | `LETS_TALK_DEBUG` | off | 仍控制 debug artifact，与 prod log 无关 |
+
+**开发默认**：人类可读单行（中文 step 名 + 耗时 + token）。  
+**生产 / `LOG_JSON=1`**：pino JSON，便于日志管道检索。
 
 ---
 
@@ -120,4 +126,4 @@ pnpm dev 2>&1 | grep '"step":"llm.call"'
 | 日期 | 内容 |
 |------|------|
 | 2026-06-11 | 创建本文档；前置 commit `db33276` 已 push（Handbook + 菜单改造） |
-| 2026-06-11 | Phase 0/1 代码落地：pino 结构化 log + traceId + 主链路 7 step |
+| 2026-06-11 | 开发环境人类可读 log；Phase 2：`getSessionStats` 差分 in/out token + cost |

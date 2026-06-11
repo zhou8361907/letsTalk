@@ -46,7 +46,8 @@ export async function POST(request: Request) {
   );
 
   const reqLog = createRequestLogger({ traceId, sessionId: body.sessionId });
-  logAgentStep(reqLog, {
+  const logCtx = { traceId, sessionId: body.sessionId };
+  logAgentStep(reqLog, logCtx, {
     step: "route.auth_parse",
     durationMs: Date.now() - routeT0,
     success: true,
@@ -86,7 +87,7 @@ export async function POST(request: Request) {
           );
         })
         .finally(() => {
-          logAgentStep(reqLog, {
+          logAgentStep(reqLog, logCtx, {
             step: "sse.flush",
             durationMs: Date.now() - chatT0,
             success: flushOk,

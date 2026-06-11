@@ -5,18 +5,19 @@
 
 import { randomUUID } from "node:crypto";
 import pino from "pino";
-import type { AgentStepLogFields } from "./log-steps.js";
+import {
+  formatPrettyLogLine,
+  formatStepMessage,
+  shouldUseJsonLog,
+} from "./format-agent-log.js";
+import type { AgentStepLogFields, RequestLogContext } from "./log-steps.js";
 
 const rootLogger = pino({
   name: "letsTalk",
   level: process.env.LOG_LEVEL?.trim() || "info",
 });
 
-export interface RequestLogContext {
-  traceId: string;
-  sessionId: string;
-  turnId?: string;
-}
+export type { RequestLogContext } from "./log-steps.js";
 
 export function createTraceId(): string {
   return randomUUID();
@@ -32,13 +33,16 @@ export function createRequestLogger(ctx: RequestLogContext): pino.Logger {
 
 export function logAgentStep(
   logger: pino.Logger,
+  ctx: RequestLogContext,
   fields: AgentStepLogFields,
-  msg?: string,
 ): void {
-  const message = msg ?? fields.step;
-  if (fields.success) {
-    logger.info(fields, message);
-  } else {
-    logger.error(fields, message);
+  const message = formatStepMessage(fields);
+  if (shouldUseJsonLog()) {
+    if (fields.success) logger.info(fields, message);
+    else logger.error(fields, message);
+    return;
   }
+  const line = formatPrettyLogLine(ctx, fields);
+  if (fields.success) console.log(line);
+  else console.error(line);
 }

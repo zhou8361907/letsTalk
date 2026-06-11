@@ -72,6 +72,14 @@ import {
   isTurnDebugSseEnabled,
   readPiJsonlTail,
 } from "./turn-debug.js";
+import {
+  createRequestLogger,
+  createTraceId,
+  logAgentStep,
+} from "./agent-logger.js";
+import { hashText, truncateForProdLog } from "./log-redact.js";
+import type { AgentStepLogFields } from "./log-steps.js";
+import { estimateCostUsd, usageFromContextTokens } from "./model-pricing.js";
 
 // ─── 进程内状态（Next dev HMR 后 Map 会清空，靠 jsonl + conversation JSON 恢复）───
 
@@ -236,6 +244,8 @@ function piEventToSse(event: unknown): SseEvent | null {
 /** runChat 的入参；onEvent 由 API route 编码为 SSE 行 */
 export interface RunChatOptions {
   sessionId: string;
+  /** 单次 HTTP 请求 id；route 生成，脚本未传时 runChat 内 createTraceId */
+  traceId?: string;
   /** 用户原始输入；JIT 前缀在内部拼接，不会改写此字段的持久化 */
   message: string;
   useTools?: boolean;
@@ -261,14 +271,42 @@ export async function runChat(options: RunChatOptions): Promise<void> {
   const useTools = options.useTools ?? true;
   const chatMode = options.chatMode ?? "explore";
   const anchorRef = anchorRefFrom(options.anchor);
+  const traceId = options.traceId ?? createTraceId();
+  const userMsgMeta = {
+    userMessageHash: hashText(options.message),
+    userMessageLen: options.message.length,
+  };
+  let stepLogger = createRequestLogger({
+    traceId,
+    sessionId: options.sessionId,
+  });
+  const logStep = (fields: AgentStepLogFields) => {
+    logAgentStep(stepLogger, fields);
+  };
 
   // ── 阶段 1a：PRD 草稿旁路 ──────────────────────────────────────────────
   // update_requirement_draft 工具不走 piEventToSse，而是 notifyDraftUpdated → 这里
   const onDraftUpdated = (draft: RequirementDraftState) => {
     emitDraftEvents(draft, options.onEvent);
-    void persistDraft(cwd, options.sessionId, draft).catch(() => {
-      // 落盘失败不阻断 SSE；下轮 GET 仍可从内存 store 恢复
-    });
+    const persistT0 = Date.now();
+    void persistDraft(cwd, options.sessionId, draft)
+      .then(() => {
+        logStep({
+          step: "artifact.persist_draft",
+          durationMs: Date.now() - persistT0,
+          success: true,
+          chatMode,
+        });
+      })
+      .catch((err: unknown) => {
+        logStep({
+          step: "artifact.persist_draft",
+          durationMs: Date.now() - persistT0,
+          success: false,
+          chatMode,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      });
   };
 
   setDraftListener(options.sessionId, onDraftUpdated);
@@ -276,6 +314,7 @@ export async function runChat(options: RunChatOptions): Promise<void> {
   liveAnchors.set(options.sessionId, options.anchor ?? null);
 
   // ── 阶段 1b：取 Pi AgentSession（创建逻辑在 create-session.ts）──────────
+  const sessionT0 = Date.now();
   const handle = await getOrCreatePiHandle(
     options.sessionId,
     cwd,
@@ -285,6 +324,14 @@ export async function runChat(options: RunChatOptions): Promise<void> {
     options.anchor ?? null,
   );
   const { session, modelLabel } = handle;
+  logStep({
+    step: "session.get_or_create",
+    durationMs: Date.now() - sessionT0,
+    success: true,
+    model: modelLabel,
+    chatMode,
+    ...userMsgMeta,
+  });
 
   ensureDraft(options.sessionId, anchorRef);
   const initialDraft = getDraft(options.sessionId) ?? emptyDraft(anchorRef);
@@ -298,6 +345,7 @@ export async function runChat(options: RunChatOptions): Promise<void> {
     sessionId: options.sessionId,
     cwd,
     model: modelLabel,
+    traceId,
   });
 
   pushContextUsageEvents(session, options.onEvent);
@@ -313,8 +361,15 @@ export async function runChat(options: RunChatOptions): Promise<void> {
 
   const turnId = nextTurnId(options.sessionId);
   setActiveTurnId(options.sessionId, turnId);
+  stepLogger = createRequestLogger({
+    traceId,
+    sessionId: options.sessionId,
+    turnId,
+  });
   const debugTools: DebugToolRecord[] = [];
   let debugAssistant = "";
+  const toolStepStarts = new Map<string, number>();
+  let toolStepCounter = 0;
 
   // ── 阶段 3：订阅 Pi（必须在 prompt 之前；prompt 期间异步推送）────────────
   const unsub = session.subscribe((piEvent: unknown) => {
@@ -328,6 +383,8 @@ export async function runChat(options: RunChatOptions): Promise<void> {
       }
     }
     if (e.type === "tool_execution_start") {
+      const callId = String(e.toolCallId ?? "");
+      toolStepStarts.set(callId, Date.now());
       debugTools.push({
         tool: String(e.toolName ?? "?"),
         callId: String(e.toolCallId ?? ""),
@@ -368,6 +425,22 @@ export async function runChat(options: RunChatOptions): Promise<void> {
       };
       if (idx >= 0) debugTools[idx] = rec;
       else debugTools.push(rec);
+
+      const toolT0 = toolStepStarts.get(callId) ?? Date.now();
+      toolStepStarts.delete(callId);
+      toolStepCounter += 1;
+      const { preview: toolPreview, truncated } = truncateForProdLog(preview);
+      logStep({
+        step: "tool.execute",
+        stepId: `tool-${toolStepCounter}`,
+        durationMs: Date.now() - toolT0,
+        success: e.isError !== true,
+        toolName,
+        chatMode,
+        preview: toolPreview,
+        truncated,
+        ...(e.isError === true ? { error: "tool_execution_failed" } : {}),
+      });
     }
 
     // 转成 SseEvent 推给浏览器
@@ -378,6 +451,7 @@ export async function runChat(options: RunChatOptions): Promise<void> {
   try {
     // ── 阶段 4a：V1 上下文 — 每轮仅 pointer / memory Pull / 清单摘要（规则在 system）──
     noteUserTurnForSelfImprovementReview(options.sessionId);
+    const prefixT0 = Date.now();
     const turnCtx = await buildTurnPromptPrefix({
       sessionId: options.sessionId,
       layout,
@@ -388,6 +462,13 @@ export async function runChat(options: RunChatOptions): Promise<void> {
       sessionCreatedAtMs: handle.sessionCreatedAtMs,
     });
     const prefix = turnCtx.prefix;
+    logStep({
+      step: "context.build_prefix",
+      durationMs: Date.now() - prefixT0,
+      success: true,
+      chatMode,
+      model: modelLabel,
+    });
     options.onEvent({
       type: "context",
       mode: turnCtx.mode,
@@ -417,11 +498,25 @@ export async function runChat(options: RunChatOptions): Promise<void> {
     // ── 阶段 4b：进入 Pi SDK ─────────────────────────────────────────────
     // 内部：调 LLM → 可能多轮 tool_execution（grep/read/…）→ subscribe 推事件
     // 本仓库在此行之后无代码，直到 prompt Promise resolve
+    const llmT0 = Date.now();
     await session.prompt(userText);
+    const postPromptUsage = snapshotContextUsage(session);
+    const tokenUsage = usageFromContextTokens(postPromptUsage?.tokens);
+    logStep({
+      step: "llm.call",
+      stepId: "llm-1",
+      durationMs: Date.now() - llmT0,
+      success: true,
+      model: modelLabel,
+      chatMode,
+      tokenUsage,
+      costUsd: tokenUsage ? estimateCostUsd(modelLabel, tokenUsage) : null,
+      ...userMsgMeta,
+    });
 
     pushContextUsageEvents(session, options.onEvent);
 
-    const usageSnap = snapshotContextUsage(session);
+    const usageSnap = postPromptUsage;
     const piFileAbs = session.sessionFile ?? handle.piSessionFile ?? null;
     let piRel: string | null = null;
     if (piFileAbs) {

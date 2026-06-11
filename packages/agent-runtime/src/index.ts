@@ -36,6 +36,14 @@ export {
   type RunChatOptions,
 } from "./run-chat.js";
 export { cleanupSessionDebug } from "./debug-logger.js";
+export {
+  createRequestLogger,
+  createTraceId,
+  logAgentStep,
+} from "./agent-logger.js";
+export { hashText, truncateForProdLog } from "./log-redact.js";
+export type { AgentStepLogFields, LogStep } from "./log-steps.js";
+export { estimateCostUsd, MODEL_PRICING } from "./model-pricing.js";
 export { generateDevAppendix } from "./generate-dev-appendix.js";
 export {
   isDevAppendixJobRunning,

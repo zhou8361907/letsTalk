@@ -4,7 +4,7 @@
 |------|--------|---------------|
 | L2 | 🔴 P0 | Logging ⚠️ · Trace ⚠️ |
 
-← [Handbook](./README.md) · [Mastra 矩阵](./00_GAP_ASSESSMENT.md#mastra-矩阵)
+← [Handbook](./README.md) · [Mastra 矩阵](./00_GAP_ASSESSMENT.md#mastra-矩阵) · [实施 & 进度](./01_LOGGING_IMPLEMENTATION.md)
 
 > **Week 1**：与 [05 Metrics 基础](./05_OBSERVABILITY.md#核心-metrics) 同步推进 — Log 与 Metric 字段对齐。
 

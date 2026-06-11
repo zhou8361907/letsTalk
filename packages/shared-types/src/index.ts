@@ -89,8 +89,8 @@ export interface ContextUsageSnapshot {
  *  wire 格式：`data: ${JSON.stringify(event)}\n\n`（见 formatSseData）
  */
 export type SseEvent =
-  /** 本轮开始，告知 sessionId、cwd、模型名 */
-  | { type: "session"; sessionId: string; cwd: string; model: string }
+  /** 本轮开始，告知 sessionId、cwd、模型名；traceId 供排障关联 prod log */
+  | { type: "session"; sessionId: string; cwd: string; model: string; traceId?: string }
   /** 上下文 token 占用更新（prompt 前后各推一次） */
   | { type: "context_usage"; tokens: number | null; contextWindow: number; percent: number | null }
   /** 上下文占用提醒（默认 50% 提示，90% 触发压缩） */

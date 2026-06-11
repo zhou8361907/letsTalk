@@ -10,12 +10,16 @@ import "server-only";
  * 必须用 nodejs runtime，因为 Pi SDK 不能在 Edge 跑。
  */
 
+import { randomUUID } from "node:crypto";
 import { formatSseData, type ChatStreamRequest } from "@lets-talk/shared-types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const traceId = randomUUID();
+  const routeT0 = Date.now();
+
   // --- 解析请求 ---
   let body: ChatStreamRequest;
   try {
@@ -36,10 +40,18 @@ export async function POST(request: Request) {
   const encoder = new TextEncoder();
 
   // 运行时再从 Node 加载 Pi（避免 Webpack 把 pi-ai 的动态 require 打进 bundle）
-  const { runChat } = await import(
+  const { runChat, createRequestLogger, logAgentStep } = await import(
     /* webpackIgnore: true */
     "@lets-talk/agent-runtime"
   );
+
+  const reqLog = createRequestLogger({ traceId, sessionId: body.sessionId });
+  logAgentStep(reqLog, {
+    step: "route.auth_parse",
+    durationMs: Date.now() - routeT0,
+    success: true,
+    chatMode: body.chatMode ?? "explore",
+  });
 
   const stream = new ReadableStream({
     start(controller) {
@@ -52,7 +64,11 @@ export async function POST(request: Request) {
         }
       };
 
+      const chatT0 = Date.now();
+      let flushOk = true;
+
       runChat({
+        traceId,
         sessionId: body.sessionId,
         message: body.message.trim(),
         anchor: body.anchor ?? null,
@@ -61,6 +77,7 @@ export async function POST(request: Request) {
         onEvent: enqueue,
       })
         .catch((err: unknown) => {
+          flushOk = false;
           const message = err instanceof Error ? err.message : String(err);
           controller.enqueue(
             encoder.encode(
@@ -68,7 +85,15 @@ export async function POST(request: Request) {
             ),
           );
         })
-        .finally(() => controller.close());
+        .finally(() => {
+          logAgentStep(reqLog, {
+            step: "sse.flush",
+            durationMs: Date.now() - chatT0,
+            success: flushOk,
+            ...(flushOk ? {} : { error: "agent turn failed" }),
+          });
+          controller.close();
+        });
     },
   });
 

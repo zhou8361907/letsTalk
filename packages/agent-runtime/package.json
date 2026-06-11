@@ -23,16 +23,17 @@
     "@earendil-works/pi-ai": "0.75.5",
     "@earendil-works/pi-coding-agent": "0.75.5",
     "@lets-talk/ast-tools": "workspace:*",
-    "@lets-talk/memory": "workspace:*",
     "@lets-talk/context": "workspace:*",
     "@lets-talk/conversation": "workspace:*",
+    "@lets-talk/memory": "workspace:*",
     "@lets-talk/shared-types": "workspace:*",
     "@lets-talk/skills": "workspace:*",
-    "@sinclair/typebox": "^0.34.0"
+    "@sinclair/typebox": "^0.34.0",
+    "pino": "^10.3.1"
   },
   "devDependencies": {
-    "dotenv": "^16.4.0",
     "@types/node": "^22.10.0",
+    "dotenv": "^16.4.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"
   }

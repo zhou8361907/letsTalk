@@ -15,6 +15,7 @@
 |------|------|
 | **AGENT_OS_DESIGN.md** | 架构、契约、原则 — **不轻易改方向，只增补 ADR** |
 | **本文档** | 分阶段做什么、验收标准、**进度勾选**、你提的需求 backlog |
+| **[AI_ENGINEERING/README.md](./AI_ENGINEERING/README.md)** | Agent **工程成熟度**（日志、tool、eval…）— 与本文功能阶段正交 |
 | **PI_SDK_NODE_INTEGRATION.md** | 实现时抄 Pi API 用 |
 
 > 你后续提的需求，记在本文 **§6 需求 Backlog**；若影响架构，再回写总设计 §1.4 / 修订记录。

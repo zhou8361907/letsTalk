@@ -39,7 +39,11 @@ export async function POST(req: Request) {
     return Response.json({ error: "当前会话无需求清单" }, { status: 400 });
   }
 
-  const title = body.title?.trim() || record.title || "需求";
+  const title =
+    (record.titleLocked && record.title) ||
+    body.title?.trim() ||
+    record.title ||
+    "需求";
   const anchor = body.anchor ?? record.anchor ?? null;
   const primary = buildRequirementPrimaryMarkdown(record.requirementDraft, {
     title,

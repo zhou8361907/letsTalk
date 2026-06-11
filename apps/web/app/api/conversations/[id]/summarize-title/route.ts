@@ -33,6 +33,9 @@ export async function POST(_req: Request, ctx: RouteCtx) {
   if (!record.requirementDraft?.items.length) {
     return Response.json({ error: "无需求清单，无法生成标题" }, { status: 400 });
   }
+  if (record.titleLocked && record.title) {
+    return Response.json({ title: record.title, record });
+  }
 
   try {
     const title = await summarizeConversationTitle({

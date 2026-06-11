@@ -12,7 +12,7 @@ export {
   type MenuLeafItem,
   type MenuMegaPanel,
   type MenuNavRoot,
-  type MenuSection,
+  type MenuGroup,
   type MenuTreePayload,
   type SysMenuRow,
 } from "./menu-sys.js";

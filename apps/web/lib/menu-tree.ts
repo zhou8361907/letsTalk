@@ -3,20 +3,20 @@
  * Web API 使用本地副本，避免 context 包未 rebuild 时 buildMergedMenuTree 缺失。
  */
 export type {
+  MenuGroup,
   MenuLeafItem,
   MenuMegaPanel,
   MenuNavRoot,
-  MenuSection,
   MenuTreePayload,
   SysMenuRow,
 } from "@lets-talk/context";
 
 import { parseSysMenuUrl } from "./parse-menu-url.js";
 import type {
+  MenuGroup,
   MenuLeafItem,
   MenuMegaPanel,
   MenuNavRoot,
-  MenuSection,
   MenuTreePayload,
   SysMenuRow,
 } from "@lets-talk/context";
@@ -49,23 +49,48 @@ function resolveContentRoot(rows: SysMenuRow[], root: SysMenuRow): SysMenuRow {
   return root;
 }
 
-function collectLeaves(rows: SysMenuRow[], node: SysMenuRow): MenuLeafItem[] {
+function buildMenuGroup(rows: SysMenuRow[], node: SysMenuRow): MenuGroup | null {
   const kids = childrenOf(rows, node.menuId);
-  if (kids.length === 0) {
-    if (node.isLeaf && node.url) {
-      return [leafFromUrl(node.menuId, node.menuName, node.url)];
-    }
-    return [];
-  }
-  const out: MenuLeafItem[] = [];
+  const groups: MenuGroup[] = [];
+  const items: MenuLeafItem[] = [];
+
   for (const k of kids) {
     if (k.isLeaf && k.url) {
-      out.push(leafFromUrl(k.menuId, k.menuName, k.url));
+      items.push(leafFromUrl(k.menuId, k.menuName, k.url));
     } else {
-      out.push(...collectLeaves(rows, k));
+      const sub = buildMenuGroup(rows, k);
+      if (sub) groups.push(sub);
     }
   }
-  return out;
+
+  if (groups.length === 0 && items.length === 0) return null;
+  return { menuId: node.menuId, title: node.menuName, groups, items };
+}
+
+function buildTopGroups(rows: SysMenuRow[], content: SysMenuRow): MenuGroup[] {
+  const kids = childrenOf(rows, content.menuId);
+  const groups: MenuGroup[] = [];
+  const orphanItems: MenuLeafItem[] = [];
+
+  for (const k of kids) {
+    if (k.isLeaf && k.url) {
+      orphanItems.push(leafFromUrl(k.menuId, k.menuName, k.url));
+    } else {
+      const g = buildMenuGroup(rows, k);
+      if (g) groups.push(g);
+    }
+  }
+
+  if (orphanItems.length > 0) {
+    groups.unshift({
+      menuId: `${content.menuId}-misc`,
+      title: "功能入口",
+      groups: [],
+      items: orphanItems,
+    });
+  }
+
+  return groups;
 }
 
 export function buildMenuTree(rows: SysMenuRow[], userSysId: string): MenuTreePayload {
@@ -79,31 +104,12 @@ export function buildMenuTree(rows: SysMenuRow[], userSysId: string): MenuTreePa
   const panels: Record<string, MenuMegaPanel> = {};
   for (const root of childrenOf(enabled, userSysId)) {
     const content = resolveContentRoot(enabled, root);
-    const groups = childrenOf(enabled, content.menuId);
-    const sections: MenuSection[] = [];
-
-    for (const g of groups) {
-      const items = collectLeaves(enabled, g);
-      if (items.length === 0) continue;
-      sections.push({ menuId: g.menuId, title: g.menuName, items });
-    }
-
-    const orphanLeaves = collectLeaves(enabled, content).filter(
-      (leaf) => !sections.some((s) => s.items.some((i) => i.menuId === leaf.menuId)),
-    );
-    if (orphanLeaves.length > 0) {
-      sections.unshift({
-        menuId: `${content.menuId}-misc`,
-        title: "功能入口",
-        items: orphanLeaves,
-      });
-    }
 
     panels[root.menuId] = {
       rootId: root.menuId,
       rootName: root.menuName,
       breadcrumb: [root.menuName],
-      sections,
+      groups: buildTopGroups(enabled, content),
     };
   }
 

@@ -172,6 +172,7 @@ pnpm sync-menu
 
 ### 产品与 Agent 能力
 
+- [docs/AI_ENGINEERING/README.md](docs/AI_ENGINEERING/README.md) — **AI Engineering Handbook**（成熟度评估 + 工程知识库）
 - [docs/AGENT_OS_DESIGN.md](docs/AGENT_OS_DESIGN.md) — 总设计
 - [docs/IMPLEMENTATION_PHASES.md](docs/IMPLEMENTATION_PHASES.md) — 分阶段进度
 - [docs/PM_REQUIREMENT_ASSISTANT.md](docs/PM_REQUIREMENT_ASSISTANT.md) — PM 需求助手

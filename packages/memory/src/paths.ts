@@ -35,6 +35,22 @@ export function topicFilePath(
   return join(topicsDir(workspaceRoot), `${kind}-${slug}.md`);
 }
 
+/** 按 Actor 隔离的 USER 画像目录 */
+export function actorUserDir(workspaceRoot: string, actorId: string): string {
+  return join(memoryDir(workspaceRoot), "actors", actorId);
+}
+
+export function actorUserRelPath(actorId: string): string {
+  return `${MEMORY_DIR}/actors/${actorId}/USER.md`;
+}
+
+export function actorUserFilePath(
+  workspaceRoot: string,
+  actorId: string,
+): string {
+  return join(actorUserDir(workspaceRoot, actorId), "USER.md");
+}
+
 /** @deprecated legacy 根目录 flat 文件 */
 export function legacyMemoryFilePath(workspaceRoot: string, slug: string): string {
   return join(memoryDir(workspaceRoot), `${slug}.md`);

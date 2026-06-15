@@ -1,0 +1,13 @@
+description: 支付计划批量审批 - 第 1 轮
+
+vars:
+  message: |
+    我们四川医保局那边觉得现在一个个点支付计划太慢了，想做个批量审批功能，可以一次选中多条支付计划然后统一审批通过，这样能提高工作效率。
+
+assert:
+  - type: javascript
+    value: output.draft?.readyToFinalize !== true
+  - type: llm-rubric
+    value: 以追问或业务概要开头，不直接把未核实的规则写成 toBe 定论
+  - type: cost
+    threshold: 0.50

@@ -1,0 +1,15 @@
+description: 真实需求 - 背景轮（零金额剔除）
+
+vars:
+  message: |
+    最近省医保局那边提了个问题，子表里会推金额为 0 的数据，这些数据没有实际意义，但在界面上会显示出来，影响用户体验，需要处理一下。
+
+assert:
+  - type: javascript
+    value: |
+      // 不猜解决方案写进 toBe（无 item 或 toBe 无「剔除」「过滤」等定论句）
+      const items = output.draft?.items || [];
+      const toBeText = items.map(i => i.fields.find(f => f.key === 'toBe')?.value || '').join(' ');
+      !toBeText.includes('剔除') && !toBeText.includes('过滤')
+  - type: javascript
+    value: output.draft?.readyToFinalize !== true

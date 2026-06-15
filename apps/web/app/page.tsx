@@ -25,8 +25,15 @@ import {
   buildAssistantTurnIds,
   mergeTurnDebugSnapshots,
 } from "../lib/turn-debug-client";
+import { ActorPickerModal } from "../components/ActorPickerModal";
 import { MenuAnchorPicker } from "../components/MenuAnchorPicker";
 import { MemoryEditorModal } from "../components/MemoryEditorModal";
+import {
+  actorFetch,
+  loadStoredActorId,
+  loadStoredActorName,
+  persistActorChoice,
+} from "../lib/actor-client";
 import { RequirementCanvas } from "../components/RequirementCanvas";
 import { TurnDebugModal } from "../components/TurnDebugModal";
 import {
@@ -42,6 +49,8 @@ import {
   type SseEvent,
   type TranscriptItem,
   type TurnDebugSnapshot,
+  type Actor,
+  ANONYMOUS_ACTOR_ID,
 } from "@lets-talk/shared-types";
 
 const ANCHOR_STORAGE_KEY = "letsTalk.anchor";
@@ -121,6 +130,8 @@ export default function HomePage() {
   const [sessionId, setSessionId] = useState("");
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [booting, setBooting] = useState(true);
+  const [currentActor, setCurrentActor] = useState<Actor | null>(null);
+  const [actorPickerOpen, setActorPickerOpen] = useState(false);
 
   const [anchor, setAnchor] = useState<AgentAnchor | null>(null);
   const [anchorList, setAnchorList] = useState<AgentAnchor[]>([]);
@@ -198,7 +209,7 @@ export default function HomePage() {
     const id = sid ?? sessionIdRef.current;
     if (!id || chatModeRef.current !== "prd") return;
     try {
-      const res = await fetch(`/api/conversations/${id}`);
+      const res = await actorFetch(`/api/conversations/${id}`);
       if (!res.ok) return;
       const record = (await res.json()) as {
         requirementDraft?: RequirementDraftState | null;
@@ -228,7 +239,7 @@ export default function HomePage() {
       return;
     }
     try {
-      const res = await fetch(`/api/conversations/${id}/context`);
+      const res = await actorFetch(`/api/conversations/${id}/context`);
       if (!res.ok) return;
       const usage = (await res.json()) as ContextUsageSnapshot;
       setContextUsage(usage);
@@ -264,7 +275,7 @@ export default function HomePage() {
   const refreshConversationList = useCallback(async () => {
     const scrollEl = convScrollRef.current;
     const savedScrollTop = scrollEl?.scrollTop ?? 0;
-    const res = await fetch("/api/conversations");
+    const res = await actorFetch("/api/conversations");
     if (!res.ok) return [];
     const data = (await res.json()) as { conversations?: ConversationSummary[] };
     const list = data.conversations ?? [];
@@ -279,7 +290,7 @@ export default function HomePage() {
     async (snapshot?: TranscriptItem[]) => {
       const sid = sessionIdRef.current;
       if (!sid) return;
-      const exists = await fetch(`/api/conversations/${sid}`);
+      const exists = await actorFetch(`/api/conversations/${sid}`);
       if (!exists.ok) return;
       const server = (await exists.json()) as { items?: TranscriptItem[] };
       const clientItems = snapshot ?? itemsRef.current;
@@ -297,7 +308,7 @@ export default function HomePage() {
       if (draft) {
         body.requirementDraft = draft;
       }
-      await fetch(`/api/conversations/${sid}`, {
+      await actorFetch(`/api/conversations/${sid}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -358,7 +369,7 @@ export default function HomePage() {
     if (sessionIdRef.current) {
       await persistCurrent();
     }
-    const res = await fetch("/api/conversations", { method: "POST" });
+    const res = await actorFetch("/api/conversations", { method: "POST" });
     if (!res.ok) return;
     const record = (await res.json()) as {
       sessionId: string;
@@ -385,7 +396,7 @@ export default function HomePage() {
       setDebugTick((t) => t + 1);
 
       try {
-        const res = await fetch(`/api/debug/session/${sid}/turns`);
+        const res = await actorFetch(`/api/debug/session/${sid}/turns`);
         const data = (await res.json()) as {
           turns?: TurnDebugSnapshot[];
           source?: SessionDebugState["source"];
@@ -422,7 +433,7 @@ export default function HomePage() {
       const id = sid ?? sessionIdRef.current;
       if (!id || chatModeRef.current !== "prd") return null;
       try {
-        const res = await fetch(`/api/conversations/${id}/summarize-title`, {
+        const res = await actorFetch(`/api/conversations/${id}/summarize-title`, {
           method: "POST",
         });
         if (res.ok) {
@@ -449,7 +460,7 @@ export default function HomePage() {
 
   const loadConversationById = useCallback(
     async (id: string) => {
-      const res = await fetch(`/api/conversations/${id}`);
+      const res = await actorFetch(`/api/conversations/${id}`);
       if (!res.ok) return false;
       const record = (await res.json()) as {
         sessionId: string;
@@ -482,7 +493,7 @@ export default function HomePage() {
       const t = title.trim();
       setRenamingId(null);
       if (!t) return;
-      const res = await fetch(`/api/conversations/${id}`, {
+      const res = await actorFetch(`/api/conversations/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title: t }),
@@ -498,7 +509,7 @@ export default function HomePage() {
       if (!window.confirm("确定删除此对话？删除后不可恢复。")) return;
 
       const wasCurrent = id === sessionIdRef.current;
-      const res = await fetch(`/api/conversations/${id}`, { method: "DELETE" });
+      const res = await actorFetch(`/api/conversations/${id}`, { method: "DELETE" });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
         window.alert(err.error ?? "删除失败");
@@ -517,7 +528,7 @@ export default function HomePage() {
         if (list.length > 0) {
           await loadConversationById(list[0]!.sessionId);
         } else {
-          const createRes = await fetch("/api/conversations", { method: "POST" });
+          const createRes = await actorFetch("/api/conversations", { method: "POST" });
           if (createRes.ok) {
             const record = (await createRes.json()) as {
               sessionId: string;
@@ -597,7 +608,7 @@ export default function HomePage() {
 
     setAppendixJobStatus("running");
     try {
-      const res = await fetch("/api/export/dev-appendix", {
+      const res = await actorFetch("/api/export/dev-appendix", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -635,6 +646,17 @@ export default function HomePage() {
     window.alert("未找到含附录文档，请稍候或重新生成。");
   }, []);
 
+  const handleActorSelect = useCallback(
+    (actor: Actor) => {
+      setActorPickerOpen(false);
+      if (currentActor?.id === actor.id) return;
+      persistActorChoice(actor);
+      setCurrentActor(actor);
+      resetActiveSessionLocal();
+    },
+    [resetActiveSessionLocal, currentActor?.id],
+  );
+
   useEffect(() => {
     setAnchor(loadStoredAnchor());
     anchorRef.current = loadStoredAnchor();
@@ -642,11 +664,30 @@ export default function HomePage() {
     setChatMode(storedMode);
     chatModeRef.current = storedMode;
 
+    const storedId = loadStoredActorId();
+    const storedName = loadStoredActorName();
+    if (storedId) {
+      setCurrentActor({
+        id: storedId,
+        displayName:
+          storedName ?? (storedId === ANONYMOUS_ACTOR_ID ? "匿名" : storedId),
+        kind: storedId === ANONYMOUS_ACTOR_ID ? "anonymous" : "named",
+        createdAt: "",
+      });
+    } else {
+      setActorPickerOpen(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!currentActor) return;
+
+    setBooting(true);
     void (async () => {
       try {
         const [list] = await Promise.all([
           refreshConversationList(),
-          fetch("/api/workspace")
+          actorFetch("/api/workspace")
             .then((r) => r.json())
             .then(
               (d: {
@@ -661,7 +702,7 @@ export default function HomePage() {
                 }),
             )
             .catch(() => setWorkspace({ root: null, front: null, back: null })),
-          fetch("/api/workspace/anchors")
+          actorFetch("/api/workspace/anchors")
             .then((r) => r.json())
             .then((d: { anchors?: AgentAnchor[] }) => setAnchorList(d.anchors ?? []))
             .catch(() => setAnchorList([])),
@@ -683,14 +724,14 @@ export default function HomePage() {
 
         const lastId = sessionStorage.getItem(SESSION_STORAGE_KEY);
         if (lastId && list.some((c) => c.sessionId === lastId)) {
-          const res = await fetch(`/api/conversations/${lastId}`);
+          const res = await actorFetch(`/api/conversations/${lastId}`);
           if (res.ok) {
             restoreRecord(await res.json());
             return;
           }
         }
         if (list.length > 0) {
-          const res = await fetch(`/api/conversations/${list[0]!.sessionId}`);
+          const res = await actorFetch(`/api/conversations/${list[0]!.sessionId}`);
           if (res.ok) {
             restoreRecord(await res.json());
             return;
@@ -701,8 +742,8 @@ export default function HomePage() {
         setBooting(false);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 仅挂载
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- currentActor 变化时重载会话
+  }, [currentActor]);
 
   useEffect(() => {
     if (booting || !sessionId) return;
@@ -732,7 +773,7 @@ export default function HomePage() {
     let cancelled = false;
     const poll = async () => {
       try {
-        const res = await fetch(
+        const res = await actorFetch(
           `/api/export/dev-appendix?sessionId=${encodeURIComponent(sessionId)}`,
         );
         if (!res.ok || cancelled) return;
@@ -853,7 +894,7 @@ export default function HomePage() {
     setItems(snapshot);
 
     try {
-      const res = await fetch("/api/agent/chat/stream", {
+      const res = await actorFetch("/api/agent/chat/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1037,15 +1078,34 @@ export default function HomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, booting]);
 
-  if (booting) {
+  if (booting || !currentActor) {
     return (
-      <main className="layout boot">
-        <p className="muted">加载会话…</p>
-      </main>
+      <>
+        <ActorPickerModal
+          open={!currentActor || actorPickerOpen}
+          mode={currentActor ? "switch" : "welcome"}
+          currentActorId={currentActor?.id}
+          onClose={() => setActorPickerOpen(false)}
+          onSelect={handleActorSelect}
+        />
+        {!currentActor ? null : (
+          <main className="layout boot">
+            <p className="muted">加载会话…</p>
+          </main>
+        )}
+      </>
     );
   }
 
   return (
+    <>
+    <ActorPickerModal
+      open={actorPickerOpen}
+      mode="switch"
+      currentActorId={currentActor.id}
+      onClose={() => setActorPickerOpen(false)}
+      onSelect={handleActorSelect}
+    />
     <main className="layout">
       <aside className={`conv-sidebar${sidebarCollapsed ? " collapsed" : ""}`}>
         <div className="sidebar-header">
@@ -1220,6 +1280,21 @@ export default function HomePage() {
             </span>
           </div>
           <div className="header-actions">
+            <button
+              type="button"
+              className="actor-btn"
+              onClick={() => setActorPickerOpen(true)}
+              disabled={busy}
+              title="切换身份（部门内会话隔离）"
+            >
+              <span className="actor-btn-icon" aria-hidden>
+                ◉
+              </span>
+              <span className="actor-btn-name">{currentActor.displayName}</span>
+              <span className="actor-btn-caret" aria-hidden>
+                ▾
+              </span>
+            </button>
             <button
               type="button"
               className="export-btn"
@@ -1804,6 +1879,43 @@ export default function HomePage() {
         .export-btn:hover:not(:disabled) {
           border-color: var(--accent);
         }
+        .actor-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          font-size: 11px;
+          padding: 0.25rem 0.5rem 0.25rem 0.4rem;
+          border: 1px solid var(--border);
+          border-radius: 999px;
+          background: var(--panel);
+          color: var(--text);
+          cursor: pointer;
+          max-width: 9rem;
+        }
+        .actor-btn:hover:not(:disabled) {
+          border-color: var(--accent);
+          background: rgba(88, 166, 255, 0.08);
+        }
+        .actor-btn:disabled {
+          opacity: 0.55;
+          cursor: not-allowed;
+        }
+        .actor-btn-icon {
+          font-size: 10px;
+          color: var(--accent);
+          line-height: 1;
+        }
+        .actor-btn-name {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          min-width: 0;
+        }
+        .actor-btn-caret {
+          font-size: 9px;
+          color: var(--muted);
+          line-height: 1;
+        }
         .header h1 {
           font-size: 1rem;
           margin: 0;
@@ -2097,5 +2209,6 @@ export default function HomePage() {
         }
       `}</style>
     </main>
+    </>
   );
 }

@@ -1,5 +1,5 @@
 /** state.db v1 DDL — 与 docs/STATE_DB_V1.md §3 对齐 */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 /** 基础表 DDL（不含 FTS5 虚拟表及触发器） */
 export const SCHEMA_V1_BASE_SQL = `
@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS sessions (
     message_count   INTEGER DEFAULT 0,
     input_tokens    INTEGER DEFAULT 0,
     output_tokens   INTEGER DEFAULT 0,
+    owner_actor_id  TEXT,
+    owner_display_name TEXT,
     FOREIGN KEY (parent_session_id) REFERENCES sessions(id)
 );
 
@@ -79,3 +81,10 @@ END;
 
 /** 完整 DDL（含 FTS5），兼容已有引用 */
 export const SCHEMA_V1_SQL = `${SCHEMA_V1_BASE_SQL}\n${SCHEMA_V1_FTS_SQL}`;
+
+/** v2：Actor 会话归属 */
+export const SCHEMA_V2_MIGRATION_SQL = `
+ALTER TABLE sessions ADD COLUMN owner_actor_id TEXT;
+ALTER TABLE sessions ADD COLUMN owner_display_name TEXT;
+CREATE INDEX IF NOT EXISTS idx_sessions_owner ON sessions(owner_actor_id, updated_at DESC);
+`;

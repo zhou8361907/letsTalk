@@ -1,7 +1,15 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { ensureMemoryDir, memoryDir } from "./paths.js";
+import {
+  actorUserFilePath,
+  actorUserRelPath,
+  ensureMemoryDir,
+  memoryDir,
+} from "./paths.js";
 import { validateSaveMemoryContent } from "./validate-save.js";
+
+/** 与 @lets-talk/shared-types ANONYMOUS_ACTOR_ID 一致 */
+const ANON_ACTOR_ID = "anon";
 
 export const USER_REL = ".agent/memory/USER.md";
 export const CORE_REL = ".agent/memory/CORE.md";
@@ -19,12 +27,24 @@ export interface CoreMemorySnapshot {
 
 export type CoreMemoryUpdateMode = "append" | "replace";
 
-function userFilePath(workspaceRoot: string): string {
+function legacyUserFilePath(workspaceRoot: string): string {
   return join(memoryDir(workspaceRoot), "USER.md");
 }
 
 function coreFilePath(workspaceRoot: string): string {
   return join(memoryDir(workspaceRoot), "CORE.md");
+}
+
+export function resolveUserRelPath(actorId?: string): string {
+  return actorId ? actorUserRelPath(actorId) : USER_REL;
+}
+
+async function ensureActorUserDir(
+  workspaceRoot: string,
+  actorId: string,
+): Promise<void> {
+  const { actorUserDir } = await import("./paths.js");
+  await mkdir(actorUserDir(workspaceRoot, actorId), { recursive: true });
 }
 
 async function readOptionalFile(absPath: string): Promise<string | null> {
@@ -52,12 +72,13 @@ function truncateWithNotice(text: string, limit: number): {
 
 export async function loadCoreMemorySnapshot(
   workspaceRoot: string,
+  actorId?: string,
 ): Promise<CoreMemorySnapshot> {
-  const userRaw = await readOptionalFile(userFilePath(workspaceRoot));
+  const userText = await readFullUser(workspaceRoot, actorId);
   const coreRaw = await readOptionalFile(coreFilePath(workspaceRoot));
 
-  const user = userRaw
-    ? truncateWithNotice(userRaw, USER_CHAR_LIMIT)
+  const user = userText
+    ? truncateWithNotice(userText, USER_CHAR_LIMIT)
     : { text: null as string | null, truncated: false };
   const core = coreRaw
     ? truncateWithNotice(coreRaw, CORE_CHAR_LIMIT)
@@ -129,14 +150,19 @@ function removeEntryByOldText(
 export async function removeUserProfileEntry(
   workspaceRoot: string,
   old_text: string,
+  actorId?: string,
 ): Promise<{ path: string; charCount: number; limit: number }> {
   await ensureMemoryDir(workspaceRoot);
-  const existing = await readFullUser(workspaceRoot);
+  if (actorId) await ensureActorUserDir(workspaceRoot, actorId);
+  const existing = await readFullUser(workspaceRoot, actorId);
   const next = removeEntryByOldText(existing, old_text, "USER.md");
   assertWithinLimit(next, USER_CHAR_LIMIT, "USER.md");
-  await writeFile(userFilePath(workspaceRoot), next ? `${next}\n` : "", "utf8");
+  const abs = actorId
+    ? actorUserFilePath(workspaceRoot, actorId)
+    : legacyUserFilePath(workspaceRoot);
+  await writeFile(abs, next ? `${next}\n` : "", "utf8");
   return {
-    path: USER_REL,
+    path: resolveUserRelPath(actorId),
     charCount: next.length,
     limit: USER_CHAR_LIMIT,
   };
@@ -169,8 +195,22 @@ export function formatM0UsageLine(
   return `${label}：${charCount}/${limit} 字符（${pct}%）`;
 }
 
-async function readFullUser(workspaceRoot: string): Promise<string> {
-  return (await readOptionalFile(userFilePath(workspaceRoot))) ?? "";
+async function readFullUser(
+  workspaceRoot: string,
+  actorId?: string,
+): Promise<string> {
+  if (actorId && actorId !== ANON_ACTOR_ID) {
+    return (
+      (await readOptionalFile(actorUserFilePath(workspaceRoot, actorId))) ?? ""
+    );
+  }
+  if (actorId === ANON_ACTOR_ID) {
+    const onAnon = await readOptionalFile(
+      actorUserFilePath(workspaceRoot, ANON_ACTOR_ID),
+    );
+    if (onAnon) return onAnon;
+  }
+  return (await readOptionalFile(legacyUserFilePath(workspaceRoot))) ?? "";
 }
 
 async function readFullCore(workspaceRoot: string): Promise<string> {
@@ -187,8 +227,9 @@ function assertWithinLimit(text: string, limit: number, label: string): void {
 
 export async function readUserProfile(
   workspaceRoot: string,
+  actorId?: string,
 ): Promise<{ content: string; charCount: number; limit: number }> {
-  const content = await readFullUser(workspaceRoot);
+  const content = await readFullUser(workspaceRoot, actorId);
   return {
     content: content || "（USER.md 暂无内容）",
     charCount: content.length,
@@ -210,6 +251,7 @@ export async function readCoreMemory(
 export async function updateUserProfile(
   workspaceRoot: string,
   input: { content: string; mode: CoreMemoryUpdateMode; old_text?: string },
+  actorId?: string,
 ): Promise<{ path: string; charCount: number; limit: number }> {
   const validation = validateSaveMemoryContent(input.content);
   if (validation.blocked) {
@@ -217,7 +259,8 @@ export async function updateUserProfile(
   }
 
   await ensureMemoryDir(workspaceRoot);
-  const existing = await readFullUser(workspaceRoot);
+  if (actorId) await ensureActorUserDir(workspaceRoot, actorId);
+  const existing = await readFullUser(workspaceRoot, actorId);
   let next: string;
 
   if (input.mode === "replace") {
@@ -235,10 +278,13 @@ export async function updateUserProfile(
   }
 
   assertWithinLimit(next, USER_CHAR_LIMIT, "USER.md");
-  await writeFile(userFilePath(workspaceRoot), `${next}\n`, "utf8");
+  const abs = actorId
+    ? actorUserFilePath(workspaceRoot, actorId)
+    : legacyUserFilePath(workspaceRoot);
+  await writeFile(abs, `${next}\n`, "utf8");
 
   return {
-    path: USER_REL,
+    path: resolveUserRelPath(actorId),
     charCount: next.length,
     limit: USER_CHAR_LIMIT,
   };

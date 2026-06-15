@@ -50,6 +50,9 @@ export interface ConversationSummary {
   title: string;
   createdAt: string;
   updatedAt: string;
+  /** 归属 Actor；缺省视为匿名用户（迁移前会话） */
+  ownerActorId?: string;
+  ownerDisplayName?: string;
 }
 
 /**
@@ -74,4 +77,8 @@ export interface ConversationRecord extends ConversationSummary {
   titleLocked?: boolean;
   /** 含研发附录的后台导出任务（最近一次） */
   devAppendixExport?: DevAppendixExportJob | null;
+  /** 归属 Actor id（anon 或命名用户 uuid） */
+  ownerActorId?: string;
+  /** 列表展示用 */
+  ownerDisplayName?: string;
 }

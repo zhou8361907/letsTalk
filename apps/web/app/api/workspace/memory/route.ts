@@ -1,15 +1,17 @@
 import "server-only";
 import { importPromptEditorModule } from "../../../../lib/import-prompt-editor";
+import { parseActorFromRequest } from "../../../../lib/actor-server";
 
 export const runtime = "nodejs";
 
 /** 列出 .agent/memory 与 .agent/prompt 下可编辑文件 */
-export async function GET() {
+export async function GET(req: Request) {
   const workspaceRoot = process.env.WORKSPACE_ROOT?.trim();
   if (!workspaceRoot) {
     return Response.json({ error: "未配置 WORKSPACE_ROOT" }, { status: 503 });
   }
 
+  const { actorId } = parseActorFromRequest(req);
   const { listMemoryEditorFiles } = await import(
     /* webpackIgnore: true */
     "@lets-talk/memory"
@@ -19,7 +21,7 @@ export async function GET() {
   try {
     const files = [
       ...listPromptEditorFiles(),
-      ...(await listMemoryEditorFiles(workspaceRoot)),
+      ...(await listMemoryEditorFiles(workspaceRoot, actorId)),
     ];
     return Response.json({ files });
   } catch (e) {

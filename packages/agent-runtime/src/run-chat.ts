@@ -46,6 +46,8 @@ import {
   type DebugToolRecord,
 } from "./debug-logger.js";
 import { createPiSession, type PiSessionHandle } from "./create-session.js";
+import { TraceRecorder } from "./trace-recorder.js";
+import { toolRecordsFromSteps } from "./trace-tool-records.js";
 import {
   buildAgentActions,
   emptyDraft,
@@ -143,6 +145,7 @@ async function getOrCreatePiHandle(
   anchorRef: string | null,
   chatMode: ChatMode,
   anchor: AgentAnchor | null,
+  actorId?: string,
 ): Promise<PiSessionHandle> {
   let handle = sessions.get(sessionId);
   if (handle && handle.cwd === cwd && handle.chatMode === chatMode) {
@@ -170,6 +173,7 @@ async function getOrCreatePiHandle(
     piSessionFile,
     sessionId,
     chatMode,
+    actorId,
     getAnchorRef: () => liveAnchorRefs.get(sessionId) ?? null,
     getAnchor: () => liveAnchors.get(sessionId) ?? null,
   });
@@ -256,6 +260,10 @@ export interface RunChatOptions {
   useTools?: boolean;
   anchor?: AgentAnchor | null;
   chatMode?: ChatMode;
+  /** 单次 HTTP 请求的 step 收集；route 创建并 finalize */
+  traceRecorder?: TraceRecorder;
+  /** 会话归属 Actor；USER 画像与访问控制 */
+  actorId?: string;
   /** 每产生一个 SseEvent 调用一次；route.ts 里对应 enqueue → ReadableStream */
   onEvent: (event: SseEvent) => void;
 }
@@ -290,7 +298,7 @@ export async function runChat(options: RunChatOptions): Promise<void> {
     sessionId: options.sessionId,
   };
   const logStep = (fields: AgentStepLogFields) => {
-    logAgentStep(stepLogger, logCtx, fields);
+    logAgentStep(stepLogger, logCtx, fields, options.traceRecorder);
   };
 
   // ── 阶段 1a：PRD 草稿旁路 ──────────────────────────────────────────────
@@ -331,6 +339,7 @@ export async function runChat(options: RunChatOptions): Promise<void> {
     anchorRef,
     chatMode,
     options.anchor ?? null,
+    options.actorId,
   );
   const { session, modelLabel } = handle;
   logStep({
@@ -470,6 +479,7 @@ export async function runChat(options: RunChatOptions): Promise<void> {
       draftRevision: getDraftRevision(options.sessionId),
       userMessage: options.message,
       sessionCreatedAtMs: handle.sessionCreatedAtMs,
+      actorId: options.actorId,
     });
     const prefix = turnCtx.prefix;
     logStep({
@@ -578,6 +588,7 @@ export async function runChat(options: RunChatOptions): Promise<void> {
       sessionId: options.sessionId,
       workspaceRoot: cwd,
       chatMode,
+      actorId: options.actorId,
       userMessage: options.message,
       assistantText: debugAssistant,
     });
@@ -589,6 +600,26 @@ export async function runChat(options: RunChatOptions): Promise<void> {
       requirementDraftAfter:
         chatMode === "prd" ? (getDraft(options.sessionId) ?? null) : null,
     });
+
+    options.traceRecorder?.setTurnMeta({
+      turnId,
+      chatMode,
+      model: modelLabel,
+      userMessageHash: userMsgMeta.userMessageHash,
+      userMessageLen: userMsgMeta.userMessageLen,
+      turnTokenUsage: turnUsage,
+      turnCostUsd: costUsd ?? null,
+      sessionTokenTotal: tokenStatsAfter.total,
+      sessionCostUsd:
+        tokenStatsAfter.costUsd > 0
+          ? tokenStatsAfter.costUsd
+          : (estimateCostUsd(modelLabel, {
+              input: tokenStatsAfter.input,
+              output: tokenStatsAfter.output,
+            }) ?? undefined),
+      tools: toolRecordsFromSteps(options.traceRecorder?.getSteps() ?? []),
+      success: true,
+    });
   } catch (err) {
     const usageSnap = snapshotContextUsage(session);
     await logTurnResponse(cwd, options.sessionId, turnId, {
@@ -597,6 +628,16 @@ export async function runChat(options: RunChatOptions): Promise<void> {
       contextUsage: usageSnap,
       requirementDraftAfter:
         chatMode === "prd" ? (getDraft(options.sessionId) ?? null) : null,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    options.traceRecorder?.setTurnMeta({
+      turnId,
+      chatMode,
+      model: modelLabel,
+      userMessageHash: userMsgMeta.userMessageHash,
+      userMessageLen: userMsgMeta.userMessageLen,
+      tools: toolRecordsFromSteps(options.traceRecorder?.getSteps() ?? []),
+      success: false,
       error: err instanceof Error ? err.message : String(err),
     });
     throw err;

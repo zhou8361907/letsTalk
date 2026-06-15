@@ -5,7 +5,9 @@ import {
   loadCoreMemorySnapshot,
   type CoreMemorySnapshot,
 } from "./core-store.js";
-import { memoryDir } from "./paths.js";
+import { actorUserFilePath, memoryDir } from "./paths.js";
+
+const ANON_ACTOR_ID = "anon";
 
 /** Pi project_context 虚拟 Tier 1 文件路径（展示用） */
 export const TIER1_VIRTUAL_REL = ".agent/memory/_tier1.md";
@@ -18,18 +20,36 @@ export interface M0FileMtimes {
 /** 读取 USER/CORE 的 mtime；不存在则为 0 */
 export async function getM0FileMtimes(
   workspaceRoot: string,
+  actorId?: string,
 ): Promise<M0FileMtimes> {
   const dir = memoryDir(workspaceRoot);
-  const readMtime = async (name: string): Promise<number> => {
+  const readMtimeAbs = async (absPath: string): Promise<number> => {
     try {
-      const st = await stat(join(dir, name));
+      const st = await stat(absPath);
       return st.mtimeMs;
     } catch {
       return 0;
     }
   };
+  const readMtime = async (name: string): Promise<number> =>
+    readMtimeAbs(join(dir, name));
+
+  let userMtimeMs = 0;
+  if (actorId && actorId !== ANON_ACTOR_ID) {
+    userMtimeMs = await readMtimeAbs(actorUserFilePath(workspaceRoot, actorId));
+  } else if (actorId === ANON_ACTOR_ID) {
+    userMtimeMs = await readMtimeAbs(
+      actorUserFilePath(workspaceRoot, ANON_ACTOR_ID),
+    );
+    if (!userMtimeMs) {
+      userMtimeMs = await readMtime("USER.md");
+    }
+  } else {
+    userMtimeMs = await readMtime("USER.md");
+  }
+
   return {
-    userMtimeMs: await readMtime("USER.md"),
+    userMtimeMs,
     coreMtimeMs: await readMtime("CORE.md"),
   };
 }

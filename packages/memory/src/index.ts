@@ -55,6 +55,7 @@ export {
   updateUserProfile,
   USER_CHAR_LIMIT,
   USER_REL,
+  resolveUserRelPath,
   type CoreMemorySnapshot,
   type CoreMemoryUpdateMode,
 } from "./core-store.js";
@@ -68,6 +69,9 @@ export {
 export {
   INDEX_REL,
   MEMORY_DIR,
+  actorUserDir,
+  actorUserFilePath,
+  actorUserRelPath,
   indexFilePath,
   memoryDir,
   topicRelPath,

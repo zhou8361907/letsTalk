@@ -1,12 +1,21 @@
-import { readFile, readdir, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import {
   CORE_CHAR_LIMIT,
   USER_CHAR_LIMIT,
+  readUserProfile,
 } from "./core-store.js";
 import { parseIndexTable } from "./index-table.js";
-import { memoryDir, topicsDir } from "./paths.js";
+import {
+  actorUserDir,
+  actorUserFilePath,
+  actorUserRelPath,
+  memoryDir,
+  topicsDir,
+} from "./paths.js";
 import { validateSaveMemoryContent } from "./validate-save.js";
+
+const ANON_ACTOR_ID = "anon";
 
 export type MemoryEditorGroup = "m0" | "m2" | "m1";
 
@@ -71,12 +80,38 @@ export function assertEditableMemoryRelPath(
   return normalized;
 }
 
+/** 从 actor 专属 USER 路径解析 actorId */
+export function parseActorUserRelPath(relPath: string): string | undefined {
+  const normalized = relPath.replace(/\\/g, "/").replace(/^\/+/, "");
+  const m = normalized.match(/^\.agent\/memory\/actors\/([^/]+)\/USER\.md$/);
+  return m?.[1];
+}
+
+async function fileExists(absPath: string): Promise<boolean> {
+  try {
+    await access(absPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function listMemoryEditorFiles(
   workspaceRoot: string,
+  actorId?: string,
 ): Promise<MemoryEditorFileEntry[]> {
   const entries: MemoryEditorFileEntry[] = [];
 
   for (const meta of EDITABLE_ROOT_FILES) {
+    if (meta.name === "USER.md" && actorId) {
+      entries.push({
+        path: actorUserRelPath(actorId),
+        label: `USER · ${actorId === "anon" ? "匿名" : "我的画像"}`,
+        group: meta.group,
+        description: meta.description,
+      });
+      continue;
+    }
     entries.push({
       path: `${MEMORY_PREFIX}${meta.name}`,
       label: meta.label,
@@ -114,6 +149,8 @@ export interface ReadMemoryEditorFileResult {
   content: string;
   charCount: number;
   limit?: number;
+  /** actor USER 尚未创建，内容来自 legacy .agent/memory/USER.md */
+  readFromLegacy?: boolean;
 }
 
 export async function readMemoryEditorFile(
@@ -121,21 +158,46 @@ export async function readMemoryEditorFile(
   relPath: string,
 ): Promise<ReadMemoryEditorFileResult> {
   const path = assertEditableMemoryRelPath(workspaceRoot, relPath);
+  const base = path.split("/").pop() ?? "";
+
+  if (base === "USER.md") {
+    const actorId = parseActorUserRelPath(path);
+    const profile = await readUserProfile(workspaceRoot, actorId);
+    const content =
+      profile.content === "（USER.md 暂无内容）" ? "" : profile.content;
+    let readFromLegacy = false;
+    if (actorId === ANON_ACTOR_ID && content) {
+      const onActor = await fileExists(
+        actorUserFilePath(workspaceRoot, ANON_ACTOR_ID),
+      );
+      readFromLegacy = !onActor;
+    }
+    return {
+      path,
+      content,
+      charCount: content.length,
+      limit: profile.limit,
+      ...(readFromLegacy ? { readFromLegacy: true } : {}),
+    };
+  }
+
   const abs = join(workspaceRoot, path);
   let content: string;
   try {
     content = await readFile(abs, "utf8");
-  } catch {
-    throw new Error(`文件不存在：${path}`);
+  } catch (e) {
+    const err = e as NodeJS.ErrnoException;
+    if (err.code === "ENOENT") {
+      content = "";
+    } else {
+      throw e;
+    }
   }
 
-  const base = path.split("/").pop() ?? "";
   const limit =
-    base === "USER.md"
-      ? USER_CHAR_LIMIT
-      : base === "CORE.md"
-        ? CORE_CHAR_LIMIT
-        : undefined;
+    base === "CORE.md"
+      ? CORE_CHAR_LIMIT
+      : undefined;
 
   return {
     path,
@@ -180,6 +242,11 @@ export async function writeMemoryEditorFile(
 
   if (base === "INDEX.md") {
     parseIndexTable(text);
+  }
+
+  const actorId = parseActorUserRelPath(path);
+  if (actorId && base === "USER.md") {
+    await mkdir(actorUserDir(workspaceRoot, actorId), { recursive: true });
   }
 
   const abs = join(workspaceRoot, path);

@@ -20,6 +20,7 @@ import {
   trySyncConversationToDb,
   getSessionDb,
 } from "./db-sync.js";
+import { conversationOwnedBy } from "./actors.js";
 
 /** letsTalk 会话元数据目录（相对 WORKSPACE_ROOT） */
 export const CONVERSATIONS_DIR = ".agent/conversations";
@@ -51,8 +52,17 @@ async function ensureDir(workspaceRoot: string): Promise<void> {
   await mkdir(conversationsDir(workspaceRoot), { recursive: true });
 }
 
+function matchesActorFilter(
+  rec: ConversationRecord,
+  actorId?: string,
+): boolean {
+  if (!actorId) return true;
+  return conversationOwnedBy(rec.ownerActorId, actorId);
+}
+
 async function listConversationsFromJson(
   workspaceRoot: string,
+  actorId?: string,
 ): Promise<ConversationSummary[]> {
   const dir = conversationsDir(workspaceRoot);
   let names: string[];
@@ -68,11 +78,14 @@ async function listConversationsFromJson(
     try {
       const raw = await readFile(join(dir, name), "utf8");
       const rec = JSON.parse(raw) as ConversationRecord;
+      if (!matchesActorFilter(rec, actorId)) continue;
       out.push({
         sessionId: rec.sessionId,
         title: rec.title || DEFAULT_TITLE,
         createdAt: rec.createdAt,
         updatedAt: rec.updatedAt,
+        ownerActorId: rec.ownerActorId,
+        ownerDisplayName: rec.ownerDisplayName,
       });
     } catch {
       // skip corrupt file
@@ -89,14 +102,15 @@ async function listConversationsFromJson(
 /** 侧栏列表：DB + JSON 合并（过渡期）；DB 不可用则纯 JSON */
 export async function listConversations(
   workspaceRoot: string,
+  actorId?: string,
 ): Promise<ConversationSummary[]> {
-  const jsonRows = await listConversationsFromJson(workspaceRoot);
+  const jsonRows = await listConversationsFromJson(workspaceRoot, actorId);
   const db = getSessionDb(workspaceRoot);
   if (!db) {
     return jsonRows;
   }
   try {
-    const dbRows = db.listSessions();
+    const dbRows = db.listSessions(actorId);
     if (dbRows.length === 0) {
       return jsonRows;
     }
@@ -105,12 +119,16 @@ export async function listConversations(
       map.set(r.sessionId, r);
     }
     for (const r of dbRows) {
+      if (actorId && !conversationOwnedBy(r.ownerActorId, actorId)) continue;
       const existing = map.get(r.sessionId);
       if (!existing || r.updatedAt.localeCompare(existing.updatedAt) >= 0) {
         map.set(r.sessionId, r);
       }
     }
-    return [...map.values()].sort((a, b) => {
+    const merged = [...map.values()].filter(
+      (r) => !actorId || conversationOwnedBy(r.ownerActorId, actorId),
+    );
+    return merged.sort((a, b) => {
       const byUpdated = b.updatedAt.localeCompare(a.updatedAt);
       return byUpdated !== 0 ? byUpdated : b.sessionId.localeCompare(a.sessionId);
     });
@@ -135,12 +153,51 @@ export async function getConversation(
   }
 }
 
+export function assertConversationAccess(
+  record: ConversationRecord | null,
+  actorId: string,
+): void {
+  if (!record) {
+    throw new Error("会话不存在");
+  }
+  if (!conversationOwnedBy(record.ownerActorId, actorId)) {
+    throw new Error("无权访问此会话");
+  }
+}
+
+export async function claimConversationOwner(
+  workspaceRoot: string,
+  sessionId: string,
+  actorId: string,
+  displayName?: string,
+): Promise<ConversationRecord | null> {
+  const existing = await getConversation(workspaceRoot, sessionId);
+  if (!existing || existing.ownerActorId) return existing;
+  const record: ConversationRecord = {
+    ...existing,
+    ownerActorId: actorId,
+    ownerDisplayName: displayName,
+    updatedAt: new Date().toISOString(),
+  };
+  await writeFile(
+    conversationPath(workspaceRoot, sessionId),
+    JSON.stringify(record, null, 2),
+    "utf8",
+  );
+  trySyncConversationToDb(workspaceRoot, record);
+  return record;
+}
+
 export async function createConversation(
   workspaceRoot: string,
-  sessionId?: string,
+  options?: {
+    sessionId?: string;
+    ownerActorId?: string;
+    ownerDisplayName?: string;
+  },
 ): Promise<ConversationRecord> {
   await ensureDir(workspaceRoot);
-  const id = sessionId?.trim() || randomUUID();
+  const id = options?.sessionId?.trim() || randomUUID();
 
   const now = new Date().toISOString();
   await ensurePiSessionsDir(workspaceRoot);
@@ -154,6 +211,8 @@ export async function createConversation(
     items: [],
     piSessionFile: relativePiSessionFile(id),
     chatMode: "explore",
+    ownerActorId: options?.ownerActorId,
+    ownerDisplayName: options?.ownerDisplayName,
   };
 
   await writeFile(
@@ -208,6 +267,8 @@ export async function saveConversation(
         ? input.requirementDraft
         : (existing?.requirementDraft ?? null),
     devAppendixExport: existing?.devAppendixExport ?? null,
+    ownerActorId: existing?.ownerActorId,
+    ownerDisplayName: existing?.ownerDisplayName,
   };
 
   await writeFile(

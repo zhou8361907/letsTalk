@@ -44,6 +44,13 @@ export {
 export { hashText, truncateForProdLog } from "./log-redact.js";
 export type { AgentStepLogFields, LogStep } from "./log-steps.js";
 export { estimateCostUsd, MODEL_PRICING } from "./model-pricing.js";
+export { TraceRecorder } from "./trace-recorder.js";
+export { finalizeTrace } from "./trace-finalize.js";
+export {
+  findTraceById,
+  listSessionTraces,
+  summarizeDailySessionCosts,
+} from "./trace-store.js";
 export { generateDevAppendix } from "./generate-dev-appendix.js";
 export {
   isDevAppendixJobRunning,

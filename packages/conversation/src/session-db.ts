@@ -12,7 +12,13 @@ import type {
 
 const DEFAULT_FTS_ROLES = ["user", "assistant"] as const;
 import { resolveSessionDbPath } from "./session-db-config.js";
-import { SCHEMA_V1_BASE_SQL, SCHEMA_V1_FTS_SQL, SCHEMA_VERSION } from "./schema.js";
+import {
+  SCHEMA_V1_BASE_SQL,
+  SCHEMA_V1_FTS_SQL,
+  SCHEMA_V2_MIGRATION_SQL,
+  SCHEMA_VERSION,
+} from "./schema.js";
+import { conversationOwnedBy } from "./actors.js";
 import { transcriptItemsToMessageRows } from "./transcript-db-mapper.js";
 
 export class SessionDB {
@@ -71,12 +77,21 @@ export class SessionDB {
       | undefined;
     const current = versionRow?.version ?? 0;
     if (current < SCHEMA_VERSION) {
-      this.db.exec(SCHEMA_V1_BASE_SQL);
-      if (this.ftsEnabled) {
+      if (current < 1) {
+        this.db.exec(SCHEMA_V1_BASE_SQL);
+        if (this.ftsEnabled) {
+          try {
+            this.db.exec(SCHEMA_V1_FTS_SQL);
+          } catch {
+            this.ftsEnabled = false;
+          }
+        }
+      }
+      if (current < 2) {
         try {
-          this.db.exec(SCHEMA_V1_FTS_SQL);
+          this.db.exec(SCHEMA_V2_MIGRATION_SQL);
         } catch {
-          this.ftsEnabled = false;
+          // 列已存在时忽略（幂等）
         }
       }
       if (versionRow) {
@@ -102,10 +117,12 @@ export class SessionDB {
       .prepare(
         `INSERT INTO sessions (
           id, source, title, title_locked, chat_mode, pi_session_file,
-          anchor_json, has_draft, created_at, updated_at, message_count
+          anchor_json, has_draft, created_at, updated_at, message_count,
+          owner_actor_id, owner_display_name
         ) VALUES (
           @id, 'web', @title, @title_locked, @chat_mode, @pi_session_file,
-          @anchor_json, @has_draft, @created_at, @updated_at, @message_count
+          @anchor_json, @has_draft, @created_at, @updated_at, @message_count,
+          @owner_actor_id, @owner_display_name
         )
         ON CONFLICT(id) DO UPDATE SET
           title = excluded.title,
@@ -115,7 +132,9 @@ export class SessionDB {
           anchor_json = excluded.anchor_json,
           has_draft = excluded.has_draft,
           updated_at = excluded.updated_at,
-          message_count = excluded.message_count`,
+          message_count = excluded.message_count,
+          owner_actor_id = COALESCE(excluded.owner_actor_id, owner_actor_id),
+          owner_display_name = COALESCE(excluded.owner_display_name, owner_display_name)`,
       )
       .run({
         id: record.sessionId,
@@ -128,6 +147,8 @@ export class SessionDB {
         created_at: record.createdAt,
         updated_at: record.updatedAt,
         message_count: record.items.length,
+        owner_actor_id: record.ownerActorId ?? null,
+        owner_display_name: record.ownerDisplayName ?? null,
       });
   }
 
@@ -169,18 +190,21 @@ export class SessionDB {
     this.db.prepare("DELETE FROM sessions WHERE id = ?").run(sessionId);
   }
 
-  listSessions(): ConversationSummary[] {
+  listSessions(actorId?: string): ConversationSummary[] {
     const rows = this.db
       .prepare(
-        `SELECT id AS sessionId, title, created_at AS createdAt, updated_at AS updatedAt
+        `SELECT id AS sessionId, title, created_at AS createdAt, updated_at AS updatedAt,
+                owner_actor_id AS ownerActorId, owner_display_name AS ownerDisplayName
          FROM sessions
          ORDER BY updated_at DESC, id DESC`,
       )
       .all() as ConversationSummary[];
-    return rows.map((r) => ({
-      ...r,
-      title: r.title || "新对话",
-    }));
+    return rows
+      .filter((r) => !actorId || conversationOwnedBy(r.ownerActorId, actorId))
+      .map((r) => ({
+        ...r,
+        title: r.title || "新对话",
+      }));
   }
 
   countMessages(sessionId: string): number {

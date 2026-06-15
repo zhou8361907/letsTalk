@@ -1,4 +1,6 @@
 import "server-only";
+import { ActorAccessError } from "../../../../lib/actor-server";
+import { loadConversationForActor } from "../../../../lib/conversation-access";
 
 export const runtime = "nodejs";
 
@@ -9,23 +11,22 @@ function workspaceRoot(): string | null {
 type RouteCtx = { params: Promise<{ id: string }> };
 
 /** 读取一条会话 */
-export async function GET(_req: Request, ctx: RouteCtx) {
+export async function GET(req: Request, ctx: RouteCtx) {
   const root = workspaceRoot();
   if (!root) {
     return Response.json({ error: "未配置 WORKSPACE_ROOT" }, { status: 503 });
   }
 
   const { id } = await ctx.params;
-  const { getConversation } = await import(
-    /* webpackIgnore: true */
-    "@lets-talk/conversation"
-  );
-
-  const record = await getConversation(root, id);
-  if (!record) {
-    return Response.json({ error: "会话不存在" }, { status: 404 });
+  try {
+    const { record } = await loadConversationForActor(root, id, req);
+    return Response.json(record);
+  } catch (e) {
+    if (e instanceof ActorAccessError) {
+      return Response.json({ error: e.message }, { status: e.status });
+    }
+    throw e;
   }
-  return Response.json(record);
 }
 
 /** 保存 Transcript */
@@ -53,21 +54,29 @@ export async function PUT(req: Request, ctx: RouteCtx) {
     return Response.json({ error: "需要 items 数组" }, { status: 400 });
   }
 
-  const { saveConversation } = await import(
-    /* webpackIgnore: true */
-    "@lets-talk/conversation"
-  );
+  try {
+    await loadConversationForActor(root, id, req);
+    const { saveConversation } = await import(
+      /* webpackIgnore: true */
+      "@lets-talk/conversation"
+    );
 
-  const record = await saveConversation(root, {
-    sessionId: id,
-    items: body.items as import("@lets-talk/shared-types").TranscriptItem[],
-    anchor: (body.anchor ?? null) as import("@lets-talk/shared-types").AgentAnchor | null,
-    title: body.title,
-    chatMode: body.chatMode,
-    requirementDraft: body.requirementDraft,
-  });
+    const record = await saveConversation(root, {
+      sessionId: id,
+      items: body.items as import("@lets-talk/shared-types").TranscriptItem[],
+      anchor: (body.anchor ?? null) as import("@lets-talk/shared-types").AgentAnchor | null,
+      title: body.title,
+      chatMode: body.chatMode,
+      requirementDraft: body.requirementDraft,
+    });
 
-  return Response.json(record);
+    return Response.json(record);
+  } catch (e) {
+    if (e instanceof ActorAccessError) {
+      return Response.json({ error: e.message }, { status: e.status });
+    }
+    throw e;
+  }
 }
 
 /** 重命名会话 */
@@ -90,47 +99,59 @@ export async function PATCH(req: Request, ctx: RouteCtx) {
     return Response.json({ error: "需要 title" }, { status: 400 });
   }
 
-  const { renameConversation } = await import(
-    /* webpackIgnore: true */
-    "@lets-talk/conversation"
-  );
-
   try {
+    await loadConversationForActor(root, id, req);
+    const { renameConversation } = await import(
+      /* webpackIgnore: true */
+      "@lets-talk/conversation"
+    );
+
     const record = await renameConversation(root, id, title);
     if (!record) {
       return Response.json({ error: "会话不存在" }, { status: 404 });
     }
     return Response.json(record);
   } catch (e) {
-    return Response.json(
-      { error: e instanceof Error ? e.message : String(e) },
-      { status: 400 },
-    );
+    if (e instanceof ActorAccessError) {
+      return Response.json({ error: e.message }, { status: e.status });
+    }
+    if (e instanceof Error) {
+      return Response.json({ error: e.message }, { status: 400 });
+    }
+    throw e;
   }
 }
 
 /** 删除会话（JSON + Pi jsonl） */
-export async function DELETE(_req: Request, ctx: RouteCtx) {
+export async function DELETE(req: Request, ctx: RouteCtx) {
   const root = workspaceRoot();
   if (!root) {
     return Response.json({ error: "未配置 WORKSPACE_ROOT" }, { status: 503 });
   }
 
   const { id } = await ctx.params;
-  const { deleteConversation } = await import(
-    /* webpackIgnore: true */
-    "@lets-talk/conversation"
-  );
-  const { cleanupSessionDebug, disposePiSession } = await import(
-    /* webpackIgnore: true */
-    "@lets-talk/agent-runtime"
-  );
+  try {
+    await loadConversationForActor(root, id, req);
+    const { deleteConversation } = await import(
+      /* webpackIgnore: true */
+      "@lets-talk/conversation"
+    );
+    const { cleanupSessionDebug, disposePiSession } = await import(
+      /* webpackIgnore: true */
+      "@lets-talk/agent-runtime"
+    );
 
-  const ok = await deleteConversation(root, id);
-  if (!ok) {
-    return Response.json({ error: "会话不存在" }, { status: 404 });
+    const ok = await deleteConversation(root, id);
+    if (!ok) {
+      return Response.json({ error: "会话不存在" }, { status: 404 });
+    }
+    disposePiSession(id);
+    await cleanupSessionDebug(root, id);
+    return Response.json({ ok: true, sessionId: id });
+  } catch (e) {
+    if (e instanceof ActorAccessError) {
+      return Response.json({ error: e.message }, { status: e.status });
+    }
+    throw e;
   }
-  disposePiSession(id);
-  await cleanupSessionDebug(root, id);
-  return Response.json({ ok: true, sessionId: id });
 }

@@ -1,0 +1,54 @@
+description: letsTalk PRD scenario bank — Layer 1
+
+providers:
+  - id: lets-talk
+    label: letsTalk runChat (prd)
+    config:
+      chatMode: prd
+      workspaceRoot: ${WORKSPACE_ROOT}
+      useTools: true
+
+prompts:
+  - "{{message}}"
+
+defaultTest:
+  options:
+    provider: lets-talk
+
+tests:
+  - description: payment-approval-round-1
+    vars:
+      message: |
+        我们四川医保局那边觉得现在一个个点支付计划太慢了，想做个批量审批功能，可以一次选中多条支付计划然后统一审批通过，这样能提高工作效率。
+    assert:
+      - type: javascript
+        value: output.draft?.readyToFinalize !== true
+      - type: llm-rubric
+        value: 以追问或业务概要开头，不直接把未核实的规则写成 toBe 定论
+      - type: cost
+        threshold: 0.50
+
+  - description: bank-switch-round-1
+    vars:
+      message: |
+        省局要求把四川的医保支付银行从工行换成农行，同时宁夏那边也要做类似的银行切换，但具体银行还没定，可能要等省局通知。
+    assert:
+      - type: javascript
+        value: |
+          const items = output.draft?.items || [];
+          items.length >= 2 || items.some(i => i.title.includes('四川') || i.title.includes('宁夏'))
+      - type: javascript
+        value: output.draft?.readyToFinalize !== true
+
+  - description: real-requirement-round-1
+    vars:
+      message: |
+        最近省医保局那边提了个问题，子表里会推金额为 0 的数据，这些数据没有实际意义，但在界面上会显示出来，影响用户体验，需要处理一下。
+    assert:
+      - type: javascript
+        value: |
+          const items = output.draft?.items || [];
+          const toBeText = items.map(i => i.fields.find(f => f.key === 'toBe')?.value || '').join(' ');
+          !toBeText.includes('剔除') && !toBeText.includes('过滤')
+      - type: javascript
+        value: output.draft?.readyToFinalize !== true

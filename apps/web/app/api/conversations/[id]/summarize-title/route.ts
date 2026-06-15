@@ -1,4 +1,6 @@
 import "server-only";
+import { ActorAccessError } from "../../../../../lib/actor-server";
+import { loadConversationForActor } from "../../../../../lib/conversation-access";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -10,7 +12,7 @@ function workspaceRoot(): string | null {
 type RouteCtx = { params: Promise<{ id: string }> };
 
 /** 导出/定稿后：用 LLM 根据需求清单生成侧栏标题 */
-export async function POST(_req: Request, ctx: RouteCtx) {
+export async function POST(req: Request, ctx: RouteCtx) {
   if (!process.env.LLM_API_KEY?.trim()) {
     return Response.json({ error: "未配置 LLM_API_KEY" }, { status: 503 });
   }
@@ -21,14 +23,17 @@ export async function POST(_req: Request, ctx: RouteCtx) {
   }
 
   const { id } = await ctx.params;
-  const { getConversation, setConversationTitle } = await import(
-    "@lets-talk/conversation"
-  );
+  const { setConversationTitle } = await import("@lets-talk/conversation");
   const { summarizeConversationTitle } = await import("@lets-talk/agent-runtime");
 
-  const record = await getConversation(root, id);
-  if (!record) {
-    return Response.json({ error: "会话不存在" }, { status: 404 });
+  let record;
+  try {
+    ({ record } = await loadConversationForActor(root, id, req));
+  } catch (e) {
+    if (e instanceof ActorAccessError) {
+      return Response.json({ error: e.message }, { status: e.status });
+    }
+    throw e;
   }
   if (!record.requirementDraft?.items.length) {
     return Response.json({ error: "无需求清单，无法生成标题" }, { status: 400 });

@@ -47,7 +47,10 @@ function m0ResultText(
   ].join("\n");
 }
 
-export function createMemoryTools(workspaceRoot: string): ToolDefinition[] {
+export function createMemoryTools(
+  workspaceRoot: string,
+  actorId?: string,
+): ToolDefinition[] {
   const memoryTool = defineTool({
     name: "memory",
     label: "Memory (USER/CORE)",
@@ -74,7 +77,11 @@ export function createMemoryTools(workspaceRoot: string): ToolDefinition[] {
       if (action === "remove") {
         const result =
           target === "user"
-            ? await removeUserProfileEntry(workspaceRoot, params.old_text ?? "")
+            ? await removeUserProfileEntry(
+                workspaceRoot,
+                params.old_text ?? "",
+                actorId,
+              )
             : await removeCoreMemoryEntry(workspaceRoot, params.old_text ?? "");
         return {
           content: [{ type: "text", text: m0ResultText(result, target) }],
@@ -89,11 +96,15 @@ export function createMemoryTools(workspaceRoot: string): ToolDefinition[] {
       const mode = action === "add" ? "append" : "replace";
       const result =
         target === "user"
-          ? await updateUserProfile(workspaceRoot, {
-              content: params.content,
-              mode,
-              old_text: params.old_text,
-            })
+          ? await updateUserProfile(
+              workspaceRoot,
+              {
+                content: params.content,
+                mode,
+                old_text: params.old_text,
+              },
+              actorId,
+            )
           : await updateCoreMemory(workspaceRoot, {
               content: params.content,
               mode,
@@ -249,7 +260,7 @@ export function createMemoryTools(workspaceRoot: string): ToolDefinition[] {
       ),
     }),
     execute: async (_id, params) => {
-      const result = await updateUserProfile(workspaceRoot, params);
+      const result = await updateUserProfile(workspaceRoot, params, actorId);
       return {
         content: [
           {
@@ -299,7 +310,7 @@ export function createMemoryTools(workspaceRoot: string): ToolDefinition[] {
     promptSnippet: "read_user_profile",
     parameters: Type.Object({}),
     execute: async () => {
-      const result = await readUserProfile(workspaceRoot);
+      const result = await readUserProfile(workspaceRoot, actorId);
       return {
         content: [
           {
@@ -351,6 +362,9 @@ export function createMemoryTools(workspaceRoot: string): ToolDefinition[] {
 }
 
 /** 后台 memory review：仅 memory 单工具 */
-export function createMemoryOnlyTool(workspaceRoot: string): ToolDefinition {
-  return createMemoryTools(workspaceRoot)[0]!;
+export function createMemoryOnlyTool(
+  workspaceRoot: string,
+  actorId?: string,
+): ToolDefinition {
+  return createMemoryTools(workspaceRoot, actorId)[0]!;
 }

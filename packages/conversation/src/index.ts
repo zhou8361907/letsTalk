@@ -12,6 +12,8 @@ export {
   setConversationTitle,
   updateDevAppendixExport,
   appendExportReadyTranscriptItem,
+  assertConversationAccess,
+  claimConversationOwner,
 } from "./store.js";
 export {
   PI_SESSIONS_SUBDIR,
@@ -42,3 +44,13 @@ export {
   buildEpisodicRecallBlock,
   isEpisodicPrefetchEnabled,
 } from "./episodic-prefetch.js";
+export {
+  ACTORS_DIR,
+  ACTORS_REGISTRY_REL,
+  conversationOwnedBy,
+  createNamedActor,
+  ensureActorRegistry,
+  getActor,
+  listActors,
+  resolveOwnerActorId,
+} from "./actors.js";

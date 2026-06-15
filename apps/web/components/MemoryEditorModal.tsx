@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { actorFetch } from "../lib/actor-client";
 
 interface MemoryEditorFileEntry {
   path: string;
@@ -52,7 +53,7 @@ export function MemoryEditorModal(props: {
     setLoadingFile(true);
     setError(null);
     try {
-      const res = await fetch(
+      const res = await actorFetch(
         `/api/workspace/memory/file?path=${encodeURIComponent(path)}`,
       );
       const data = (await res.json()) as {
@@ -60,6 +61,7 @@ export function MemoryEditorModal(props: {
         content?: string;
         charCount?: number;
         limit?: number;
+        readFromLegacy?: boolean;
       };
       if (!res.ok) {
         throw new Error(data.error ?? "读取失败");
@@ -70,7 +72,11 @@ export function MemoryEditorModal(props: {
       setSavedContent(text);
       setCharCount(data.charCount ?? text.length);
       setLimit(data.limit);
-      setNotice(null);
+      setNotice(
+        data.readFromLegacy
+          ? "内容来自旧版 .agent/memory/USER.md；保存后将写入你的个人目录"
+          : null,
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -100,7 +106,7 @@ export function MemoryEditorModal(props: {
 
     void (async () => {
       try {
-        const res = await fetch("/api/workspace/memory");
+        const res = await actorFetch("/api/workspace/memory");
         const data = (await res.json()) as {
           error?: string;
           files?: MemoryEditorFileEntry[];
@@ -157,7 +163,7 @@ export function MemoryEditorModal(props: {
       setError(null);
       setNotice(null);
       try {
-        const res = await fetch("/api/workspace/memory/file", {
+        const res = await actorFetch("/api/workspace/memory/file", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

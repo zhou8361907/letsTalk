@@ -34,6 +34,8 @@ export interface BuildTurnPromptPrefixInput {
   userMessage?: string;
   /** Pi 句柄创建时间（ms），用于 M0 前缀刷新 */
   sessionCreatedAtMs: number;
+  /** 会话归属 Actor；USER 画像隔离 */
+  actorId?: string;
 }
 
 export interface BuildTurnPromptPrefixResult {
@@ -87,9 +89,15 @@ export async function buildTurnPromptPrefix(
     }
   }
   if (!memorySuppressed && isMemoryToolsEnabled()) {
-    const mtimes = await getM0FileMtimes(input.layout.workspaceRoot);
+    const mtimes = await getM0FileMtimes(
+      input.layout.workspaceRoot,
+      input.actorId,
+    );
     if (shouldRefreshM0InPrefix(mtimes, input.sessionCreatedAtMs)) {
-      const snap = await loadCoreMemorySnapshot(input.layout.workspaceRoot);
+      const snap = await loadCoreMemorySnapshot(
+        input.layout.workspaceRoot,
+        input.actorId,
+      );
       const block = formatCoreMemoryPrefixRefresh(snap);
       if (block) coreMemoryRefresh = block;
     }

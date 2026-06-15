@@ -9,6 +9,12 @@
 import type { AgentAnchor } from "./anchor.js";
 
 export type { AgentAnchor } from "./anchor.js";
+export type { Actor } from "./actor.js";
+export {
+  ACTOR_ID_HEADER,
+  ACTOR_NAME_HEADER,
+  ANONYMOUS_ACTOR_ID,
+} from "./actor.js";
 export type { MenuUrlKind, ParsedMenuUrl } from "./parse-menu-url.js";
 export { EXPORT_PRIMARY_APPENDIX_DIVIDER } from "./export-constants.js";
 export type {

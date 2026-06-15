@@ -72,6 +72,7 @@ Pi Runtime + Mastra Engineering + Langfuse (+ OTel) + Promptfoo + 业务知识 =
 
 | 名称 | 阶段 | 用于 log.step · trace span |
 |------|------|---------------------------|
+| `route.bundle_load` | 动态加载 runtime | route.ts（Next dynamic import） |
 | `route.auth_parse` | HTTP 入口 | route.ts |
 | `session.get_or_create` | 会话 | run-chat.ts |
 | `context.build_prefix` | 前缀 | turn-prefix.ts |

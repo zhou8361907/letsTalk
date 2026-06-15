@@ -1,0 +1,15 @@
+description: 银行切换 - 第 1 轮
+
+vars:
+  message: |
+    省局要求把四川的医保支付银行从工行换成农行，同时宁夏那边也要做类似的银行切换，但具体银行还没定，可能要等省局通知。
+
+assert:
+  - type: javascript
+    value: |
+      // 四川切换 vs 宁夏对账不应混为一条 draft item
+      const items = output.draft?.items || [];
+      // 检查是否有至少 2 条 item，或者 item title 明确区分
+      items.length >= 2 || items.some(i => i.title.includes('四川') || i.title.includes('宁夏'))
+  - type: javascript
+    value: output.draft?.readyToFinalize !== true

@@ -116,6 +116,8 @@ export interface CreatePiSessionOptions {
   /** 草稿工具写入 anchorRef 时读取当前锚点 */
   getAnchorRef?: () => string | null;
   getAnchor?: () => AgentAnchor | null;
+  /** 会话归属 Actor；USER 画像按此隔离 */
+  actorId?: string;
 }
 
 /**
@@ -158,11 +160,13 @@ export async function createPiSession(
 
   const modelRegistry = ModelRegistry.create(authStorage);
 
-  const memoryTools = isMemoryToolsEnabled() ? createMemoryTools(workspace) : [];
+  const memoryTools = isMemoryToolsEnabled()
+    ? createMemoryTools(workspace, options?.actorId)
+    : [];
   const skillTools = skillsEnabled && !isMinimalTask ? createSkillTools(workspace) : [];
   const memoryOnlyTool =
     isMemoryToolsEnabled() && isSelfImprovementReview
-      ? createMemoryOnlyTool(workspace)
+      ? createMemoryOnlyTool(workspace, options?.actorId)
       : null;
   const skillManageOnlyTool =
     skillsEnabled && isSelfImprovementReview
@@ -253,7 +257,7 @@ export async function createPiSession(
       ? await createExportAppendixResourceLoader(workspace)
       : isTitleSummary
         ? await createTitleSummaryResourceLoader(workspace)
-        : await createLetsTalkResourceLoader(workspace, chatMode);
+        : await createLetsTalkResourceLoader(workspace, chatMode, options?.actorId);
 
   const rawCustomTools = isSelfImprovementReview
     ? [

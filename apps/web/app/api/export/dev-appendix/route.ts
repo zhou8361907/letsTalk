@@ -1,4 +1,6 @@
 import "server-only";
+import { ActorAccessError } from "../../../../lib/actor-server";
+import { loadConversationForActor } from "../../../../lib/conversation-access";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -21,9 +23,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "缺少 sessionId" }, { status: 400 });
   }
 
-  const { getConversation, updateDevAppendixExport } = await import(
-    "@lets-talk/conversation"
-  );
+  const { updateDevAppendixExport } = await import("@lets-talk/conversation");
   const {
     generateDevAppendix,
     isDevAppendixJobRunning,
@@ -34,8 +34,16 @@ export async function POST(req: Request) {
   const { resolveWorkspaceLayout } = await import("@lets-talk/context");
 
   const cwd = resolveWorkspaceLayout().workspaceRoot;
-  const record = await getConversation(cwd, sessionId);
-  if (!record?.requirementDraft?.items.length) {
+  let record;
+  try {
+    ({ record } = await loadConversationForActor(cwd, sessionId, req));
+  } catch (e) {
+    if (e instanceof ActorAccessError) {
+      return Response.json({ error: e.message }, { status: e.status });
+    }
+    throw e;
+  }
+  if (!record.requirementDraft?.items.length) {
     return Response.json({ error: "当前会话无需求清单" }, { status: 400 });
   }
 
@@ -116,10 +124,14 @@ export async function GET(req: Request) {
     return Response.json({ error: "缺少 sessionId" }, { status: 400 });
   }
 
-  const { getConversation } = await import("@lets-talk/conversation");
-  const record = await getConversation(root, sessionId);
-  if (!record) {
-    return Response.json({ error: "会话不存在" }, { status: 404 });
+  let record;
+  try {
+    ({ record } = await loadConversationForActor(root, sessionId, req));
+  } catch (e) {
+    if (e instanceof ActorAccessError) {
+      return Response.json({ error: e.message }, { status: e.status });
+    }
+    throw e;
   }
 
   return Response.json({

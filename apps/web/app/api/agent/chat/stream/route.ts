@@ -12,21 +12,24 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 import { formatSseData, type ChatStreamRequest } from "@lets-talk/shared-types";
+import { ActorAccessError } from "../../../../../lib/actor-server";
+import { loadConversationForActor } from "../../../../../lib/conversation-access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   const traceId = randomUUID();
-  const routeT0 = Date.now();
 
   // --- 解析请求 ---
+  const parseT0 = Date.now();
   let body: ChatStreamRequest;
   try {
     body = (await request.json()) as ChatStreamRequest;
   } catch {
     return Response.json({ error: "JSON 格式错误" }, { status: 400 });
   }
+  const parseMs = Date.now() - parseT0;
 
   if (!body.sessionId || !body.message?.trim()) {
     return Response.json({ error: "需要 sessionId 和 message" }, { status: 400 });
@@ -39,20 +42,78 @@ export async function POST(request: Request) {
   // --- SSE 流 ---
   const encoder = new TextEncoder();
 
-  // 运行时再从 Node 加载 Pi（避免 Webpack 把 pi-ai 的动态 require 打进 bundle）
-  const { runChat, createRequestLogger, logAgentStep } = await import(
+  const bundleT0 = Date.now();
+  const runtimeMod = await import(
     /* webpackIgnore: true */
     "@lets-talk/agent-runtime"
   );
+  const bundleMs = Date.now() - bundleT0;
+
+  const {
+    runChat,
+    createRequestLogger,
+    logAgentStep,
+    TraceRecorder,
+    finalizeTrace,
+    getWorkspaceRoot,
+  } = runtimeMod;
+
+  const workspaceRoot = process.env.WORKSPACE_ROOT?.trim();
+  if (!workspaceRoot) {
+    return Response.json({ error: "未配置 WORKSPACE_ROOT" }, { status: 503 });
+  }
+
+  let actorId: string;
+  let actorDisplayName: string;
+  try {
+    const loaded = await loadConversationForActor(
+      workspaceRoot,
+      body.sessionId,
+      request,
+    );
+    actorId = loaded.actorId;
+    actorDisplayName = loaded.displayName;
+  } catch (e) {
+    if (e instanceof ActorAccessError) {
+      return Response.json({ error: e.message }, { status: e.status });
+    }
+    throw e;
+  }
+
+  const chatMode = body.chatMode ?? "explore";
+  const recorder = new TraceRecorder({
+    traceId,
+    sessionId: body.sessionId,
+    chatMode,
+    actorId,
+    actorDisplayName,
+  });
 
   const reqLog = createRequestLogger({ traceId, sessionId: body.sessionId });
   const logCtx = { traceId, sessionId: body.sessionId };
-  logAgentStep(reqLog, logCtx, {
-    step: "route.auth_parse",
-    durationMs: Date.now() - routeT0,
-    success: true,
-    chatMode: body.chatMode ?? "explore",
-  });
+
+  logAgentStep(
+    reqLog,
+    logCtx,
+    {
+      step: "route.bundle_load",
+      durationMs: bundleMs,
+      success: true,
+      chatMode,
+    },
+    recorder,
+  );
+  logAgentStep(
+    reqLog,
+    logCtx,
+    {
+      step: "route.auth_parse",
+      durationMs: parseMs,
+      success: true,
+      chatMode,
+    },
+    recorder,
+  );
 
   const stream = new ReadableStream({
     start(controller) {
@@ -67,13 +128,16 @@ export async function POST(request: Request) {
 
       const chatT0 = Date.now();
       let flushOk = true;
+      const cwd = workspaceRoot || getWorkspaceRoot();
 
       runChat({
         traceId,
+        traceRecorder: recorder,
         sessionId: body.sessionId,
         message: body.message.trim(),
         anchor: body.anchor ?? null,
-        chatMode: body.chatMode ?? "explore",
+        chatMode,
+        actorId,
         useTools: true,
         onEvent: enqueue,
       })
@@ -87,13 +151,25 @@ export async function POST(request: Request) {
           );
         })
         .finally(() => {
-          logAgentStep(reqLog, logCtx, {
-            step: "sse.flush",
-            durationMs: Date.now() - chatT0,
-            success: flushOk,
-            ...(flushOk ? {} : { error: "agent turn failed" }),
-          });
-          controller.close();
+          void (async () => {
+            logAgentStep(
+              reqLog,
+              logCtx,
+              {
+                step: "sse.flush",
+                durationMs: Date.now() - chatT0,
+                success: flushOk,
+                ...(flushOk ? {} : { error: "agent turn failed" }),
+              },
+              recorder,
+            );
+            try {
+              await finalizeTrace(cwd, recorder);
+            } catch {
+              // 落盘失败不阻断 SSE 关闭
+            }
+            controller.close();
+          })();
         });
     },
   });

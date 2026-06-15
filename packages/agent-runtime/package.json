@@ -17,6 +17,7 @@
     "build": "tsc -p tsconfig.build.json",
     "smoke": "tsx scripts/smoke-session.ts",
     "minimal": "tsx scripts/minimal.ts",
+    "trace:show": "tsx scripts/trace-show.ts",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

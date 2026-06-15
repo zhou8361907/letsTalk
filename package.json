@@ -9,16 +9,22 @@
     "minimal": "pnpm --filter @lets-talk/agent-runtime minimal",
     "lint": "pnpm -r lint",
     "sync-menu": "node scripts/sync-menu-map.mjs all",
-    "sessions:import": "pnpm --filter @lets-talk/conversation import-sessions"
+    "sessions:import": "pnpm --filter @lets-talk/conversation import-sessions",
+    "trace:show": "pnpm --filter @lets-talk/agent-runtime trace:show",
+    "eval": "promptfoo eval -c eval/promptfoo.yaml",
+    "eval:summary": "node eval/metrics/summarize.mjs .promptfoo/output.json"
   },
   "devDependencies": {
     "dotenv": "^16.4.0",
-    "mysql2": "^3.14.0"
+    "mysql2": "^3.14.0",
+    "promptfoo": "^0.121.15"
   },
   "engines": {
     "node": ">=20"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["better-sqlite3"]
+    "onlyBuiltDependencies": [
+      "better-sqlite3"
+    ]
   }
 }

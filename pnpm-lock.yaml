@@ -84,6 +84,12 @@ importers:
       '@lets-talk/conversation':
         specifier: workspace:*
         version: link:../conversation
+      '@lets-talk/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@lets-talk/infrastructure':
+        specifier: workspace:*
+        version: link:../infrastructure
       '@lets-talk/memory':
         specifier: workspace:*
         version: link:../memory
@@ -124,6 +130,9 @@ importers:
 
   packages/context:
     dependencies:
+      '@lets-talk/domain':
+        specifier: workspace:*
+        version: link:../domain
       '@lets-talk/shared-types':
         specifier: workspace:*
         version: link:../shared-types
@@ -165,9 +174,18 @@ importers:
 
   packages/domain:
     dependencies:
+      '@earendil-works/pi-coding-agent':
+        specifier: 0.75.5
+        version: 0.75.5(@modelcontextprotocol/sdk@1.29.0(zod@4.4.3))(ws@8.21.0)(zod@4.4.3)
+      '@lets-talk/infrastructure':
+        specifier: workspace:*
+        version: link:../infrastructure
       '@lets-talk/shared-types':
         specifier: workspace:*
         version: link:../shared-types
+      '@sinclair/typebox':
+        specifier: ^0.34.0
+        version: 0.34.49
     devDependencies:
       '@types/node':
         specifier: ^22.10.0
@@ -178,6 +196,9 @@ importers:
 
   packages/infrastructure:
     dependencies:
+      '@earendil-works/pi-coding-agent':
+        specifier: 0.75.5
+        version: 0.75.5(@modelcontextprotocol/sdk@1.29.0(zod@4.4.3))(ws@8.21.0)(zod@4.4.3)
       '@lets-talk/shared-types':
         specifier: workspace:*
         version: link:../shared-types

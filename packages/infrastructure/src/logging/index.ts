@@ -1,3 +1,22 @@
 // Logging Infrastructure
 
-export {}; // Placeholder - to be populated in Phase 3
+export {
+  LOG_STEPS,
+  type LogStep,
+  type RequestLogContext,
+  type TokenUsageFields,
+  type AgentStepLogFields,
+} from "./log-steps.js";
+
+export {
+  hashText,
+  truncateForProdLog,
+  toWorkspaceRelativePath,
+  safeEqualHash,
+} from "./log-redact.js";
+
+export {
+  createTraceId,
+  createRequestLogger,
+  logAgentStep,
+} from "./agent-logger.js";

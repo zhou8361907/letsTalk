@@ -19,7 +19,8 @@
   },
   "dependencies": {
     "@lets-talk/shared-types": "workspace:*",
-    "@lets-talk/skills": "workspace:*"
+    "@lets-talk/skills": "workspace:*",
+    "@lets-talk/domain": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

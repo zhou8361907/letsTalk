@@ -1,3 +1,5 @@
 // Session Infrastructure
 
-export {}; // Placeholder - to be populated in Phase 3
+export { maybeCompactSessionIfNeeded, shouldCompactSession } from "./compaction.js";
+export { syncSessionPointer, clearSessionContext, getSessionRevision } from "./context.js";
+export { snapshotSessionTokens, diffSessionTokens, diffSessionCostUsd } from "./token-stats.js";

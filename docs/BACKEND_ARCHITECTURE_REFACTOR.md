@@ -2,7 +2,7 @@
 
 > **目标**：从混乱的平铺结构转向清晰的分层架构，提升可维护性和可演进性
 >
-> **状态**：Phase 0 - 设计阶段
+> **状态**：Phase 4 - 进行中
 >
 > **北极星**：参考 Mastra 工程理念，不迁移、不复刻，只吸收分层思想
 
@@ -434,11 +434,11 @@ export {
 
 | Phase | 状态 | 完成时间 |
 |-------|------|----------|
-| Phase 0: 准备 | 🟡 进行中 | - |
-| Phase 1: 建立结构 | 🟡 部分完成 | 2026-06-15 |
-| Phase 2: 领域拆分 | ⚪ 待开始 | - |
-| Phase 3: 基础设施拆分 | ⚪ 待开始 | - |
-| Phase 4: 编排瘦身 | ⚪ 待开始 | - |
+| Phase 0: 准备 | ✅ 已完成 | 2026-06-15 |
+| Phase 1: 建立结构 | ✅ 已完成 | 2026-06-15 |
+| Phase 2: 领域拆分 | 🟡 部分完成 | 2026-06-15 |
+| Phase 3: 基础设施拆分 | 🟡 部分完成 | 2026-06-15 |
+| Phase 4: 编排瘦身 | 🟡 部分完成 | 2026-06-15 |
 | Phase 5: 收尾清理 | ⚪ 待开始 | - |
 
 ---
@@ -467,6 +467,71 @@ export {
 - 在 `agent-runtime/src/index.ts` 添加 re-export 兼容层
 - 验证 `pnpm lint` 通过
 - 验证 `pnpm dev` 正常运行
+
+---
+
+## 十、Phase 2/3 执行日志
+
+### 2026-06-15
+
+**执行内容**：
+
+#### Phase 2：领域拆分
+1. 迁移 `requirement-draft-store.ts` → `domain/requirement/draft-store.ts`
+2. 迁移 `requirement-draft-runtime.ts` → `domain/requirement/draft-runtime.ts`
+3. 迁移 `requirement-draft-tools.ts` → `domain/requirement/tools.ts`
+4. 更新 import 路径（从 `./` 改为 `@lets-talk/domain/requirement`）
+5. 原文件改为 re-export 兼容层
+
+**已迁移文件数**：3 个 domain 文件（requirement 领域）
+
+#### Phase 3：基础设施拆分
+1. 迁移 `debug-logger.ts` → `infrastructure/debug/logger.ts`
+2. 迁移 `draft-io-log.ts` → `infrastructure/debug/draft-io-log.ts`
+3. 更新 import 路径（从 `./` 改为 `@lets-talk/infrastructure/debug`）
+4. 原文件改为 re-export 兼容层
+
+**已迁移文件数**：2 个 infrastructure 文件（debug 领域）
+
+**依赖关系处理**：
+- `domain` 包新增依赖：`@lets-talk/infrastructure`、`@sinclair/typebox`、`@earendil-works/pi-coding-agent`
+- `agent-runtime` 包新增依赖：`@lets-talk/domain`、`@lets-talk/infrastructure`
+
+**验证结果**：
+- [x] `pnpm build` 全量构建通过
+- [x] `pnpm lint` 通过
+- [ ] `pnpm dev` 启动验证
+
+**agent-runtime/src/ 当前文件数**：41（其中 20 个已改为 re-export 兼容层，2 个移至 core/）
+
+---
+
+## 十一、Phase 4 执行日志
+
+### 2026-06-15
+
+**执行内容**：
+
+1. 创建 `agent-runtime/src/core/` 目录
+2. 迁移 `create-session.ts` → `core/create-session.ts`
+3. 迁移 `run-chat.ts` → `core/run-chat.ts`
+4. 更新两个文件的所有相对 import 路径
+5. 原文件改为 re-export 兼容层
+6. 更新 `index.ts` 的导出路径
+
+**验证结果**：
+- [x] `pnpm build` 全量构建通过
+
+**agent-runtime/src/ 当前结构**：
+```
+src/
+├── core/                    # 编排层（2 files）
+│   ├── create-session.ts
+│   └── run-chat.ts
+├── index.ts                 # 导出 + re-export 兼容层
+├── *.ts (20 re-export)      # 已迁移至 domain/infrastructure
+└── *.ts (19 remaining)      # 工具注册等真实实现
+```
 
 ---
 

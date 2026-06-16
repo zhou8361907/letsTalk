@@ -22,7 +22,7 @@ import {
 } from "@lets-talk/memory";
 import { buildEpisodicRecallBlock } from "@lets-talk/conversation";
 import { isMemoryToolsEnabled } from "./agent-write-policy.js";
-import { getDraft } from "./requirement-draft-store.js";
+import { getDraft } from "@lets-talk/domain/requirement";
 
 export interface BuildTurnPromptPrefixInput {
   sessionId: string;

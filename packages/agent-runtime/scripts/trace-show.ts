@@ -8,8 +8,7 @@
 
 import { config } from "dotenv";
 import { resolve } from "node:path";
-import { formatDuration } from "../src/format-agent-log.js";
-import { formatTurnSummaryLines } from "../src/format-turn-summary.js";
+import { formatDuration, formatTurnSummaryLines } from "../src/index.js";
 import {
   findTraceById,
   listSessionTraces,

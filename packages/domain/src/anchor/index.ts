@@ -1,3 +1,8 @@
 // Anchor Domain
 
-export {}; // Placeholder - to be populated in Phase 2
+export {
+  listVueAnchors,
+  anchorExists,
+} from "./list-anchors.js";
+
+export { readAnchorPreview } from "./anchor-preview.js";

@@ -104,6 +104,7 @@ async function runReviewInBackground(input: {
   workspaceRoot: string;
   sessionId: string;
   chatMode: "explore" | "prd";
+  actorId?: string;
   userMessage: string;
   assistantText: string;
 }): Promise<void> {
@@ -121,6 +122,7 @@ async function runReviewInBackground(input: {
   const handle = await createPiSession(cwd, true, {
     sessionKind: "self-improvement-review",
     chatMode: input.chatMode,
+    actorId: input.actorId,
   });
 
   try {
@@ -137,6 +139,7 @@ export function maybeSpawnBackgroundMemoryReview(input: {
   sessionId: string;
   workspaceRoot: string;
   chatMode: "explore" | "prd";
+  actorId?: string;
   userMessage: string;
   assistantText: string;
 }): void {
@@ -147,6 +150,7 @@ export function maybeSpawnSelfImprovementReview(input: {
   sessionId: string;
   workspaceRoot: string;
   chatMode: "explore" | "prd";
+  actorId?: string;
   userMessage: string;
   assistantText: string;
 }): void {

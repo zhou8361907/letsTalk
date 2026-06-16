@@ -23,7 +23,7 @@ export {
   type ContextChange,
   type ContextPointer,
 } from "./format-context-v1.js";
-export { listVueAnchors, anchorExists } from "./list-anchors.js";
+export { listVueAnchors, anchorExists, readAnchorPreview } from "@lets-talk/domain/anchor";
 export {
   formatWorkspaceDirsHint,
   resolveWorkspaceLayout,

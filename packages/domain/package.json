@@ -26,7 +26,10 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@lets-talk/shared-types": "workspace:*"
+    "@lets-talk/shared-types": "workspace:*",
+    "@lets-talk/infrastructure": "workspace:*",
+    "@sinclair/typebox": "^0.34.0",
+    "@earendil-works/pi-coding-agent": "0.75.5"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

@@ -1,18 +1,8 @@
-import { printTurnSummary } from "./format-turn-summary.js";
-import { persistTraceRecord } from "./trace-store.js";
-import type { TraceRecorder } from "./trace-recorder.js";
+/**
+ * trace/session jsonl 落盘。
+ *
+ * 已迁移至 @lets-talk/infrastructure/tracing
+ * 本文件保留用于向后兼容。
+ */
 
-/** 落盘 trace/session jsonl 并打印回合摘要块（dev 默认） */
-export async function finalizeTrace(
-  workspaceRoot: string | undefined,
-  recorder: TraceRecorder,
-): Promise<{ traceFile: string; sessionFile: string } | null> {
-  if (!workspaceRoot?.trim()) {
-    printTurnSummary(recorder);
-    return null;
-  }
-  const record = recorder.buildTraceRecord();
-  const files = await persistTraceRecord(workspaceRoot, record);
-  printTurnSummary(recorder, files);
-  return files;
-}
+export { finalizeTrace } from "@lets-talk/infrastructure/tracing";

@@ -24,11 +24,12 @@ import type { ChatMode } from "@lets-talk/shared-types";
 export async function createLetsTalkResourceLoader(
   workspaceRoot: string,
   chatMode: ChatMode,
+  actorId?: string,
 ): Promise<ResourceLoader> {
   const workspace = resolve(workspaceRoot);
   const agentDir = getAgentDir();
   const settingsManager = SettingsManager.create(workspace, agentDir);
-  const coreSnapshot = await loadCoreMemorySnapshot(workspace);
+  const coreSnapshot = await loadCoreMemorySnapshot(workspace, actorId);
   const tier1Block = formatCoreMemorySystemBlock(coreSnapshot);
   const append = await buildLetsTalkAppendSystemPrompt(chatMode, workspace);
 

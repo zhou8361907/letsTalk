@@ -32,3 +32,8 @@ legacy/test-project/
 
 # TypeScript 构建缓存
 *.tsbuildinfo
+
+# 运行时数据（日志 / 角色注册，勿提交）
+.agent/logs/
+.agent/actors/
+.serena/

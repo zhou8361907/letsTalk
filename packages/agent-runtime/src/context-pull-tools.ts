@@ -18,7 +18,7 @@ import {
   isMemoryIgnoredMessage,
   resolveMemoryContext,
 } from "@lets-talk/memory";
-import { logDraftIo } from "./draft-io-log.js";
+import { logDraftIo } from "@lets-talk/infrastructure/debug";
 
 export function createContextPullTools(options: {
   sessionId: string;

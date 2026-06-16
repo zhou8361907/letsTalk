@@ -1,3 +1,10 @@
 // Format Infrastructure
 
-export {}; // Placeholder - to be populated in Phase 3
+export {
+  formatDuration,
+  formatStepMessage,
+  formatPrettyLogLine,
+  shouldUseJsonLog,
+} from "./agent-log.js";
+
+export { printTurnSummary, formatTurnSummaryLines } from "./turn-summary.js";

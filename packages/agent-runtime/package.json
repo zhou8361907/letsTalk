@@ -26,6 +26,8 @@
     "@lets-talk/ast-tools": "workspace:*",
     "@lets-talk/context": "workspace:*",
     "@lets-talk/conversation": "workspace:*",
+    "@lets-talk/domain": "workspace:*",
+    "@lets-talk/infrastructure": "workspace:*",
     "@lets-talk/memory": "workspace:*",
     "@lets-talk/shared-types": "workspace:*",
     "@lets-talk/skills": "workspace:*",

@@ -1,6 +1,5 @@
 import type { AgentAnchor } from "@lets-talk/shared-types";
-import { anchorExists } from "./list-anchors.js";
-import { readAnchorPreview } from "./anchor-preview.js";
+import { anchorExists, readAnchorPreview } from "@lets-talk/domain/anchor";
 import type { WorkspaceLayout } from "./workspace-paths.js";
 import { toWorkspaceRef } from "./workspace-paths.js";
 

@@ -1,3 +1,7 @@
 // Context Infrastructure
 
-export {}; // Placeholder - to be populated in Phase 3
+export {
+  contextBudgetThresholds,
+  evaluateContextBudgetFromEnv,
+  toolOutputCharLimit,
+} from "./budget.js";

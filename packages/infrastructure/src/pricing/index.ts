@@ -1,3 +1,3 @@
 // Pricing Infrastructure
 
-export {}; // Placeholder - to be populated in Phase 3
+export { estimateCostUsd, MODEL_PRICING } from "./model.js";

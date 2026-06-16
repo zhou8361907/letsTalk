@@ -43,6 +43,7 @@
   },
   "dependencies": {
     "@lets-talk/shared-types": "workspace:*",
+    "@earendil-works/pi-coding-agent": "0.75.5",
     "pino": "^10.3.1"
   },
   "devDependencies": {

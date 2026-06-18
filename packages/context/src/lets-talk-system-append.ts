@@ -11,6 +11,7 @@ import {
   resolvePmPrdRules,
   resolveSkillsGuidance,
 } from "./prompt/prompt-editor.js";
+import { QA_TESTING_RULES } from "./prompt/qa-testing.js";
 import {
   formatHintsDirectoryHint,
   listBusinessHintFiles,
@@ -52,6 +53,10 @@ export async function buildLetsTalkAppendSystemPrompt(
         formatHintsDirectoryHint(hintFiles),
       );
     }
+  }
+
+  if (chatMode === "qa") {
+    parts.push("## 测试辅助模式（QA）", QA_TESTING_RULES);
   }
 
   if (isSkillsEnabled()) {

@@ -107,3 +107,46 @@ export { TraceRecorder, finalizeTrace, findTraceById, listSessionTraces, summari
 
 // buildTurnPromptPrefix 保留在原位置（暂未迁移）
 export { buildTurnPromptPrefix } from "./turn-prefix.js";
+
+// QA 测试辅助模式
+export {
+  openBrowser,
+  closeBrowser,
+  stopRecording,
+  getCurrentSession,
+  getRecordingStatus,
+  matchWhitelist,
+  getWhitelist,
+  setWhitelist,
+  resetWhitelist,
+} from "./qa/recorder.js";
+export {
+  listSessions,
+  loadSession,
+  loadCurrentSession,
+  clearSession,
+} from "./qa/store.js";
+export {
+  findLogsByTraceId,
+  findLogsByTimeWindow,
+  readJavaSource,
+  setLogBasePath,
+  setSrcBasePath,
+} from "./qa/log-analyzer.js";
+export {
+  subscribeEvents,
+} from "./qa/event-bus.js";
+export {
+  createQaAnalysisTools,
+} from "./qa/tools.js";
+export {
+  buildQaContextPrefix,
+} from "./qa/context.js";
+export type { QaFocusedRequest } from "./qa/context.js";
+export type {
+  RecordedSession,
+} from "./qa/store.js";
+export type {
+  LogEntry,
+  SourceSnippet,
+} from "./qa/log-analyzer.js";

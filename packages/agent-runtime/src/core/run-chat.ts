@@ -29,6 +29,7 @@ import {
 import type {
   AgentAnchor,
   ChatMode,
+  ChatStreamRequest,
   RequirementDraftState,
   SseEvent,
 } from "@lets-talk/shared-types";
@@ -268,6 +269,8 @@ export interface RunChatOptions {
   actorId?: string;
   /** 每产生一个 SseEvent 调用一次；route.ts 里对应 enqueue → ReadableStream */
   onEvent: (event: SseEvent) => void;
+  /** QA 模式：面板选中的关注请求 */
+  qaFocusedRequest?: ChatStreamRequest["qaFocusedRequest"];
 }
 
 /**
@@ -482,6 +485,7 @@ export async function runChat(options: RunChatOptions): Promise<void> {
       userMessage: options.message,
       sessionCreatedAtMs: handle.sessionCreatedAtMs,
       actorId: options.actorId,
+      qaFocusedRequest: options.qaFocusedRequest ?? null,
     });
     const prefix = turnCtx.prefix;
     logStep({

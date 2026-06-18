@@ -139,6 +139,7 @@ export async function POST(request: Request) {
         chatMode,
         actorId,
         useTools: true,
+        qaFocusedRequest: body.qaFocusedRequest ?? null,
         onEvent: enqueue,
       })
         .catch((err: unknown) => {

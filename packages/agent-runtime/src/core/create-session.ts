@@ -44,6 +44,7 @@ import {
   getDraft,
   getDraftRevision,
 } from "@lets-talk/domain/requirement";
+import { createQaAnalysisTools } from "../qa/tools.js";
 import {
   createSkillManageOnlyTool,
   createSkillTools,
@@ -208,6 +209,11 @@ export async function createPiSession(
         })
       : [];
 
+  const qaTools =
+    useTools && !isMinimalTask && options?.sessionId && chatMode === "qa"
+      ? createQaAnalysisTools({ sessionId: options.sessionId })
+      : [];
+
   const pullToolNames: string[] = [...CONTEXT_PULL_TOOLS];
   if (chatMode === "prd") {
     pullToolNames.push(...PRD_PULL_TOOLS);
@@ -249,6 +255,7 @@ export async function createPiSession(
             ),
             ...(draftTools.length ? (["update_requirement_draft"] as const) : []),
             ...(sessionSearchTools.length ? (["session_search"] as const) : []),
+            ...(qaTools.length ? (["qa_search_events", "qa_list_requests", "qa_analyze_request"] as const) : []),
           ];
 
   const resourceLoader = isSelfImprovementReview
@@ -276,6 +283,7 @@ export async function createPiSession(
             ...pullTools,
             ...draftTools,
             ...sessionSearchTools,
+            ...qaTools,
           ];
 
   const customTools = wrapToolsWithOutputLimit(rawCustomTools);

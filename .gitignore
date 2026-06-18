@@ -37,3 +37,10 @@ legacy/test-project/
 .agent/logs/
 .agent/actors/
 .serena/
+
+# QA 录制运行时数据
+apps/web/.agent/qa-recordings/
+
+# Playwright MCP 缓存（Claude Code 调试产物）
+.playwright-mcp/
+.serena/

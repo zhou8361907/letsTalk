@@ -5,6 +5,7 @@
 
 import type { AgentAnchor, ChatMode } from "@lets-talk/shared-types";
 import type { WorkspaceLayout } from "@lets-talk/context";
+import { buildQaContextPrefix } from "./qa/context.js";
 import {
   formatRequirementDraftBriefSummary,
   formatTurnPrefix,
@@ -36,6 +37,16 @@ export interface BuildTurnPromptPrefixInput {
   sessionCreatedAtMs: number;
   /** 会话归属 Actor；USER 画像隔离 */
   actorId?: string;
+  /** QA 模式：面板选中的关注请求 */
+  qaFocusedRequest?: {
+    seq?: number;
+    url?: string;
+    method?: string;
+    statusCode?: number;
+    traceId?: string;
+    timestamp?: string;
+    summary?: string;
+  } | null;
 }
 
 export interface BuildTurnPromptPrefixResult {
@@ -69,6 +80,22 @@ export async function buildTurnPromptPrefix(
     const draft = getDraft(input.sessionId);
     const summary = formatRequirementDraftBriefSummary(draft);
     if (summary) draftSummary = summary;
+  }
+
+  let qaContextPrefix: string | undefined;
+  if (input.chatMode === "qa") {
+    const focused = input.qaFocusedRequest
+      ? {
+          seq: input.qaFocusedRequest.seq ?? 0,
+          url: input.qaFocusedRequest.url ?? "",
+          method: input.qaFocusedRequest.method ?? "?",
+          statusCode: input.qaFocusedRequest.statusCode ?? 0,
+          traceId: input.qaFocusedRequest.traceId ?? "",
+          timestamp: input.qaFocusedRequest.timestamp ?? "",
+        }
+      : undefined;
+    const ctx = buildQaContextPrefix(input.sessionId, focused);
+    if (ctx) qaContextPrefix = ctx;
   }
 
   let memoryContext: string | undefined;
@@ -111,16 +138,23 @@ export async function buildTurnPromptPrefix(
     }
   }
 
+  const basePrefix = formatTurnPrefix({
+    pointer,
+    change: contextChange,
+    draftSummary,
+    memoryContext,
+    episodicRecall,
+    memorySuppressed,
+    coreMemoryRefresh,
+  });
+
+  // QA 上下文附加到前缀
+  const prefix = qaContextPrefix
+    ? `${basePrefix}\n\n${qaContextPrefix}\n`
+    : basePrefix;
+
   return {
-    prefix: formatTurnPrefix({
-      pointer,
-      change: contextChange,
-      draftSummary,
-      memoryContext,
-      episodicRecall,
-      memorySuppressed,
-      coreMemoryRefresh,
-    }),
+    prefix,
     mode: resolved ? "focused" : "explore",
     anchorRef: resolved?.ref ?? null,
     m0Refreshed: Boolean(coreMemoryRefresh?.trim()),

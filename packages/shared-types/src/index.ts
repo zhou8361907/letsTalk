@@ -77,7 +77,29 @@ export const REQUIREMENT_FIELD_LABELS: Record<RequirementFieldKey, string> = {
  * - explore：研发探索代码，无需求草稿板
  * - prd：产品经理写需求，启用 update_requirement_draft 与 RequirementCanvas
  */
-export type ChatMode = "explore" | "prd";
+export type ChatMode = "explore" | "prd" | "qa";
+
+/** QA 录制事件类型 */
+export type QaRecordEventKind = "PAGE" | "TAB" | "CLICK" | "REQUEST";
+
+/** QA 录制事件 */
+export interface QaRecordEvent {
+  kind: QaRecordEventKind;
+  /** 展示摘要（如「结算查询」「POST /smps/...」） */
+  summary: string;
+  /** HTTP 状态码（仅 REQUEST 类型） */
+  statusCode?: number;
+  /** 请求方法（仅 REQUEST 类型） */
+  method?: string;
+  /** 请求 URL（仅 REQUEST 类型） */
+  url?: string;
+  /** 响应 traceId */
+  traceId?: string;
+  /** 事件时间戳 */
+  timestamp: string;
+  /** 完整数据 */
+  detail: Record<string, unknown>;
+}
 
 /**
  * 模型上下文窗口占用快照。
@@ -139,7 +161,9 @@ export type SseEvent =
   /** PRD 模式：可点击的 Agent 建议动作 */
   | { type: "agent_actions"; actions: import("./requirement-draft.js").AgentAction[] }
   /** 异常；HTTP 仍 200，由前端展示 message */
-  | { type: "error"; code: string; message: string };
+  | { type: "error"; code: string; message: string }
+  /** QA 模式：录制事件实时推送 */
+  | { type: "qa_event"; event: QaRecordEvent };
 
 /** POST /api/agent/chat/stream 的请求体 */
 export interface ChatStreamRequest {
@@ -151,6 +175,16 @@ export interface ChatStreamRequest {
   anchor?: AgentAnchor | null;
   /** 默认 explore */
   chatMode?: ChatMode;
+  /** QA 模式：面板选中的关注请求 */
+  qaFocusedRequest?: {
+    seq?: number;
+    url?: string;
+    method?: string;
+    statusCode?: number;
+    traceId?: string;
+    timestamp?: string;
+    summary?: string;
+  } | null;
 }
 
 /** 格式化成 SSE 一行：data: {...}\n\n */

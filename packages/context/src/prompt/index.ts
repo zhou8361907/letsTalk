@@ -5,6 +5,7 @@ export {
   SELF_IMPROVEMENT_REVIEW_PROMPT,
 } from "./skills-guidance.js";
 export { PM_PRD_RULES } from "./pm-prd.js";
+export { QA_TESTING_RULES } from "./qa-testing.js";
 export {
   assertEditablePromptRelPath,
   listPromptEditorFiles,

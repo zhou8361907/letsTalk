@@ -23,7 +23,7 @@ import { logDraftIo } from "@lets-talk/infrastructure/debug";
 export function createContextPullTools(options: {
   sessionId: string;
   workspaceRoot: string;
-  chatMode: "explore" | "prd";
+  chatMode: "explore" | "prd" | "qa";
   getAnchor: () => AgentAnchor | null;
   getDraft: () => import("@lets-talk/shared-types").RequirementDraftState | null;
   getDraftRevision: () => number;

@@ -3,6 +3,7 @@
  */
 
 import { resolve } from "node:path";
+import type { ChatMode } from "@lets-talk/shared-types";
 import { getConversation } from "@lets-talk/conversation";
 import { resolveSelfImprovementReviewPrompt } from "@lets-talk/context";
 import {
@@ -103,7 +104,7 @@ async function buildTranscriptExcerpt(
 async function runReviewInBackground(input: {
   workspaceRoot: string;
   sessionId: string;
-  chatMode: "explore" | "prd";
+  chatMode: ChatMode;
   actorId?: string;
   userMessage: string;
   assistantText: string;
@@ -138,7 +139,7 @@ async function runReviewInBackground(input: {
 export function maybeSpawnBackgroundMemoryReview(input: {
   sessionId: string;
   workspaceRoot: string;
-  chatMode: "explore" | "prd";
+  chatMode: ChatMode;
   actorId?: string;
   userMessage: string;
   assistantText: string;
@@ -149,7 +150,7 @@ export function maybeSpawnBackgroundMemoryReview(input: {
 export function maybeSpawnSelfImprovementReview(input: {
   sessionId: string;
   workspaceRoot: string;
-  chatMode: "explore" | "prd";
+  chatMode: ChatMode;
   actorId?: string;
   userMessage: string;
   assistantText: string;

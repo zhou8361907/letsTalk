@@ -32,7 +32,8 @@
     "@lets-talk/shared-types": "workspace:*",
     "@lets-talk/skills": "workspace:*",
     "@sinclair/typebox": "^0.34.0",
-    "pino": "^10.3.1"
+    "pino": "^10.3.1",
+    "playwright": "^1.61.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

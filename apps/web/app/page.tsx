@@ -35,6 +35,7 @@ import {
   persistActorChoice,
 } from "../lib/actor-client";
 import { RequirementCanvas } from "../components/RequirementCanvas";
+import { QATestConsole } from "../components/QATestConsole";
 import { TurnDebugModal } from "../components/TurnDebugModal";
 import {
   evaluateContextBudget,
@@ -112,7 +113,9 @@ function getSessionDebugState(
 function loadStoredChatMode(): ChatMode {
   if (typeof window === "undefined") return "explore";
   const v = sessionStorage.getItem(CHAT_MODE_STORAGE_KEY);
-  return v === "prd" ? "prd" : "explore";
+  if (v === "prd") return "prd";
+  if (v === "qa") return "qa";
+  return "explore";
 }
 
 function loadStoredAnchor(): AgentAnchor | null {
@@ -344,7 +347,9 @@ export default function HomePage() {
       setSessionId(record.sessionId);
       sessionIdRef.current = record.sessionId;
       sessionStorage.setItem(SESSION_STORAGE_KEY, record.sessionId);
-      const mode = record.chatMode === "prd" ? "prd" : "explore";
+      const mode: ChatMode =
+        record.chatMode === "prd" ? "prd" :
+        record.chatMode === "qa" ? "qa" : "explore";
       setChatMode(mode);
       chatModeRef.current = mode;
       sessionStorage.setItem(CHAT_MODE_STORAGE_KEY, mode);
@@ -902,6 +907,12 @@ export default function HomePage() {
           message: text,
           anchor: anchorRef.current,
           chatMode: chatModeRef.current,
+          qaFocusedRequest: (() => {
+            try {
+              const raw = sessionStorage.getItem("qa_focused_req");
+              return raw ? JSON.parse(raw) : null;
+            } catch { return null; }
+          })(),
         }),
       });
 
@@ -1272,6 +1283,14 @@ export default function HomePage() {
               >
                 需求整理
               </button>
+              <button
+                type="button"
+                className={chatMode === "qa" ? "mode-btn active" : "mode-btn"}
+                onClick={() => setChatModePersist("qa")}
+                disabled={busy}
+              >
+                测试辅助
+              </button>
             </div>
             <span className={`dot ${status === "error" ? "err" : busy ? "on" : ""}`} />
             <span className="muted header-status">
@@ -1358,7 +1377,9 @@ export default function HomePage() {
             <p className="muted empty-hint">
               {chatMode === "prd"
                 ? "需求整理：左侧用口语说就行，右侧会自动整理成清单；选好页面锚点更准确。"
-                : "探索模式：选会话或锚点后提问。回答以实际代码为准。"}
+                : chatMode === "qa"
+                  ? "测试辅助：点击右侧面板「打开浏览器」启动录制，操作后回来分析。"
+                  : "探索模式：选会话或锚点后提问。回答以实际代码为准。"}
             </p>
           )}
           {displayItems.map((item, i) => {
@@ -1514,6 +1535,24 @@ export default function HomePage() {
           onFinalize={(action) => {
             if (action.kind === "finalize_skip_blast") {
               exportMarkdown();
+            }
+          }}
+        />
+      )}
+
+      {chatMode === "qa" && (
+        <QATestConsole
+          chatSessionId={sessionId}
+          onPageChange={(pageLabel) => {
+            if (!pageLabel) return;
+            persistAnchor({ kind: "route", ref: pageLabel, label: pageLabel });
+          }}
+          onFocusRequest={(req) => {
+            // 关注请求存入全局状态，agent 对话时可读到
+            if (req) {
+              sessionStorage.setItem("qa_focused_req", JSON.stringify(req));
+            } else {
+              sessionStorage.removeItem("qa_focused_req");
             }
           }}
         />

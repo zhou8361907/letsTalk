@@ -3,10 +3,13 @@
  */
 
 import { randomUUID } from "crypto";
-import { runChat, disposePiSession } from "@lets-talk/agent-runtime";
+// @lets-talk/agent-runtime 通过 eval/package.json 的 workspace 协议解析
+const { runChat, disposePiSession } = await import(
+  "@lets-talk/agent-runtime"
+);
 
 export async function runEvalTurn(message, config) {
-  const { chatMode, workspaceRoot, useTools = true } = config;
+  const { chatMode, useTools = true } = config;
 
   // 每个 scenario 用新 sessionId，避免污染
   const sessionId = `eval-${randomUUID()}`;

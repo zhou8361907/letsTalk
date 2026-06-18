@@ -6,24 +6,43 @@
 
 import { runEvalTurn } from "../lib/run-turn.mjs";
 
-export async function callApi(prompt, context) {
-  const config = context.config;
-
-  if (!config?.workspaceRoot) {
-    throw new Error("lets-talk provider requires workspaceRoot in config");
+export default class LetsTalkProvider {
+  constructor(options) {
+    this.options = options;
   }
 
-  // 设置 WORKSPACE_ROOT 环境变量（runChat 内部会读取）
-  process.env.WORKSPACE_ROOT = config.workspaceRoot;
+  id() {
+    return "lets-talk";
+  }
 
-  const result = await runEvalTurn(prompt, config);
+  async callApi(prompt, context) {
+    const config = context.config || {};
 
-  // Promptfoo 期望返回 { output, cost } 或直接返回 output
-  // 我们返回 EvalTurnResult，promptfoo 会把它当作 output
-  return {
-    output: result,
-    cost: result.turnCostUsd || 0,
-  };
+    // 检测 WORKSPACE_ROOT
+    if (!config.workspaceRoot && !process.env.WORKSPACE_ROOT) {
+      const { existsSync } = await import("fs");
+      const { resolve } = await import("path");
+      let dir = process.cwd();
+      while (dir !== "/") {
+        if (existsSync(resolve(dir, "package.json"))) break;
+        dir = resolve(dir, "..");
+      }
+      process.env.WORKSPACE_ROOT = dir;
+    }
+    if (config.workspaceRoot) {
+      process.env.WORKSPACE_ROOT = config.workspaceRoot;
+    }
+
+    const result = await runEvalTurn(prompt, {
+      chatMode: config.chatMode || "prd",
+      useTools: config.useTools !== false,
+    });
+
+    return {
+      output: result,
+      cost: result.turnCostUsd || 0,
+    };
+  }
 }
 
 export const id = "lets-talk";

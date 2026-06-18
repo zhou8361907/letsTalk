@@ -67,6 +67,12 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
+  eval:
+    dependencies:
+      '@lets-talk/agent-runtime':
+        specifier: workspace:*
+        version: link:../packages/agent-runtime
+
   packages/agent-runtime:
     dependencies:
       '@earendil-works/pi-ai':

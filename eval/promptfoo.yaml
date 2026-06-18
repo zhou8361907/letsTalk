@@ -1,11 +1,10 @@
 description: letsTalk PRD scenario bank — Layer 1
 
 providers:
-  - id: lets-talk
+  - id: file:///Users/zs/IdeaProjects/work/letsTalk/eval/providers/lets-talk.mjs
     label: letsTalk runChat (prd)
     config:
       chatMode: prd
-      workspaceRoot: ${WORKSPACE_ROOT}
       useTools: true
 
 prompts:
@@ -14,6 +13,9 @@ prompts:
 defaultTest:
   options:
     provider: lets-talk
+
+env:
+  WORKSPACE_ROOT: /Users/zs/IdeaProjects/work/letsTalk
 
 tests:
   - description: payment-approval-round-1

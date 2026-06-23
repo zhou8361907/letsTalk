@@ -11,16 +11,17 @@
   },
   "dependencies": {
     "@lets-talk/agent-runtime": "workspace:*",
-    "@lets-talk/conversation": "workspace:*",
     "@lets-talk/context": "workspace:*",
+    "@lets-talk/conversation": "workspace:*",
     "@lets-talk/memory": "workspace:*",
     "@lets-talk/shared-types": "workspace:*",
     "dotenv": "^16.4.0",
-    "server-only": "^0.0.1",
     "mysql2": "^3.14.0",
     "next": "^15.1.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "recharts": "^3.8.1",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

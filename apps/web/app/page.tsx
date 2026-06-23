@@ -742,6 +742,25 @@ export default function HomePage() {
           );
         };
 
+        // 从 admin 调试按钮跳转过来的话，加载对应会话并打开调试
+        const debugSessionId = sessionStorage.getItem("letsTalk.debugSession");
+        const debugTurnIdx = sessionStorage.getItem("letsTalk.debugTurnIdx");
+        sessionStorage.removeItem("letsTalk.debugSession");
+        sessionStorage.removeItem("letsTalk.debugTurnIdx");
+
+        if (debugSessionId && list.some((c) => c.sessionId === debugSessionId)) {
+          const res = await actorFetch(`/api/conversations/${debugSessionId}`);
+          if (res.ok) {
+            restoreRecord(await res.json());
+            // 等会话加载完后打开调试面板
+            setTimeout(() => {
+              void refreshSessionDebugTurns(debugSessionId);
+              setDebugModalOpen(true);
+            }, 300);
+            return;
+          }
+        }
+
         const lastId = sessionStorage.getItem(SESSION_STORAGE_KEY);
         if (lastId && list.some((c) => c.sessionId === lastId)) {
           const res = await actorFetch(`/api/conversations/${lastId}`);
@@ -1204,7 +1223,7 @@ export default function HomePage() {
                           title={
                             c.title +
                             "  ($" +
-                            (c.totalCostUsd ?? 0).toFixed(4) +
+                            (c.totalCostUsd ?? 0).toFixed(6) +
                             ")"
                           }
                         >
@@ -1392,6 +1411,14 @@ export default function HomePage() {
               title="导出为 Markdown"
             >
               导出
+            </button>
+            <button
+              type="button"
+              className="export-btn"
+              onClick={() => { window.location.href = "/admin"; }}
+              title="管理后台"
+            >
+              📊
             </button>
             <span
               className={`context-usage${

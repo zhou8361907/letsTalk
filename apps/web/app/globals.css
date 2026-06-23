@@ -11,6 +11,19 @@
   --tool: #3d2e0022;
 }
 
+.light {
+  color-scheme: light;
+  --bg: #ffffff;
+  --panel: #f6f8fa;
+  --border: #d0d7de;
+  --text: #1f2328;
+  --muted: #656d76;
+  --accent: #0969da;
+  --user: #0969da15;
+  --assistant: #f6f8fa;
+  --tool: #d4a72c15;
+}
+
 * {
   box-sizing: border-box;
 }

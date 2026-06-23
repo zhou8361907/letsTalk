@@ -74,7 +74,8 @@ export async function resolveSystemPromptSnapshot(
     sourceNote?: string;
   },
 ): Promise<SystemPromptSnapshot> {
-  const loader = await createLetsTalkResourceLoader(workspaceRoot, chatMode);
+  const productLine = process.env.PRODUCT_LINE?.trim() || "yibao";
+  const loader = await createLetsTalkResourceLoader(workspaceRoot, chatMode, undefined, productLine);
   return captureSystemPromptFromLoader(loader, {
     workspaceRoot,
     chatMode,

@@ -12,21 +12,38 @@ export interface WorkspaceLayout {
   frontendRel: string;
   /** 相对 workspaceRoot，如 workBack */
   backendRel: string;
+  /** 当前产品线 */
+  productLine?: string;
 }
 
+import { PRODUCT_LINES, DEFAULT_PRODUCT_LINE, type ProductLineId } from "@lets-talk/shared-types";
+
 /**
- * 从环境变量解析工作区布局：
+ * 从环境变量 + 产品线解析工作区布局：
  * - WORKSPACE_ROOT：letsTalk 运行根（必填，建议填仓库绝对路径）
- * - FRONTEND_ROOT：前端目录，相对 WORKSPACE_ROOT 或绝对路径（默认 workFront）
- * - BACKEND_ROOT：后端目录（默认 workBack）
+ * - FRONTEND_ROOT：前端目录（默认取产品线配置）
+ * - BACKEND_ROOT：后端目录（默认取产品线配置）
+ * - PRODUCT_LINE：产品线 id（默认 yibao）
  */
-export function resolveWorkspaceLayout(): WorkspaceLayout {
+export function resolveWorkspaceLayout(
+  productLine?: ProductLineId | null,
+): WorkspaceLayout {
   const workspaceRoot = resolve(
     process.env.WORKSPACE_ROOT?.trim() || process.cwd(),
   );
 
-  const frontendEnv = process.env.FRONTEND_ROOT?.trim() || "workFront";
-  const backendEnv = process.env.BACKEND_ROOT?.trim() || "workBack";
+  const plId: ProductLineId = productLine
+    ?? (process.env.PRODUCT_LINE?.trim() as ProductLineId)
+    ?? DEFAULT_PRODUCT_LINE;
+  const pl = PRODUCT_LINES[plId];
+
+  // 按产品线读取对应的 env 覆盖
+  const frontendEnv = (plId === "shebao"
+    ? process.env.SHEBAO_FRONTEND_ROOT?.trim()
+    : process.env.FRONTEND_ROOT?.trim()) || pl.frontendRoot;
+  const backendEnv = (plId === "shebao"
+    ? process.env.SHEBAO_BACKEND_ROOT?.trim()
+    : process.env.BACKEND_ROOT?.trim()) || pl.backendRoot;
 
   const frontendRoot = resolve(
     frontendEnv.startsWith("/") ? frontendEnv : workspaceRoot,
@@ -40,7 +57,7 @@ export function resolveWorkspaceLayout(): WorkspaceLayout {
   const frontendRel = toPosixRelative(workspaceRoot, frontendRoot);
   const backendRel = toPosixRelative(workspaceRoot, backendRoot);
 
-  return { workspaceRoot, frontendRoot, backendRoot, frontendRel, backendRel };
+  return { workspaceRoot, frontendRoot, backendRoot, frontendRel, backendRel, productLine: plId };
 }
 
 function toPosixRelative(from: string, to: string): string {

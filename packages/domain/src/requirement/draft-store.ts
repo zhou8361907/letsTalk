@@ -26,6 +26,13 @@ export function getDraftRevision(sessionId: string): number {
   return draftRevisions.get(sessionId) ?? 0;
 }
 
+/** 从持久化恢复 draftRevision */
+export function setDraftRevision(sessionId: string, revision: number): void {
+  if (revision > 0) {
+    draftRevisions.set(sessionId, revision);
+  }
+}
+
 function bumpDraftRevision(sessionId: string): number {
   const next = getDraftRevision(sessionId) + 1;
   draftRevisions.set(sessionId, next);

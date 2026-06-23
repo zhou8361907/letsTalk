@@ -264,7 +264,10 @@ export async function createPiSession(
       ? await createExportAppendixResourceLoader(workspace)
       : isTitleSummary
         ? await createTitleSummaryResourceLoader(workspace)
-        : await createLetsTalkResourceLoader(workspace, chatMode, options?.actorId);
+        : await createLetsTalkResourceLoader(
+            workspace, chatMode, options?.actorId,
+            process.env.PRODUCT_LINE?.trim() || "yibao",
+          );
 
   const rawCustomTools = isSelfImprovementReview
     ? [

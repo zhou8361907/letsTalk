@@ -34,7 +34,10 @@ function rowFromDb(r: Record<string, unknown>): SysMenuRow {
   };
 }
 
-export async function fetchSysMenuRows(userSysId?: string): Promise<SysMenuRow[]> {
+export async function fetchSysMenuRows(
+  userSysId?: string,
+  tableName: string = "sys_menu",
+): Promise<SysMenuRow[]> {
   const cfg = readMenuDbConfig();
   if (!cfg) {
     return loadMenuRowsFromCache(userSysId);
@@ -51,13 +54,15 @@ export async function fetchSysMenuRows(userSysId?: string): Promise<SysMenuRow[]
   });
 
   try {
+    // 表名用参数替换（安全：来自配置而非用户输入）
+    const table = tableName.replace(/[^a-z0-9_]/gi, "");
     const sql = userSysId
       ? `SELECT MENU_ID, MENU_NAME, PARENT_ID, LEVEL_NUM, IS_LEAF, ENABLED, url,
                 DISP_ORDER, USER_SYS_ID
-         FROM sys_menu WHERE ENABLED = 1 AND USER_SYS_ID = ?`
+         FROM \`${table}\` WHERE ENABLED = 1 AND USER_SYS_ID = ?`
       : `SELECT MENU_ID, MENU_NAME, PARENT_ID, LEVEL_NUM, IS_LEAF, ENABLED, url,
                 DISP_ORDER, USER_SYS_ID
-         FROM sys_menu WHERE ENABLED = 1`;
+         FROM \`${table}\` WHERE ENABLED = 1`;
     const [rows] = await conn.execute(sql, userSysId ? [userSysId] : []);
     return (rows as Record<string, unknown>[]).map(rowFromDb);
   } finally {
@@ -81,7 +86,9 @@ export async function loadMenuRowsFromCache(userSysId?: string): Promise<SysMenu
   }
 }
 
-export async function listMenuUserSysIds(): Promise<string[]> {
+export async function listMenuUserSysIds(
+  tableName: string = "sys_menu",
+): Promise<string[]> {
   const cfg = readMenuDbConfig();
   if (!cfg) {
     const id = process.env.MENU_USER_SYS_ID?.trim() || "672";
@@ -96,8 +103,9 @@ export async function listMenuUserSysIds(): Promise<string[]> {
     database: cfg.database,
   });
   try {
+    const table = tableName.replace(/[^a-z0-9_]/gi, "");
     const [rows] = await conn.execute(
-      `SELECT DISTINCT USER_SYS_ID FROM sys_menu
+      `SELECT DISTINCT USER_SYS_ID FROM \`${table}\`
        WHERE ENABLED = 1 AND PARENT_ID = USER_SYS_ID
        ORDER BY USER_SYS_ID`,
     );

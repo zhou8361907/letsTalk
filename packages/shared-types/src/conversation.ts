@@ -1,5 +1,6 @@
 import type { AgentAnchor } from "./anchor.js";
 import type { RequirementDraftState } from "./requirement-draft.js";
+import type { ProductLineId } from "./product-line.js";
 
 /**
  * 对话 Transcript 中的一条记录。
@@ -69,10 +70,18 @@ export interface ConversationRecord extends ConversationSummary {
    * 默认 `.agent/conversations/pi/{sessionId}.jsonl`
    */
   piSessionFile?: string | null;
-  /** explore=研发查代码；prd=产品经理写需求 */
-  chatMode?: "explore" | "prd";
+  /** explore=研发查代码；prd=产品经理写需求；qa=测试辅助 */
+  chatMode?: "explore" | "prd" | "qa";
   /** PRD 模式下的需求草稿板快照 */
   requirementDraft?: RequirementDraftState | null;
+  /** 草稿修订号（每次 update_requirement_draft 递增），用作乐观锁 */
+  draftRevision?: number;
+  /** 会话指针修订号（chatMode 切换时递增），用于上下文前缀去重 */
+  pointerRevision?: number;
+  /** 当前 PRD 阶段：exploring | drafting | confirming | ready_to_finalize | finalized */
+  currentTask?: string;
+  /** 产品线：yibao / shebao */
+  productLine?: ProductLineId;
   /** 用户手动重命名后为 true，save 时不再用首条消息覆盖标题 */
   titleLocked?: boolean;
   /** 含研发附录的后台导出任务（最近一次） */

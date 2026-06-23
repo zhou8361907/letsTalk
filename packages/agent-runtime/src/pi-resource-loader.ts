@@ -25,13 +25,14 @@ export async function createLetsTalkResourceLoader(
   workspaceRoot: string,
   chatMode: ChatMode,
   actorId?: string,
+  productLine?: string,
 ): Promise<ResourceLoader> {
   const workspace = resolve(workspaceRoot);
   const agentDir = getAgentDir();
   const settingsManager = SettingsManager.create(workspace, agentDir);
   const coreSnapshot = await loadCoreMemorySnapshot(workspace, actorId);
   const tier1Block = formatCoreMemorySystemBlock(coreSnapshot);
-  const append = await buildLetsTalkAppendSystemPrompt(chatMode, workspace);
+  const append = await buildLetsTalkAppendSystemPrompt(chatMode, workspace, productLine);
 
   const loader = new DefaultResourceLoader({
     cwd: workspace,

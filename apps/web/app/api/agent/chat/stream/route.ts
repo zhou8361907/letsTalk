@@ -139,6 +139,7 @@ export async function POST(request: Request) {
         chatMode,
         actorId,
         useTools: true,
+        productLine: body.productLine || process.env.PRODUCT_LINE?.trim() || "yibao",
         qaFocusedRequest: body.qaFocusedRequest ?? null,
         onEvent: enqueue,
       })

@@ -102,15 +102,16 @@ export function MenuAnchorPicker({ anchor, disabled, onSelect }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/menu/tree");
+      const pl = typeof window !== "undefined" ? sessionStorage.getItem("letsTalk.productLine") : null;
+      const res = await fetch(`/api/menu/tree${pl ? `?productLine=${pl}` : ""}`);
       const data = (await res.json()) as MenuTreePayload & { error?: string };
       if (!res.ok) {
-        throw new Error(data.error ?? res.statusText);
+          throw new Error(data.error ?? res.statusText);
       }
       setTree(data);
       const first = data.roots[0]?.menuId ?? null;
       setActiveRootId((prev) =>
-        prev && data.roots.some((r) => r.menuId === prev) ? prev : first,
+          prev && data.roots.some((r) => r.menuId === prev) ? prev : first,
       );
     } catch (e) {
       setTree(null);

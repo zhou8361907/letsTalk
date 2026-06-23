@@ -27,6 +27,7 @@ import {
 } from "../lib/turn-debug-client";
 import { ActorPickerModal } from "../components/ActorPickerModal";
 import { MenuAnchorPicker } from "../components/MenuAnchorPicker";
+import { ProductLinePicker } from "../components/ProductLinePicker";
 import { MemoryEditorModal } from "../components/MemoryEditorModal";
 import {
   actorFetch,
@@ -121,6 +122,10 @@ function loadStoredChatMode(): ChatMode {
 function loadStoredAnchor(): AgentAnchor | null {
   if (typeof window === "undefined") return null;
   try {
+    // 如果刚刚切换了产品线，忽略旧锚点（保留标记，applyConversation 也要读）
+    if (sessionStorage.getItem("letsTalk.plSwitched")) {
+      return null;
+    }
     const raw = sessionStorage.getItem(ANCHOR_STORAGE_KEY);
     if (!raw) return null;
     return JSON.parse(raw) as AgentAnchor;
@@ -173,6 +178,7 @@ export default function HomePage() {
   }>({ root: null, front: null, back: null });
   const [memoryEditorOpen, setMemoryEditorOpen] = useState(false);
   const [debugModalOpen, setDebugModalOpen] = useState(false);
+  const [isLight, setIsLight] = useState(false);
   const [debugInitialTurnId, setDebugInitialTurnId] = useState<string | null>(
     null,
   );
@@ -355,11 +361,15 @@ export default function HomePage() {
       sessionStorage.setItem(CHAT_MODE_STORAGE_KEY, mode);
       setItems(record.items ?? []);
       itemsRef.current = record.items ?? [];
-      if (record.anchor) {
+      const plSwitched = sessionStorage.getItem("letsTalk.plSwitched");
+      if (!plSwitched) {
+        if (record.anchor) {
         persistAnchor(record.anchor);
-      } else if (record.anchor === null) {
+        } else if (record.anchor === null) {
         persistAnchor(null);
+        }
       }
+      sessionStorage.removeItem("letsTalk.plSwitched");
       const draft = record.requirementDraft ?? null;
       setRequirementDraft(draft);
       requirementDraftRef.current = draft;
@@ -663,6 +673,11 @@ export default function HomePage() {
   );
 
   useEffect(() => {
+    // 初始化主题
+    const theme = sessionStorage.getItem("letsTalk.theme");
+    if (theme === "light") document.documentElement.classList.add("light");
+    setIsLight(theme === "light");
+
     setAnchor(loadStoredAnchor());
     anchorRef.current = loadStoredAnchor();
     const storedMode = loadStoredChatMode();
@@ -907,6 +922,7 @@ export default function HomePage() {
           message: text,
           anchor: anchorRef.current,
           chatMode: chatModeRef.current,
+          productLine: sessionStorage.getItem("letsTalk.productLine") || "yibao",
           qaFocusedRequest: (() => {
             try {
               const raw = sessionStorage.getItem("qa_focused_req");
@@ -1266,6 +1282,27 @@ export default function HomePage() {
         <header className="header">
           <div className="header-main">
             <h1>letsTalk Agent</h1>
+            <ProductLinePicker
+              onChange={(productLine) => {
+                // 切换产品线：清空锚点 + 标记 + 刷新页面
+                sessionStorage.removeItem("letsTalk.anchor");
+                sessionStorage.setItem("letsTalk.plSwitched", "1");
+                window.location.reload();
+              }}
+            />
+            <button
+              type="button"
+              className="theme-btn"
+              onClick={() => {
+                const html = document.documentElement;
+                const light = html.classList.toggle("light");
+                setIsLight(light);
+                sessionStorage.setItem("letsTalk.theme", light ? "light" : "dark");
+              }}
+              title="切换主题"
+            >
+              {isLight ? "☀️" : "🌙"}
+            </button>
             <div className="mode-toggle" role="group" aria-label="对话模式">
               <button
                 type="button"
@@ -1886,6 +1923,15 @@ export default function HomePage() {
           align-items: center;
           gap: 0.65rem;
           flex-shrink: 0;
+        }
+        .theme-btn {
+          font-size: 14px;
+          padding: 0.1rem 0.4rem;
+          border: 1px solid var(--border);
+          border-radius: 4px;
+          background: var(--panel);
+          line-height: 1.4;
+          margin-left: 0.3rem;
         }
         .mode-toggle {
           display: inline-flex;

@@ -44,3 +44,7 @@ apps/web/.agent/qa-recordings/
 # Playwright MCP 缓存（Claude Code 调试产物）
 .playwright-mcp/
 .serena/
+
+workFrontShebao/
+workBackShebao/
+results.json

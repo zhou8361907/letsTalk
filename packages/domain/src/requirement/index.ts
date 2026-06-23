@@ -6,6 +6,7 @@ export {
   setDraft,
   ensureDraft,
   getDraftRevision,
+  setDraftRevision,
   initDraftRevision,
   clearDraftRevision,
   validateDraftUpdateInput,

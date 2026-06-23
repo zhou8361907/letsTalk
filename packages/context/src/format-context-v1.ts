@@ -18,6 +18,7 @@ export interface ContextPointer {
   anchor_ref?: string | null;
   anchor_kind?: AgentAnchor["kind"];
   draft_revision?: number;
+  product_line?: string;
 }
 
 /** 仅 chatMode 切换时附带 */
@@ -40,6 +41,9 @@ export function formatStatePointer(pointer: ContextPointer): string {
   }
   if (pointer.draft_revision !== undefined) {
     attrs.push(`draft_revision="${pointer.draft_revision}"`);
+  }
+  if (pointer.product_line) {
+    attrs.push(`product_line="${pointer.product_line}"`);
   }
   return `<context ${attrs.join(" ")} />`;
 }

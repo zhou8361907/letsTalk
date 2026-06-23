@@ -47,6 +47,8 @@ export interface BuildTurnPromptPrefixInput {
     timestamp?: string;
     summary?: string;
   } | null;
+  /** 产品线：yibao（医保）/ shebao（社保） */
+  productLine?: string;
 }
 
 export interface BuildTurnPromptPrefixResult {
@@ -71,6 +73,7 @@ export async function buildTurnPromptPrefix(
       sessionId: input.sessionId,
       chatMode: input.chatMode,
       anchor: resolved,
+      productLine: input.productLine,
     },
     input.draftRevision,
   );

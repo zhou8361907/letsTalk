@@ -17,6 +17,8 @@ export {
 } from "./actor.js";
 export type { MenuUrlKind, ParsedMenuUrl } from "./parse-menu-url.js";
 export { EXPORT_PRIMARY_APPENDIX_DIVIDER } from "./export-constants.js";
+export type { ProductLine, ProductLineId } from "./product-line.js";
+export { PRODUCT_LINES, DEFAULT_PRODUCT_LINE } from "./product-line.js";
 export type {
   ConversationRecord,
   ConversationSummary,
@@ -175,6 +177,8 @@ export interface ChatStreamRequest {
   anchor?: AgentAnchor | null;
   /** 默认 explore */
   chatMode?: ChatMode;
+  /** 产品线：yibao（医保）/ shebao（社保） */
+  productLine?: string;
   /** QA 模式：面板选中的关注请求 */
   qaFocusedRequest?: {
     seq?: number;

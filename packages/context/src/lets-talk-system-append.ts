@@ -30,12 +30,15 @@ import {
 export async function buildLetsTalkAppendSystemPrompt(
   chatMode: ChatMode,
   workspaceRoot?: string,
+  productLine?: string,
 ): Promise<string> {
-  const layout = resolveWorkspaceLayout();
+  const layout = resolveWorkspaceLayout(productLine as any);
   const root = workspaceRoot ?? layout.workspaceRoot;
   const memoryGuidance = await resolveMemoryGuidance(root);
+  const plLabel = layout.productLine === "shebao" ? "社保" : "医保";
   const parts = [
     "# letsTalk 运行约束",
+    `当前产品线: ${plLabel}`,
     formatWorkspaceDirsHint(layout),
     memoryGuidance,
     "项目级编码与读码规则见 project_context（AGENTS.md + Tier1 USER/CORE）；与代码冲突以 workFront/workBack 为准。",
@@ -46,11 +49,12 @@ export async function buildLetsTalkAppendSystemPrompt(
     parts.push("## 写需求模式（PM）", trimPmRules(pmRules));
     const template = await readPrdTemplateOutline(root);
     parts.push("## PRD 文档模板（用户要求导出/定稿时）", template);
-    const hintFiles = await listBusinessHintFiles(root);
+    const hintsDirRel = layout.productLine === "shebao" ? ".agent/hints/shebao" : ".agent/hints/yibao";
+    const hintFiles = await listBusinessHintFiles(root, layout.productLine);
     if (hintFiles.length > 0) {
       parts.push(
         "## 业务 hints（仅供参考，用时 read）",
-        formatHintsDirectoryHint(hintFiles),
+        formatHintsDirectoryHint(hintFiles, hintsDirRel),
       );
     }
   }

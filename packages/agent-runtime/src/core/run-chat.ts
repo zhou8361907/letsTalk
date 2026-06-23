@@ -55,6 +55,7 @@ import {
   ensureDraft,
   getDraft,
   getDraftRevision,
+  setDraftRevision,
   initDraftRevision,
   setDraft,
   clearDraftRevision,
@@ -126,12 +127,23 @@ async function persistDraft(
 ): Promise<void> {
   const record = await getConversation(cwd, sessionId);
   if (!record) return;
+  // 计算当前 PRD 阶段
+  const draftRev = getDraftRevision(sessionId);
+  const currentTask = draft.readyToFinalize
+    ? "ready_to_finalize"
+    : draft.blockingQuestion
+      ? "confirming"
+      : draft.items.length > 0
+        ? "drafting"
+        : "exploring";
   await saveConversation(cwd, {
     sessionId,
     items: record.items,
     anchor: record.anchor,
     title: record.title,
     requirementDraft: draft,
+    draftRevision: draftRev,
+    currentTask,
   });
 }
 
@@ -165,7 +177,12 @@ async function getOrCreatePiHandle(
   );
 
   // 内存草稿与磁盘对齐，供 get_requirement_draft / update_requirement_draft 使用
-  initDraftRevision(sessionId, Boolean(record?.requirementDraft?.items?.length));
+  // 优先从磁盘恢复 draftRevision
+  if (record?.draftRevision != null && record.draftRevision > 0) {
+    setDraftRevision(sessionId, record.draftRevision);
+  } else {
+    initDraftRevision(sessionId, Boolean(record?.requirementDraft?.items?.length));
+  }
   if (record?.requirementDraft) {
     setDraft(sessionId, record.requirementDraft);
   } else {
@@ -271,6 +288,8 @@ export interface RunChatOptions {
   onEvent: (event: SseEvent) => void;
   /** QA 模式：面板选中的关注请求 */
   qaFocusedRequest?: ChatStreamRequest["qaFocusedRequest"];
+  /** 产品线：yibao（医保）/ shebao（社保），默认从 env 读取 */
+  productLine?: string;
 }
 
 /**
@@ -284,7 +303,8 @@ export interface RunChatOptions {
  *   5. 收尾：turn_end、调试日志、bindPiSessionFile
  */
 export async function runChat(options: RunChatOptions): Promise<void> {
-  const layout = getWorkspaceLayout();
+  const productLine = options.productLine || process.env.PRODUCT_LINE?.trim() || "yibao";
+  const layout = resolveWorkspaceLayout(productLine as any);
   const cwd = layout.workspaceRoot;
   const useTools = options.useTools ?? true;
   const chatMode = options.chatMode ?? "explore";
@@ -486,6 +506,7 @@ export async function runChat(options: RunChatOptions): Promise<void> {
       sessionCreatedAtMs: handle.sessionCreatedAtMs,
       actorId: options.actorId,
       qaFocusedRequest: options.qaFocusedRequest ?? null,
+	      productLine,
     });
     const prefix = turnCtx.prefix;
     logStep({

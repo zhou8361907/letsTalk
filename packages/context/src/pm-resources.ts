@@ -2,7 +2,11 @@ import { access, readdir, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 export const PRD_TEMPLATE_REL = ".agent/templates/prd-template.md";
-export const HINTS_DIR_REL = ".agent/hints";
+/** hints 目录，按产品线分开 */
+export function resolveHintsDir(productLine?: string): string {
+  if (productLine === "shebao") return ".agent/hints/shebao";
+  return ".agent/hints/yibao";
+}
 
 const PRD_TEMPLATE_MAX = 3500;
 export const PM_RULES_MAX = 2800;
@@ -24,8 +28,9 @@ export async function readPrdTemplateOutline(
 /** 列出 hints 下的 md 文件名（不含 README），供 Agent 自行 read */
 export async function listBusinessHintFiles(
   workspaceRoot: string,
+  productLine?: string,
 ): Promise<string[]> {
-  const dir = join(resolve(workspaceRoot), HINTS_DIR_REL);
+  const dir = join(resolve(workspaceRoot), resolveHintsDir(productLine));
   try {
     const names = await readdir(dir);
     return names
@@ -36,14 +41,18 @@ export async function listBusinessHintFiles(
   }
 }
 
-export function formatHintsDirectoryHint(files: string[]): string {
+export function formatHintsDirectoryHint(
+  files: string[],
+  hintsDirRel?: string,
+): string {
+  const dir = hintsDirRel || ".agent/hints/yibao";
   if (files.length === 0) {
-    return `${HINTS_DIR_REL}/ 暂无业务提示文件；可请管理员添加。`;
+    return `${dir}/ 暂无业务提示文件；可请管理员添加。`;
   }
   return [
-    `业务提示位于 ${HINTS_DIR_REL}/（仅供参考，须与代码核对）。`,
+    `业务提示位于 ${dir}/（仅供参考，须与代码核对）。`,
     "可用 read 打开：",
-    ...files.map((f) => `- ${HINTS_DIR_REL}/${f}`),
+    ...files.map((f) => `- ${dir}/${f}`),
   ].join("\n");
 }
 

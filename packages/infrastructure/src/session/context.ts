@@ -12,6 +12,7 @@ export interface ContextPointer {
   anchor_ref?: string | null;
   anchor_kind?: AgentAnchor["kind"];
   draft_revision?: number;
+  product_line?: string;
 }
 
 export interface ContextChange {
@@ -46,6 +47,7 @@ export interface SyncSessionPointerInput {
   sessionId: string;
   chatMode: ChatMode;
   anchor: AgentAnchor | null;
+  productLine?: string;
 }
 
 export interface SyncSessionPointerResult {
@@ -85,6 +87,7 @@ export function syncSessionPointer(
     anchor_ref: anchorRef,
     anchor_kind: anchorKind,
     draft_revision: draftRevision,
+    product_line: input.productLine,
   };
 
   return { pointer, contextChange };

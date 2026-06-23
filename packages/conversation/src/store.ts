@@ -232,8 +232,10 @@ export async function saveConversation(
     anchor?: AgentAnchor | null;
     title?: string;
     piSessionFile?: string | null;
-    chatMode?: "explore" | "prd";
+    chatMode?: "explore" | "prd" | "qa";
     requirementDraft?: RequirementDraftState | null;
+    draftRevision?: number;
+    currentTask?: string;
   },
 ): Promise<ConversationRecord> {
   await ensureDir(workspaceRoot);
@@ -266,6 +268,14 @@ export async function saveConversation(
       input.requirementDraft != null
         ? input.requirementDraft
         : (existing?.requirementDraft ?? null),
+    draftRevision:
+      input.draftRevision !== undefined
+        ? input.draftRevision
+        : (existing?.draftRevision ?? 0),
+    currentTask:
+      input.currentTask !== undefined
+        ? input.currentTask
+        : (existing?.currentTask ?? undefined),
     devAppendixExport: existing?.devAppendixExport ?? null,
     ownerActorId: existing?.ownerActorId,
     ownerDisplayName: existing?.ownerDisplayName,

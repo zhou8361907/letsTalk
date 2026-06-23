@@ -43,8 +43,8 @@ export {
   formatHintsDirectoryHint,
   listBusinessHintFiles,
   readPrdTemplateOutline,
+  resolveHintsDir,
   PRD_TEMPLATE_REL,
-  HINTS_DIR_REL,
 } from "./pm-resources.js";
 export { buildLetsTalkAppendSystemPrompt } from "./lets-talk-system-append.js";
 export {

@@ -36,7 +36,9 @@ function rowFromDb(r: Record<string, unknown>): SysMenuRow {
 
 /** 默认菜单表名：优先从 env 读取，兜底 sys_menu */
 function defaultMenuTable(): string {
-  return process.env.YIBAO_MENU_TABLE?.trim() || "sys_menu";
+  const val = process.env.YIBAO_MENU_TABLE?.trim();
+  console.log("[menu-db] YIBAO_MENU_TABLE =", JSON.stringify(val));
+  return val || "sys_menu";
 }
 
 export async function fetchSysMenuRows(

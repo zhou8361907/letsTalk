@@ -1049,7 +1049,19 @@ export default function HomePage() {
             });
             setDebugTick((t) => t + 1);
           } else if (event.type === "turn_end") {
-            // 草稿以 requirement_state SSE 为准；不在此 GET，避免竞态覆盖
+            const te = event as any;
+            const cost = te.sessionCostUsd ?? te.costUsd;
+            if (cost != null) {
+              const label = ` 💰 $${typeof cost === "number" ? cost.toFixed(4) : cost}`;
+              for (let j = snapshot.length - 1; j >= 0; j--) {
+                const row = snapshot[j];
+                if (row?.kind === "assistant" && !row.text.includes("💰")) {
+                  snapshot[j] = { kind: "assistant", text: row.text + label };
+                  break;
+                }
+              }
+              setItems([...snapshot]);
+            }
           } else if (event.type === "error") {
             throw new Error(event.message);
           }

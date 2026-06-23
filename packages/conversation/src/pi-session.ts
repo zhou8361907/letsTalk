@@ -1,5 +1,5 @@
 import { mkdir } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { join, resolve, normalize } from "node:path";
 
 /**
  * Pi Agent 上下文落盘目录（相对 WORKSPACE_ROOT）。
@@ -21,7 +21,8 @@ export function relativePiSessionFile(sessionId: string): string {
 }
 
 export function piSessionsDir(workspaceRoot: string): string {
-  return join(resolve(workspaceRoot), PI_SESSIONS_SUBDIR);
+  const root = normalize(resolve(workspaceRoot));
+  return join(root, PI_SESSIONS_SUBDIR);
 }
 
 /** 绝对路径：该 letsTalk 会话对应的 Pi jsonl */
@@ -35,7 +36,7 @@ export function resolvePiSessionFile(
   sessionId: string,
   stored?: string | null,
 ): string {
-  const root = resolve(workspaceRoot);
+  const root = normalize(resolve(workspaceRoot));
   if (stored?.trim()) {
     const p = stored.trim();
     return p.startsWith("/") ? p : join(root, p);

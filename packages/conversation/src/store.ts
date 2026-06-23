@@ -1,6 +1,6 @@
 import { mkdir, readdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
-import { join, resolve } from "node:path";
+import { join, normalize, resolve } from "node:path";
 import type {
   ConversationRecord,
   ConversationSummary,
@@ -29,7 +29,7 @@ const TITLE_MAX = 40;
 const DEFAULT_TITLE = "新对话";
 
 export function conversationsDir(workspaceRoot: string): string {
-  return join(resolve(workspaceRoot), CONVERSATIONS_DIR);
+  return join(normalize(resolve(workspaceRoot)), CONVERSATIONS_DIR);
 }
 
 function conversationPath(workspaceRoot: string, sessionId: string): string {

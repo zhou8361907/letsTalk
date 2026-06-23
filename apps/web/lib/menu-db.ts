@@ -63,6 +63,7 @@ export async function fetchSysMenuRows(
       : `SELECT MENU_ID, MENU_NAME, PARENT_ID, LEVEL_NUM, IS_LEAF, ENABLED, url,
                 DISP_ORDER, USER_SYS_ID
          FROM \`${table}\` WHERE ENABLED = 1`;
+    console.log(`[menu-db] SQL: ${sql.replace(/\s+/g, " ").trim()}`, userSysId ? `[${userSysId}]` : "[all]");
     const [rows] = await conn.execute(sql, userSysId ? [userSysId] : []);
     return (rows as Record<string, unknown>[]).map(rowFromDb);
   } finally {
@@ -104,11 +105,11 @@ export async function listMenuUserSysIds(
   });
   try {
     const table = tableName.replace(/[^a-z0-9_]/gi, "");
-    const [rows] = await conn.execute(
-      `SELECT DISTINCT USER_SYS_ID FROM \`${table}\`
+    const sql = `SELECT DISTINCT USER_SYS_ID FROM \`${table}\`
        WHERE ENABLED = 1 AND PARENT_ID = USER_SYS_ID
-       ORDER BY USER_SYS_ID`,
-    );
+       ORDER BY USER_SYS_ID`;
+    console.log(`[menu-db] SQL: ${sql.replace(/\s+/g, " ").trim()}`);
+    const [rows] = await conn.execute(sql);
     return (rows as { USER_SYS_ID: string }[]).map((r) => String(r.USER_SYS_ID));
   } finally {
     await conn.end();

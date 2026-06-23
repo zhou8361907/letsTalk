@@ -5,6 +5,7 @@ import type { SessionTraceTurn } from "../../lib/admin-aggregation";
 interface Props {
   sessionId: string;
   turns: SessionTraceTurn[];
+  onDebugTurn?: (sessionId: string, turnIndex: number) => void;
 }
 
 function formatCost(v: number): string {
@@ -30,7 +31,7 @@ function modelShort(model: string): string {
   return model.split("/").pop() || model;
 }
 
-export function TurnDetailTable({ sessionId, turns }: Props) {
+export function TurnDetailTable({ sessionId, turns, onDebugTurn }: Props) {
   if (turns.length === 0) {
     return (
       <div className="empty">
@@ -79,11 +80,7 @@ export function TurnDetailTable({ sessionId, turns }: Props) {
                   type="button"
                   className="debug-btn"
                   title="查看本轮 LLM 详细请求与响应"
-                  onClick={() => {
-                    sessionStorage.setItem("letsTalk.debugSession", sessionId);
-                    sessionStorage.setItem("letsTalk.debugTurnIdx", String(t.turnIndex));
-                    window.location.href = "/";
-                  }}
+                  onClick={() => onDebugTurn?.(sessionId, t.turnIndex)}
                 >
                   🔍
                 </button>

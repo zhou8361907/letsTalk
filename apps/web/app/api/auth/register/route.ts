@@ -21,8 +21,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "用户名和密码不能为空" }, { status: 400 });
     }
 
-    if (username.length < 2 || password.length < 2) {
-      return NextResponse.json({ error: "用户名和密码至少 2 个字符" }, { status: 400 });
+    if (username.length < 2) {
+      return NextResponse.json({ error: "用户名至少 2 个字符" }, { status: 400 });
     }
 
     const user = registerUser(workspaceRoot, username, password, displayName);

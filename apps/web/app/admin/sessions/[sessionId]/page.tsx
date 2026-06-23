@@ -48,7 +48,7 @@ export default function AdminSessionDetailPage() {
       .then(async (res) => {
         if (!res.ok) {
           if (res.status === 401) {
-            window.location.href = "/";
+            window.location.href = "/login";
             return;
           }
           if (res.status === 404) throw new Error("会话不存在");

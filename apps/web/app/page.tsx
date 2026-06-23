@@ -25,7 +25,6 @@ import {
   buildAssistantTurnIds,
   mergeTurnDebugSnapshots,
 } from "../lib/turn-debug-client";
-import { ActorPickerModal } from "../components/ActorPickerModal";
 import { MenuAnchorPicker } from "../components/MenuAnchorPicker";
 import { ProductLinePicker } from "../components/ProductLinePicker";
 import { MemoryEditorModal } from "../components/MemoryEditorModal";
@@ -139,7 +138,7 @@ export default function HomePage() {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [booting, setBooting] = useState(true);
   const [currentActor, setCurrentActor] = useState<Actor | null>(null);
-  const [actorPickerOpen, setActorPickerOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ id: string; display_name: string; role: string } | null>(null);
 
   const [anchor, setAnchor] = useState<AgentAnchor | null>(null);
   const [anchorList, setAnchorList] = useState<AgentAnchor[]>([]);
@@ -661,17 +660,6 @@ export default function HomePage() {
     window.alert("未找到含附录文档，请稍候或重新生成。");
   }, []);
 
-  const handleActorSelect = useCallback(
-    (actor: Actor) => {
-      setActorPickerOpen(false);
-      if (currentActor?.id === actor.id) return;
-      persistActorChoice(actor);
-      setCurrentActor(actor);
-      resetActiveSessionLocal();
-    },
-    [resetActiveSessionLocal, currentActor?.id],
-  );
-
   useEffect(() => {
     // 初始化主题
     const theme = sessionStorage.getItem("letsTalk.theme");
@@ -681,11 +669,12 @@ export default function HomePage() {
     // 检查登录状态
     fetch("/api/auth/me")
       .then((r) => r.json())
-      .then((d: { user?: { id: string; username: string; display_name: string } | null }) => {
+      .then((d: { user?: { id: string; username: string; display_name: string; role: string } | null }) => {
         if (!d.user) {
           window.location.href = "/login";
           return;
         }
+        setCurrentUser(d.user);
         // 用登录用户设置当前 Actor
         const actor: Actor = {
           id: d.user.id,
@@ -1124,32 +1113,14 @@ export default function HomePage() {
 
   if (booting || !currentActor) {
     return (
-      <>
-        <ActorPickerModal
-          open={!currentActor || actorPickerOpen}
-          mode={currentActor ? "switch" : "welcome"}
-          currentActorId={currentActor?.id}
-          onClose={() => setActorPickerOpen(false)}
-          onSelect={handleActorSelect}
-        />
-        {!currentActor ? null : (
-          <main className="layout boot">
-            <p className="muted">加载会话…</p>
-          </main>
-        )}
-      </>
+      <main className="layout boot">
+        <p className="muted">加载会话…</p>
+      </main>
     );
   }
 
   return (
     <>
-    <ActorPickerModal
-      open={actorPickerOpen}
-      mode="switch"
-      currentActorId={currentActor.id}
-      onClose={() => setActorPickerOpen(false)}
-      onSelect={handleActorSelect}
-    />
     <main className="layout">
       <aside className={`conv-sidebar${sidebarCollapsed ? " collapsed" : ""}`}>
         <div className="sidebar-header">
@@ -1358,21 +1329,20 @@ export default function HomePage() {
             </span>
           </div>
           <div className="header-actions">
-            <button
-              type="button"
-              className="actor-btn"
-              onClick={() => setActorPickerOpen(true)}
-              disabled={busy}
-              title="切换身份（部门内会话隔离）"
-            >
-              <span className="actor-btn-icon" aria-hidden>
-                ◉
-              </span>
-              <span className="actor-btn-name">{currentActor.displayName}</span>
-              <span className="actor-btn-caret" aria-hidden>
-                ▾
-              </span>
-            </button>
+            <span className="user-badge" title={currentActor.displayName}>
+              {currentUser?.display_name || currentActor.displayName}
+            </span>
+            <span className="user-role">{currentUser?.role === "admin" ? "管理员" : ""}</span>
+            {currentUser?.role === "admin" && (
+              <button
+                type="button"
+                className="export-btn"
+                onClick={() => { window.location.href = "/admin"; }}
+                title="管理后台"
+              >
+                📊
+              </button>
+            )}
             <button
               type="button"
               className="export-btn"
@@ -1400,11 +1370,14 @@ export default function HomePage() {
             </button>
             <button
               type="button"
-              className="export-btn"
-              onClick={() => { window.location.href = "/admin"; }}
-              title="管理后台"
+              className="logout-btn"
+              onClick={async () => {
+                await fetch("/api/auth/logout", { method: "POST" });
+                window.location.href = "/login";
+              }}
+              title="登出"
             >
-              📊
+              登出
             </button>
             <span
               className={`context-usage${
@@ -1994,42 +1967,27 @@ export default function HomePage() {
         .export-btn:hover:not(:disabled) {
           border-color: var(--accent);
         }
-        .actor-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.35rem;
-          font-size: 11px;
-          padding: 0.25rem 0.5rem 0.25rem 0.4rem;
-          border: 1px solid var(--border);
-          border-radius: 999px;
-          background: var(--panel);
+        .user-badge {
+          font-size: 12px;
+          font-weight: 600;
           color: var(--text);
-          cursor: pointer;
-          max-width: 9rem;
+          white-space: nowrap;
         }
-        .actor-btn:hover:not(:disabled) {
-          border-color: var(--accent);
-          background: rgba(88, 166, 255, 0.08);
-        }
-        .actor-btn:disabled {
-          opacity: 0.55;
-          cursor: not-allowed;
-        }
-        .actor-btn-icon {
+        .user-role {
           font-size: 10px;
           color: var(--accent);
-          line-height: 1;
+          margin-right: 0.3rem;
         }
-        .actor-btn-name {
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          min-width: 0;
-        }
-        .actor-btn-caret {
-          font-size: 9px;
+        .logout-btn {
+          border: none;
+          background: transparent;
           color: var(--muted);
-          line-height: 1;
+          font-size: 12px;
+          cursor: pointer;
+          padding: 0.2rem 0.35rem;
+        }
+        .logout-btn:hover {
+          color: #f85149;
         }
         .header h1 {
           font-size: 1rem;

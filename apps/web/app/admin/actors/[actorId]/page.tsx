@@ -28,7 +28,7 @@ export default function AdminActorDetailPage() {
       .then(async (res) => {
         if (!res.ok) {
           if (res.status === 401) {
-            window.location.href = "/";
+            window.location.href = "/login";
             return;
           }
           throw new Error(`请求失败: ${res.status}`);

@@ -1192,6 +1192,11 @@ export default function HomePage() {
                           title={c.title}
                         >
                           {c.title}
+                          {c.totalCostUsd != null && (
+                            <span className="conv-cost">
+                              ${(c.totalCostUsd as number).toFixed(4)}
+                            </span>
+                          )}
                         </button>
                         <div className="conv-actions">
                           <button
@@ -1703,6 +1708,13 @@ export default function HomePage() {
         }
         .conv-row:hover .conv-actions {
           opacity: 1;
+        }
+        .conv-cost {
+          font-size: 9px;
+          color: var(--muted);
+          margin-left: auto;
+          flex-shrink: 0;
+          padding-left: 0.3rem;
         }
         .conv-item {
           flex: 1;

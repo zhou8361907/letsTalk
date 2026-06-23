@@ -236,6 +236,7 @@ export async function saveConversation(
     requirementDraft?: RequirementDraftState | null;
     draftRevision?: number;
     currentTask?: string;
+    totalCostUsd?: number;
   },
 ): Promise<ConversationRecord> {
   await ensureDir(workspaceRoot);
@@ -268,6 +269,10 @@ export async function saveConversation(
       input.requirementDraft != null
         ? input.requirementDraft
         : (existing?.requirementDraft ?? null),
+    totalCostUsd:
+      input.totalCostUsd !== undefined
+        ? input.totalCostUsd
+        : (existing?.totalCostUsd ?? undefined),
     draftRevision:
       input.draftRevision !== undefined
         ? input.draftRevision

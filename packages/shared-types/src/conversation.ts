@@ -54,6 +54,8 @@ export interface ConversationSummary {
   /** 归属 Actor；缺省视为匿名用户（迁移前会话） */
   ownerActorId?: string;
   ownerDisplayName?: string;
+  /** 累计对话花费（USD） */
+  totalCostUsd?: number;
 }
 
 /**

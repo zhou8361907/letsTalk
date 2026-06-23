@@ -609,16 +609,32 @@ export async function runChat(options: RunChatOptions): Promise<void> {
       options.onEvent({ type: "turn_debug", snapshot });
     }
 
+    const sessionCostUsd = tokenStatsAfter.costUsd > 0
+      ? tokenStatsAfter.costUsd
+      : (estimateCostUsd(modelLabel, {
+          input: tokenStatsAfter.input,
+          output: tokenStatsAfter.output,
+        }) ?? undefined);
+
     options.onEvent({
       type: "turn_end",
       costUsd: costUsd ?? undefined,
-      sessionCostUsd: tokenStatsAfter.costUsd > 0
-        ? tokenStatsAfter.costUsd
-        : (estimateCostUsd(modelLabel, {
-            input: tokenStatsAfter.input,
-            output: tokenStatsAfter.output,
-          }) ?? undefined),
+      sessionCostUsd,
     });
+
+    // 持久化累计花费到 conversation JSON
+    if (sessionCostUsd != null) {
+      const conv = await getConversation(cwd, options.sessionId).catch(() => null);
+      if (conv) {
+        await saveConversation(cwd, {
+          sessionId: options.sessionId,
+          items: conv.items,
+          anchor: conv.anchor,
+          title: conv.title,
+          totalCostUsd: sessionCostUsd,
+        });
+      }
+    }
 
     maybeSpawnSelfImprovementReview({
       sessionId: options.sessionId,

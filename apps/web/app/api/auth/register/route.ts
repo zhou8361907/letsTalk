@@ -26,6 +26,34 @@ export async function POST(req: NextRequest) {
     }
 
     const user = await registerUser(workspaceRoot, username, password, displayName);
+
+    // 同步写 Actor 注册表，确保会话 API 能识别该用户
+    try {
+      const { ensureActorRegistry } = await import(
+        /* webpackIgnore: true */
+        "@lets-talk/conversation"
+      );
+      const registry = await ensureActorRegistry(workspaceRoot);
+      const exists = registry.actors.some((a: { id: string }) => a.id === user.id);
+      if (!exists) {
+        registry.actors.push({
+          id: user.id,
+          displayName: user.display_name,
+          kind: "named",
+          createdAt: new Date().toISOString(),
+        });
+        const { writeFileSync } = await import("node:fs");
+        const { join } = await import("node:path");
+        writeFileSync(
+          join(workspaceRoot, ".agent", "actors", "registry.json"),
+          JSON.stringify(registry, null, 2),
+          "utf8",
+        );
+      }
+    } catch {
+      // Actor 注册失败不影响用户创建
+    }
+
     return NextResponse.json({ user });
   } catch (e) {
     const message = e instanceof Error ? e.message : "注册失败";

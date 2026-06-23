@@ -22,6 +22,33 @@ export async function POST(req: NextRequest) {
 
     const { user, token } = await loginUser(workspaceRoot, username, password);
 
+    // 确保 Actor 注册表中有该用户
+    try {
+      const { ensureActorRegistry } = await import(
+        /* webpackIgnore: true */
+        "@lets-talk/conversation"
+      );
+      const registry = await ensureActorRegistry(workspaceRoot);
+      const exists = registry.actors.some((a: { id: string }) => a.id === user.id);
+      if (!exists) {
+        registry.actors.push({
+          id: user.id,
+          displayName: user.display_name,
+          kind: "named",
+          createdAt: new Date().toISOString(),
+        });
+        const { writeFileSync } = await import("node:fs");
+        const { join } = await import("node:path");
+        writeFileSync(
+          join(workspaceRoot, ".agent", "actors", "registry.json"),
+          JSON.stringify(registry, null, 2),
+          "utf8",
+        );
+      }
+    } catch {
+      // 不影响登录
+    }
+
     const response = NextResponse.json({ user });
     response.cookies.set("auth_token", token, {
       httpOnly: true,

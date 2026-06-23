@@ -1204,7 +1204,13 @@ export default function HomePage() {
                           title={c.title}
                         >
                           {c.title}
-                          {c.totalCostUsd != null && (
+                          {c.totalCostUsd != null ? (
+                            <span className="conv-cost">
+                              ${(c.totalCostUsd as number).toFixed(4)}
+                            </span>
+                          ) : (
+                            <span className="conv-cost">$0.0000</span>
+                          )}
                             <span className="conv-cost">
                               ${(c.totalCostUsd as number).toFixed(4)}
                             </span>

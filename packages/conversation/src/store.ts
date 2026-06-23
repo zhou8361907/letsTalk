@@ -85,6 +85,7 @@ async function listConversationsFromJson(
         createdAt: rec.createdAt,
         updatedAt: rec.updatedAt,
         ownerActorId: rec.ownerActorId,
+        totalCostUsd: rec.totalCostUsd,
         ownerDisplayName: rec.ownerDisplayName,
       });
     } catch {

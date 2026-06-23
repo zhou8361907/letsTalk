@@ -16,9 +16,11 @@ export async function GET(req: Request) {
   // 按产品线查找对应的配置（env 覆盖优先）
   const pl = PRODUCT_LINES[productLineParam] ?? PRODUCT_LINES[DEFAULT_PRODUCT_LINE];
   const userSysId = userSysIdParam || pl.userSysId;
+  const envVal = process.env.YIBAO_MENU_TABLE?.trim();
+  console.log("[menu-env] YIBAO_MENU_TABLE env =", JSON.stringify(envVal), "| pl.menuTable =", pl.menuTable);
   const menuTable = productLineParam === "shebao"
     ? (process.env.SHEBAO_MENU_TABLE?.trim() || pl.menuTable)
-    : (process.env.YIBAO_MENU_TABLE?.trim() || pl.menuTable);
+    : (envVal || pl.menuTable);
 
   try {
     const rows = merged

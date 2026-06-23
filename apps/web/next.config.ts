@@ -4,6 +4,8 @@ import type { NextConfig } from "next";
 
 loadEnv({ path: resolve(process.cwd(), "../../.env.local") });
 loadEnv({ path: resolve(process.cwd(), "../../.env") });
+console.log("[next-config] CWD:", process.cwd());
+console.log("[next-config] .env path:", resolve(process.cwd(), "../../.env"));
 
 /** Pi 与 agent-runtime 必须整包由 Node 加载，不能被 Webpack 拆进 route 包 */
 const NODE_ONLY_PACKAGES = [

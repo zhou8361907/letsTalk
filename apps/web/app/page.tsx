@@ -678,25 +678,30 @@ export default function HomePage() {
     if (theme === "light") document.documentElement.classList.add("light");
     setIsLight(theme === "light");
 
-    setAnchor(loadStoredAnchor());
-    anchorRef.current = loadStoredAnchor();
-    const storedMode = loadStoredChatMode();
-    setChatMode(storedMode);
-    chatModeRef.current = storedMode;
-
-    const storedId = loadStoredActorId();
-    const storedName = loadStoredActorName();
-    if (storedId) {
-      setCurrentActor({
-        id: storedId,
-        displayName:
-          storedName ?? (storedId === ANONYMOUS_ACTOR_ID ? "匿名" : storedId),
-        kind: storedId === ANONYMOUS_ACTOR_ID ? "anonymous" : "named",
-        createdAt: "",
-      });
-    } else {
-      setActorPickerOpen(true);
-    }
+    // 检查登录状态
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d: { user?: { id: string; username: string; display_name: string } | null }) => {
+        if (!d.user) {
+          window.location.href = "/login";
+          return;
+        }
+        // 用登录用户设置当前 Actor
+        const actor: Actor = {
+          id: d.user.id,
+          displayName: d.user.display_name || d.user.username,
+          kind: "named",
+          createdAt: "",
+        };
+        persistActorChoice(actor);
+        setCurrentActor(actor);
+        setAnchor(loadStoredAnchor());
+        anchorRef.current = loadStoredAnchor();
+        const storedMode = loadStoredChatMode();
+        setChatMode(storedMode);
+        chatModeRef.current = storedMode;
+      })
+      .catch(() => { window.location.href = "/login"; });
   }, []);
 
   useEffect(() => {

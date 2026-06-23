@@ -34,10 +34,16 @@ function rowFromDb(r: Record<string, unknown>): SysMenuRow {
   };
 }
 
+/** 默认菜单表名：优先从 env 读取，兜底 sys_menu */
+function defaultMenuTable(): string {
+  return process.env.YIBAO_MENU_TABLE?.trim() || "sys_menu";
+}
+
 export async function fetchSysMenuRows(
   userSysId?: string,
-  tableName: string = "sys_menu",
+  tableName?: string,
 ): Promise<SysMenuRow[]> {
+  const tbl = tableName || defaultMenuTable();
   const cfg = readMenuDbConfig();
   if (!cfg) {
     return loadMenuRowsFromCache(userSysId);
@@ -55,7 +61,7 @@ export async function fetchSysMenuRows(
 
   try {
     // 表名用参数替换（安全：来自配置而非用户输入）
-    const table = tableName.replace(/[^a-z0-9_]/gi, "");
+    const table = tbl.replace(/[^a-z0-9_]/gi, "");
     const sql = userSysId
       ? `SELECT MENU_ID, MENU_NAME, PARENT_ID, LEVEL_NUM, IS_LEAF, ENABLED, url,
                 DISP_ORDER, USER_SYS_ID
@@ -88,7 +94,7 @@ export async function loadMenuRowsFromCache(userSysId?: string): Promise<SysMenu
 }
 
 export async function listMenuUserSysIds(
-  tableName: string = "sys_menu",
+  tbl: string = "sys_menu",
 ): Promise<string[]> {
   const cfg = readMenuDbConfig();
   if (!cfg) {
@@ -104,7 +110,7 @@ export async function listMenuUserSysIds(
     database: cfg.database,
   });
   try {
-    const table = tableName.replace(/[^a-z0-9_]/gi, "");
+    const table = tbl.replace(/[^a-z0-9_]/gi, "");
     const sql = `SELECT DISTINCT USER_SYS_ID FROM \`${table}\`
        WHERE ENABLED = 1 AND PARENT_ID = USER_SYS_ID
        ORDER BY USER_SYS_ID`;

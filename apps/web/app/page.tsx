@@ -1209,8 +1209,8 @@ export default function HomePage() {
                               ${(c.totalCostUsd as number).toFixed(4)}
                             </span>
                           ) : (
-                              ${(c.totalCostUsd as number).toFixed(4)}
-                            </span>
+                          ) : (
+                            <span className="conv-cost">$0.0000</span>
                           )}
                         </button>
                         <div className="conv-actions">

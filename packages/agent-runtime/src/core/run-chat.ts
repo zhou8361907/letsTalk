@@ -609,7 +609,16 @@ export async function runChat(options: RunChatOptions): Promise<void> {
       options.onEvent({ type: "turn_debug", snapshot });
     }
 
-    options.onEvent({ type: "turn_end" });
+    options.onEvent({
+      type: "turn_end",
+      costUsd: costUsd ?? undefined,
+      sessionCostUsd: tokenStatsAfter.costUsd > 0
+        ? tokenStatsAfter.costUsd
+        : (estimateCostUsd(modelLabel, {
+            input: tokenStatsAfter.input,
+            output: tokenStatsAfter.output,
+          }) ?? undefined),
+    });
 
     maybeSpawnSelfImprovementReview({
       sessionId: options.sessionId,

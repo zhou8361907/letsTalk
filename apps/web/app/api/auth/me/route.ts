@@ -15,6 +15,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ user: null });
   }
 
-  const user = validateSession(workspaceRoot, token);
+  const user = await validateSession(workspaceRoot, token);
   return NextResponse.json({ user });
 }

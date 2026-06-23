@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   }
 
   const token = req.cookies.get("auth_token")?.value;
-  const user = token ? validateSession(workspaceRoot, token) : null;
+  const user = token ? await validateSession(workspaceRoot, token) : null;
   if (!user || user.role !== "admin") {
     return NextResponse.json({ error: "需要管理员权限" }, { status: 401 });
   }

@@ -36,9 +36,6 @@ legacy/test-project/
 # 运行时数据（日志 / 角色注册，勿提交）
 .agent/logs/
 .agent/actors/
-.agent/auth.db
-.agent/auth.db-shm
-.agent/auth.db-wal
 .serena/
 
 # QA 录制运行时数据

@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "用户名和密码不能为空" }, { status: 400 });
     }
 
-    const { user, token } = loginUser(workspaceRoot, username, password);
+    const { user, token } = await loginUser(workspaceRoot, username, password);
 
     const response = NextResponse.json({ user });
     response.cookies.set("auth_token", token, {

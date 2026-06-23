@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
 
   const token = req.cookies.get("auth_token")?.value;
   if (token) {
-    logoutUser(workspaceRoot, token);
+    await logoutUser(workspaceRoot, token);
   }
 
   const response = NextResponse.json({ ok: true });

@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "用户名至少 2 个字符" }, { status: 400 });
     }
 
-    const user = registerUser(workspaceRoot, username, password, displayName);
+    const user = await registerUser(workspaceRoot, username, password, displayName);
     return NextResponse.json({ user });
   } catch (e) {
     const message = e instanceof Error ? e.message : "注册失败";

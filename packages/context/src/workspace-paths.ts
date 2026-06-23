@@ -1,4 +1,4 @@
-import { relative, resolve } from "node:path";
+import { isAbsolute, relative, resolve } from "node:path";
 
 /** letsTalk 运行根目录 + 前后端子目录布局 */
 export interface WorkspaceLayout {
@@ -46,12 +46,12 @@ export function resolveWorkspaceLayout(
     : process.env.BACKEND_ROOT?.trim()) || pl.backendRoot;
 
   const frontendRoot = resolve(
-    frontendEnv.startsWith("/") ? frontendEnv : workspaceRoot,
-    frontendEnv.startsWith("/") ? "." : frontendEnv,
+    isAbsolute(frontendEnv) ? frontendEnv : workspaceRoot,
+    isAbsolute(frontendEnv) ? "." : frontendEnv,
   );
   const backendRoot = resolve(
-    backendEnv.startsWith("/") ? backendEnv : workspaceRoot,
-    backendEnv.startsWith("/") ? "." : backendEnv,
+    isAbsolute(backendEnv) ? backendEnv : workspaceRoot,
+    isAbsolute(backendEnv) ? "." : backendEnv,
   );
 
   const frontendRel = toPosixRelative(workspaceRoot, frontendRoot);

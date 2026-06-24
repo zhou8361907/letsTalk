@@ -85,7 +85,10 @@ import {
 } from "../agent-logger.js";
 import { hashText, truncateForProdLog } from "../log-redact.js";
 import type { AgentStepLogFields, RequestLogContext } from "../log-steps.js";
-import { estimateCostUsd } from "@lets-talk/infrastructure/pricing";
+import {
+  estimateCostUsd,
+  DEEPSEEK_USD_TO_CNY,
+} from "@lets-talk/infrastructure/pricing";
 import {
   diffSessionCostUsd,
   diffSessionTokens,
@@ -105,6 +108,11 @@ const liveAnchorRefs = new Map<string, string | null>();
 const liveAnchors = new Map<string, AgentAnchor | null>();
 
 // ─── 小工具函数 ─────────────────────────────────────────────────────────────
+
+/** Pi SDK 返回的 cost 单位为 USD，转换为人民币。仅对 DeepSeek 模型精确映射官方价。 */
+function toCny(usd: number): number {
+  return usd * DEEPSEEK_USD_TO_CNY;
+}
 
 function anchorRefFrom(anchor: AgentAnchor | null | undefined): string | null {
   return anchor?.ref?.trim() || null;
@@ -551,8 +559,15 @@ export async function runChat(options: RunChatOptions): Promise<void> {
     const tokenStatsAfter = snapshotSessionTokens(session);
     const turnUsage = diffSessionTokens(tokenStatsAfter, tokenStatsBefore);
     const turnCostPi = diffSessionCostUsd(tokenStatsAfter, tokenStatsBefore);
-    const costUsd =
-      turnCostPi > 0 ? turnCostPi : estimateCostUsd(modelLabel, turnUsage);
+    const turnCostCny =
+      turnCostPi > 0 ? toCny(turnCostPi) : estimateCostUsd(modelLabel, turnUsage);
+    const sessionCostCny =
+      tokenStatsAfter.costUsd > 0
+        ? toCny(tokenStatsAfter.costUsd)
+        : (estimateCostUsd(modelLabel, {
+            input: tokenStatsAfter.input,
+            output: tokenStatsAfter.output,
+          }) ?? undefined);
     logStep({
       step: "llm.call",
       stepId: "llm-1",
@@ -561,15 +576,9 @@ export async function runChat(options: RunChatOptions): Promise<void> {
       model: modelLabel,
       chatMode,
       tokenUsage: turnUsage,
-      costUsd: costUsd ?? null,
+      costUsd: turnCostCny ?? null,
       sessionTokenTotal: tokenStatsAfter.total,
-      sessionCostUsd:
-        tokenStatsAfter.costUsd > 0
-          ? tokenStatsAfter.costUsd
-          : (estimateCostUsd(modelLabel, {
-              input: tokenStatsAfter.input,
-              output: tokenStatsAfter.output,
-            }) ?? undefined),
+      sessionCostUsd: sessionCostCny,
       ...userMsgMeta,
     });
 
@@ -609,21 +618,14 @@ export async function runChat(options: RunChatOptions): Promise<void> {
       options.onEvent({ type: "turn_debug", snapshot });
     }
 
-    const sessionCostUsd = tokenStatsAfter.costUsd > 0
-      ? tokenStatsAfter.costUsd
-      : (estimateCostUsd(modelLabel, {
-          input: tokenStatsAfter.input,
-          output: tokenStatsAfter.output,
-        }) ?? undefined);
-
     options.onEvent({
       type: "turn_end",
-      costUsd: costUsd ?? undefined,
-      sessionCostUsd,
+      costUsd: turnCostCny ?? undefined,
+      sessionCostUsd: sessionCostCny,
     });
 
     // 持久化累计花费到 conversation JSON
-    if (sessionCostUsd != null) {
+    if (sessionCostCny != null) {
       const conv = await getConversation(cwd, options.sessionId).catch(() => null);
       if (conv) {
         await saveConversation(cwd, {
@@ -631,7 +633,7 @@ export async function runChat(options: RunChatOptions): Promise<void> {
           items: conv.items,
           anchor: conv.anchor,
           title: conv.title,
-          totalCostUsd: sessionCostUsd,
+          totalCostUsd: sessionCostCny,
         });
       }
     }
@@ -660,15 +662,9 @@ export async function runChat(options: RunChatOptions): Promise<void> {
       userMessageHash: userMsgMeta.userMessageHash,
       userMessageLen: userMsgMeta.userMessageLen,
       turnTokenUsage: turnUsage,
-      turnCostUsd: costUsd ?? null,
+      turnCostUsd: turnCostCny ?? null,
       sessionTokenTotal: tokenStatsAfter.total,
-      sessionCostUsd:
-        tokenStatsAfter.costUsd > 0
-          ? tokenStatsAfter.costUsd
-          : (estimateCostUsd(modelLabel, {
-              input: tokenStatsAfter.input,
-              output: tokenStatsAfter.output,
-            }) ?? undefined),
+      sessionCostUsd: sessionCostCny,
       tools: toolRecordsFromSteps(options.traceRecorder?.getSteps() ?? []),
       success: true,
     });

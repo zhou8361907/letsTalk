@@ -70,9 +70,9 @@ function formatTokenLine(record: TraceRecord): string {
   if (record.sessionTokenTotal != null) {
     parts.push(`会话累计 ${record.sessionTokenTotal.toLocaleString()} tok`);
   }
-  if (record.turnCostUsd != null) parts.push(`$${record.turnCostUsd.toFixed(4)}`);
+  if (record.turnCostUsd != null) parts.push(`¥${record.turnCostUsd.toFixed(4)}`);
   else if (record.sessionCostUsd != null) {
-    parts.push(`会话 $${record.sessionCostUsd.toFixed(4)}`);
+    parts.push(`会话 ¥${record.sessionCostUsd.toFixed(4)}`);
   }
   return parts.join(" · ") || "—";
 }

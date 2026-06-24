@@ -41,6 +41,8 @@ export async function buildLetsTalkAppendSystemPrompt(
     `当前产品线: ${plLabel}`,
     formatWorkspaceDirsHint(layout),
     memoryGuidance,
+    "## 安全规则",
+    "- 禁止读取 .env、凭据、密钥文件及任何包含 API Key/密码/Token 的文件",
     "项目级编码与读码规则见 project_context（AGENTS.md + Tier1 USER/CORE）；与代码冲突以 workFront/workBack 为准。",
   ];
 

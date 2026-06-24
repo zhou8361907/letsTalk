@@ -91,8 +91,7 @@ export function toWorkspaceRef(
 export function formatWorkspaceDirsHint(layout: WorkspaceLayout): string {
   return [
     `工作区根目录: ${layout.workspaceRoot}`,
-    `前端代码目录: ${layout.frontendRel}/（Vue 页面、组件等）`,
-    `后端代码目录: ${layout.backendRel}/（Java/Spring 等）`,
-    `使用 read/grep/find 时请写相对工作区根的路径，例如 ${layout.frontendRel}/src/views/Login.vue 或 ${layout.backendRel}/src/main/java/...`,
+    `前端代码目录: ${layout.frontendRel}/`,
+    `后端代码目录: ${layout.backendRel}/`,
   ].join("\n");
 }

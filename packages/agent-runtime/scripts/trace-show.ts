@@ -41,7 +41,7 @@ function printTrace(record: TraceRecord): void {
       s.stepId,
       s.tokenUsage?.input != null ? `in ${s.tokenUsage.input}` : "",
       s.tokenUsage?.output != null ? `out ${s.tokenUsage.output}` : "",
-      s.costUsd != null ? `$${s.costUsd.toFixed(4)}` : "",
+      s.costUsd != null ? `¥${s.costUsd.toFixed(4)}` : "",
       s.error,
     ]
       .filter(Boolean)

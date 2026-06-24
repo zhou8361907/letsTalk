@@ -1046,7 +1046,7 @@ export default function HomePage() {
             const te = event as any;
             const cost = te.sessionCostUsd ?? te.costUsd;
             if (cost != null) {
-              const label = ` 💰 $${typeof cost === "number" ? cost.toFixed(4) : cost}`;
+              const label = ` 💰 ¥${typeof cost === "number" ? cost.toFixed(4) : cost}`;
               for (let j = snapshot.length - 1; j >= 0; j--) {
                 const row = snapshot[j];
                 if (row?.kind === "assistant" && !row.text.includes("💰")) {

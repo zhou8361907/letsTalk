@@ -58,9 +58,9 @@ function formatTokenUsage(fields: AgentStepLogFields): string {
   if (fields.sessionTokenTotal != null) {
     parts.push(`session ${fields.sessionTokenTotal.toLocaleString()} tok`);
   }
-  if (fields.costUsd != null) parts.push(`$${fields.costUsd.toFixed(4)}`);
+  if (fields.costUsd != null) parts.push(`¥${fields.costUsd.toFixed(4)}`);
   else if (fields.sessionCostUsd != null) {
-    parts.push(`session $${fields.sessionCostUsd.toFixed(4)}`);
+    parts.push(`session ¥${fields.sessionCostUsd.toFixed(4)}`);
   }
   return parts.join(" · ");
 }

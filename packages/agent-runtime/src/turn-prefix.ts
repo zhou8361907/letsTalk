@@ -5,6 +5,7 @@
 
 import type { AgentAnchor, ChatMode } from "@lets-talk/shared-types";
 import type { WorkspaceLayout } from "@lets-talk/context";
+import { formatWorkspaceDirsHint } from "@lets-talk/context";
 import { buildQaContextPrefix } from "./qa/context.js";
 import {
   formatRequirementDraftBriefSummary,
@@ -141,6 +142,10 @@ export async function buildTurnPromptPrefix(
     }
   }
 
+  // 每轮注入产品线+代码目录（system prompt 只在 session 创建时固定，切换产品线后需实时修正）
+  const plLabel = input.layout.productLine === "shebao" ? "社保" : "医保";
+  const dirsHint = `当前产品线: ${plLabel}\n${formatWorkspaceDirsHint(input.layout)}`;
+
   const basePrefix = formatTurnPrefix({
     pointer,
     change: contextChange,
@@ -151,10 +156,13 @@ export async function buildTurnPromptPrefix(
     coreMemoryRefresh,
   });
 
+  // 将目录提示加到前缀顶部
+  const prefixedBase = `${dirsHint}\n\n${basePrefix}`;
+
   // QA 上下文附加到前缀
   const prefix = qaContextPrefix
-    ? `${basePrefix}\n\n${qaContextPrefix}\n`
-    : basePrefix;
+    ? `${prefixedBase}\n\n${qaContextPrefix}\n`
+    : prefixedBase;
 
   return {
     prefix,

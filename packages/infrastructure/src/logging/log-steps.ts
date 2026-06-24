@@ -26,6 +26,8 @@ export interface RequestLogContext {
 export interface TokenUsageFields {
   input?: number;
   output?: number;
+  /** 缓存命中 token 数（仅部分模型/API 返回） */
+  cacheRead?: number;
   total?: number;
 }
 

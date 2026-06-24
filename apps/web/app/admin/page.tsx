@@ -7,7 +7,7 @@ import { ModelPieChart } from "../../components/admin/ModelPieChart";
 import type { AdminOverview } from "../../lib/admin-aggregation";
 
 function formatCost(v: number): string {
-  return `$${v.toFixed(6)}`;
+  return `¥${v.toFixed(6)}`;
 }
 
 function formatTokens(v: number): string {
